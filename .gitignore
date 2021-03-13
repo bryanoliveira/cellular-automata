@@ -1,4 +1,6 @@
-game_of_life
+automata
+
+build/
 
 # Prerequisites
 *.d
