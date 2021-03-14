@@ -9,6 +9,7 @@
 #include <GL/glut.h>
 
 #include "automata.hpp"
+#include "automata_gpu.h"
 #include "config.hpp"
 #include "display.hpp"
 #include "grid.hpp"
@@ -18,9 +19,9 @@ void loop();
 int main(int argc, char** argv) {
     srand(time(NULL));
 
-    grid = initGrid(true);
-    // insertGlider(ROWS/2, COLS/2);
-    // insertBlinker(ROWS/2, COLS/);
+    grid = initGrid();
+    insertGlider(config::rows / 2 - 12, config::cols / 2 - 12);
+    insertBlinker(config::rows / 2, config::cols / 2);
 
     glutInit(&argc, argv);
     glutInitWindowSize(config::width, config::height);
