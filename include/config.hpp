@@ -17,6 +17,7 @@ extern float render_delay;
 extern int rows;
 extern int cols;
 extern float fill_prob;
+extern float virtual_fill_prob;
 
 }  // namespace config
 

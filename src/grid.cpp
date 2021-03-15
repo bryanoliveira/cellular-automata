@@ -3,7 +3,9 @@
 // global grid
 bool** grid;
 
-bool** initGrid(bool random) {
+bool** initGrid(bool random, float fill_prob) {
+    if (fill_prob == -1) fill_prob = config::fill_prob;
+
     bool** tempGrid = (bool**)calloc(config::rows, sizeof(bool*));
 
     for (int i = 0; i < config::rows; i++) {

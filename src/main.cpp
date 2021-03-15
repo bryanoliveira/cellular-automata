@@ -19,9 +19,9 @@ void loop();
 int main(int argc, char** argv) {
     srand(time(NULL));
 
-    grid = initGrid();
-    insertGlider(config::rows / 2 - 12, config::cols / 2 - 12);
-    insertBlinker(config::rows / 2, config::cols / 2);
+    grid = initGrid(true);
+    // insertGlider(config::rows / 2 - 12, config::cols / 2 - 12);
+    // insertBlinker(config::rows / 2, config::cols / 2);
 
     glutInit(&argc, argv);
     glutInitWindowSize(config::width, config::height);

@@ -9,9 +9,10 @@ GLfloat top = 0.0;
 GLfloat bottom = 1.0;
 GLfloat left = 0.0;
 GLfloat right = 1.0;
-float render_delay = 0.1;
-int rows = 100;
-int cols = 100;
-float fill_prob = 0.5;
+float render_delay = 0;
+int rows = 1000;
+int cols = 1000;
+float fill_prob = 0.08;
+float virtual_fill_prob = 0.0001;
 
 }

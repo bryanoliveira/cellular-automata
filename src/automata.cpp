@@ -33,7 +33,10 @@ void computeGrid() {
 
     for (int i = 0; i < config::rows; i++) {
         for (int j = 0; j < config::cols; j++) {
-            nextGrid[i][j] = computeCell(i, j);
+            // add a "virtual particle" spawn probability
+            nextGrid[i][j] =
+                (float(rand()) / RAND_MAX) < config::virtual_fill_prob ||
+                computeCell(i, j);
         }
     }
 

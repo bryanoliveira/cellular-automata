@@ -7,7 +7,7 @@
 
 extern bool** grid;
 
-bool** initGrid(bool random = false);
+bool** initGrid(bool random = false, float fill_prob = -1);
 void freeGrid(bool** tempGrid);
 
 #endif

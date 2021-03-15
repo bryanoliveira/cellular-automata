@@ -21,9 +21,9 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
-$(BUILDDIR)/%.o: $(SRCDIR)/%.$(CUEXT)
-	@mkdir -p $(BUILDDIR)
-	nvcc -ccbin $(CC) $(INC) --machine=64 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_86,code=compute_86 -c -o $@ $<
+# $(BUILDDIR)/%.o: $(SRCDIR)/%.$(CUEXT)
+# 	@mkdir -p $(BUILDDIR)
+# 	nvcc -ccbin $(CC) $(INC) --machine=64 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_86,code=compute_86 -c -o $@ $<
 
 clean:
 	@echo " Cleaning..."; 
