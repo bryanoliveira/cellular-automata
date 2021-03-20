@@ -38,18 +38,7 @@ void _displayFrameRate() {
 
 /// Displays the global 'grid' if it is time. Returns true if grid was
 /// rendered.
-// TODO: make the program sleep instead of busy waiting, perhaps?
-bool display() {
-    // execute display every X seconds
-    static clock_t last_exec_clock = 0;
-    if (last_exec_clock > 0 &&
-        float(clock() - last_exec_clock) / CLOCKS_PER_SEC <
-            config::render_delay) {
-        glutPostRedisplay();
-        return false;
-    }
-    last_exec_clock = clock();
-
+void display() {
     // glClear(GL_COLOR_BUFFER_BIT);
 
     float xSize = 1.0f / ((float)config::cols);
@@ -78,5 +67,4 @@ bool display() {
     _displayFrameRate();
 
     if (!printedAnything && glutGetWindow()) glutDestroyWindow(glutGetWindow());
-    return true;
 }

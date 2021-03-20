@@ -11,6 +11,6 @@
 #include "grid.hpp"
 
 void reshape(int w, int h);
-bool display();
+void display();
 
 #endif

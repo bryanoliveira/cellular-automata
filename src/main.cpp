@@ -7,6 +7,8 @@
 
 #include <GL/glu.h>
 #include <GL/glut.h>
+#include <chrono>
+#include <thread>
 
 #include "automata.hpp"
 #include "automata_gpu.h"
@@ -35,7 +37,10 @@ int main(int argc, char** argv) {
 }
 
 void loop() {
-    if (display())
-        // compute grid afterwards to display initial state
-        computeGrid();
+    // limit framerate
+    std::this_thread::sleep_for(std::chrono::milliseconds(config::render_delay_ms));
+    // display initial grid
+    display();
+    // compute next grid
+    computeGrid();
 }

@@ -13,7 +13,7 @@ extern GLfloat top;
 extern GLfloat bottom;
 extern GLfloat left;
 extern GLfloat right;
-extern float render_delay;
+extern unsigned int render_delay_ms;
 extern int rows;
 extern int cols;
 extern float fill_prob;
