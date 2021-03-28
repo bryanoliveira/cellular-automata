@@ -1,16 +1,17 @@
 #ifndef DISPLAY_HPP_
 #define DISPLAY_HPP_
 
-#include <GL/glu.h>
-#include <GL/glut.h>
-
-#include <ctime>
-#include <sstream>
-
 #include "config.hpp"
 #include "grid.hpp"
 
+namespace display {
+
+void setup(int * argc, char ** argv, void (*loopFunc)());
+void start();
+void stop();
+void draw();
 void reshape(int w, int h);
-void display();
+
+} // namespace display
 
 #endif

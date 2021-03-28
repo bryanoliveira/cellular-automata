@@ -9,28 +9,35 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 CUSOURCES := $(shell find $(SRCDIR) -type f -name *.$(CUEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CUOBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(CUSOURCES:.$(CUEXT)=.o))
-CFLAGS := -g -Wall
-LIB := -lGL -lGLU -lglut -lcudart
+CFLAGS := -g -Wall 
+LIB := -lGL -lGLU -lglut -lGLEW -lcudart
 INC := -I include
 
+run: $(TARGET)
+	@echo "\033[1;37mRunning" $(TARGET) "\033[0m"; 
+	./$(TARGET)
+
+profile: $(TARGET)
+	@echo "\033[1;37mProfiling" $(TARGET) "\033[0m"; 
+	nsys profile --stats=true -o report ./$(TARGET)
+
 $(TARGET): $(OBJECTS) $(CUOBJECTS)
-	@echo " Linking..."
+	@echo "\033[1;37mLinking" $(TARGET) "\033[0m"
 	$(CC) $^ -o $(TARGET) $(LIB)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
+	@echo "\033[1;37mBuilding" $@ "\033[0m"
 	@mkdir -p $(BUILDDIR)
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
-# $(BUILDDIR)/%.o: $(SRCDIR)/%.$(CUEXT)
-# 	@mkdir -p $(BUILDDIR)
-# 	nvcc -ccbin $(CC) $(INC) --machine=64 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_86,code=compute_86 -c -o $@ $<
+$(BUILDDIR)/%.o: $(SRCDIR)/%.$(CUEXT)
+	@echo "\033[1;37mBuilding" $@ "\033[0m"
+	@mkdir -p $(BUILDDIR)
+	nvcc -ccbin $(CC) $(INC) --machine=64 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_86,code=compute_86 -c -o $@ $<
 
 clean:
-	@echo " Cleaning..."; 
-	$(RM) -r $(BUILDDIR) $(TARGET)
+	@echo "\033[1;37mCleaning...\033[0m"; 
+	$(RM) -r $(BUILDDIR) $(TARGET) *.qdrep *.sqlite
 
-run:
-	@echo " Running..."; 
-	./$(TARGET)
 
 .PHONY: clean
