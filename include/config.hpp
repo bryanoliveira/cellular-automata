@@ -15,11 +15,11 @@ extern GLfloat bottom;
 extern GLfloat left;
 extern GLfloat right;
 extern unsigned int render_delay_ms;
-extern unsigned int  rows;
-extern unsigned int  cols;
+extern unsigned int rows;
+extern unsigned int cols;
 extern float fill_prob;
 extern float virtual_fill_prob;
 
-}  // namespace config
+} // namespace config
 
 #endif
