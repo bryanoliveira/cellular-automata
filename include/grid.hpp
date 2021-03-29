@@ -1,14 +1,12 @@
 #ifndef GRID_HPP_
 #define GRID_HPP_
 
-#include <iostream>
-
 #include "config.hpp"
 
 extern bool *grid;
 extern bool *nextGrid;
 
-bool *initGrid(bool random = false, float fill_prob = -1);
-void freeGrid(bool *tempGrid);
+void insertGlider(int row, int col);
+void insertBlinker(int row, int col);
 
 #endif
