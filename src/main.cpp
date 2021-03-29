@@ -15,13 +15,12 @@
 #include "grid.hpp"
 #include "kernels.hpp"
 
-
+Display *display;
 unsigned long iterations = 0;
-
 
 void loop();
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     unsigned long randSeed = time(NULL);
     srand(randSeed);
 
@@ -30,8 +29,8 @@ int main(int argc, char** argv) {
     // insertGlider(config::rows / 2 - 12, config::cols / 2 - 12);
     // insertBlinker(config::rows / 2, config::cols / 2);
 
-    display::setup(&argc, argv, loop);
-    display::start();
+    display = new Display(&argc, argv, loop);
+    display->start();
 
     std::cout << "Exiting after " << iterations << " iterations." << std::endl;
     gpu::cleanUp();
@@ -41,15 +40,18 @@ int main(int argc, char** argv) {
 
 void loop() {
     // limit framerate
-    if(config::render_delay_ms > 0)
-        std::this_thread::sleep_for(std::chrono::milliseconds(config::render_delay_ms));
+    if (config::render_delay_ms > 0)
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(config::render_delay_ms));
 
-    // display initial grid
-    display::draw();
+    // update display buffers (required for CPU only)
+    display->updateGridBuffersCPU();
+    // display current grid
+    display->draw();
     // compute next grid
     gpu::computeGrid();
 
     iterations++;
-    if (config::max_iterations > 0 && iterations >= config::max_iterations) 
-        display::stop();
+    if (config::max_iterations > 0 && iterations >= config::max_iterations)
+        display->stop();
 }
