@@ -14,6 +14,8 @@
 #include "grid.hpp"
 #include "kernels.hpp"
 
+#define USE_GPU true
+
 Display *display;
 unsigned long iterations = 0;
 
@@ -21,20 +23,26 @@ void loop();
 
 int main(int argc, char **argv) {
     unsigned long randSeed = time(NULL);
-    srand(randSeed);
-
-    // grid = initGrid(true);
-    // insertGlider(config::rows / 2 - 12, config::cols / 2 - 12);
-    // insertBlinker(config::rows / 2, config::cols / 2);
 
     display = new Display(&argc, argv, loop);
 
-    gpu::setup(randSeed, display->gridVBO);
+    if (USE_GPU)
+        gpu::setup(randSeed, display->gridVBO);
+    else
+        cpu::setup(randSeed, config::fill_prob);
 
+    // insertGlider(config::rows / 2 - 12, config::cols / 2 - 12);
+    // insertBlinker(config::rows / 2, config::cols / 2);
     display->start();
 
     std::cout << "Exiting after " << iterations << " iterations." << std::endl;
-    gpu::cleanUp();
+
+    // clean up
+    delete display;
+    if (USE_GPU)
+        gpu::cleanUp();
+    else
+        cpu::cleanUp();
 
     return 0;
 }
@@ -46,13 +54,18 @@ void loop() {
             std::chrono::milliseconds(config::render_delay_ms));
 
     // update display buffers
-    // display->updateGridBuffersCPU();
-    gpu::updateGridBuffers();
+    if (USE_GPU)
+        gpu::updateGridBuffers();
+    else
+        display->updateGridBuffersCPU();
 
     // display current grid
     display->draw();
     // compute next grid
-    gpu::computeGrid();
+    if (USE_GPU)
+        gpu::computeGrid();
+    else
+        cpu::computeGrid();
 
     iterations++;
     if (config::max_iterations > 0 && iterations >= config::max_iterations)

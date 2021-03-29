@@ -1,22 +1,19 @@
 #include "grid.hpp"
 
 // global grid
-bool* grid;
+bool *grid;
+bool *nextGrid;
 
-bool* initGrid(bool random, float fill_prob) {
-    if (fill_prob == -1) fill_prob = config::fill_prob;
-
-    bool* tempGrid = (bool*)calloc(config::rows, sizeof(bool));
-
-    if (random)
-        for (unsigned int i = 0; i < config::rows; i++) {
-            for (unsigned int j = 0; j < config::cols; j++)
-                tempGrid[i * config::cols + j] = (float(rand()) / RAND_MAX) < config::fill_prob;
-        }
-
-    return tempGrid;
+void insertGlider(int row, int col) {
+    grid[(row - 1) * config::cols + col + 0] = true;
+    grid[(row + 0) * config::cols + col + 1] = true;
+    grid[(row + 1) * config::cols + col - 1] = true;
+    grid[(row + 1) * config::cols + col + 0] = true;
+    grid[(row + 1) * config::cols + col + 1] = true;
 }
 
-void freeGrid(bool* tempGrid) {
-    free(tempGrid);
+void insertBlinker(int row, int col) {
+    grid[(row - 1) * config::cols + col] = true;
+    grid[(row + 0) * config::cols + col] = true;
+    grid[(row + 1) * config::cols + col] = true;
 }

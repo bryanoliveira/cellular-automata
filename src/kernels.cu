@@ -55,7 +55,8 @@ __global__ void initGrid(bool *grid, unsigned int rows, unsigned int cols,
     }
 }
 
-__global__ void evolveGrid(bool *grid, unsigned int rows, unsigned int cols) {
+__global__ void evolveGrid(bool *grid, bool *nextGrid, unsigned int rows,
+                           unsigned int cols) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     for (int y = blockDim.y * blockIdx.y + threadIdx.y; y < rows;
@@ -83,20 +84,20 @@ __global__ void evolveGrid(bool *grid, unsigned int rows, unsigned int cols) {
 
             // 1. Any live cell with two or three live neighbours survives.
             if (grid[idx])
-                grid[idx] = livingNeighbours == 2 || livingNeighbours == 3;
+                nextGrid[idx] = livingNeighbours == 2 || livingNeighbours == 3;
             // 2. Any dead cell with three live neighbours becomes a live cell.
             else if (livingNeighbours == 3)
-                grid[idx] = true;
+                nextGrid[idx] = true;
             // 3. All other live cells die in the next generation. Similarly,
             // all other dead cells stay dead.
             else
-                grid[idx] = false;
+                nextGrid[idx] = false;
         }
     }
 }
 
-__global__ void updateGridBuffers(bool *grid, unsigned int rows,
-                                  unsigned int cols, vec3s *gridVertices) {
+__global__ void updateGridBuffers(bool *grid, vec3s *gridVertices,
+                                  unsigned int rows, unsigned int cols) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     for (int y = blockDim.y * blockIdx.y + threadIdx.y; y < rows;
@@ -137,8 +138,10 @@ void setup(unsigned long randSeed, unsigned long gridVBO) {
         cudaMalloc(&globalRandState,
                    gridSize * sizeof(curandState))); // gpu only, not managed
     gpuAssert(cudaMallocManaged(&grid, gridBytes));
+    gpuAssert(cudaMallocManaged(&nextGrid, gridBytes));
     // prefetch grid to GPU
     gpuAssert(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
+    gpuAssert(cudaMemPrefetchAsync(nextGrid, gridBytes, gpuDeviceId));
 
     // initialize RNG
     setupRNG<<<gpuBlocks, gpuThreadsPerBlock>>>(config::rows, config::cols,
@@ -156,12 +159,19 @@ void setup(unsigned long randSeed, unsigned long gridVBO) {
 }
 
 void computeGrid() {
-    gpuAssert(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
-    evolveGrid<<<gpuBlocks, gpuThreadsPerBlock>>>(grid, config::rows,
+    // gpuAssert(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
+    // gpuAssert(cudaMemPrefetchAsync(nextGrid, gridBytes, gpuDeviceId));
+    evolveGrid<<<gpuBlocks, gpuThreadsPerBlock>>>(grid, nextGrid, config::rows,
                                                   config::cols);
     gpuAssert(cudaGetLastError());
-    gpuAssert(cudaMemPrefetchAsync(grid, gridBytes, cudaCpuDeviceId));
+    // gpuAssert(cudaMemPrefetchAsync(grid, gridBytes, cudaCpuDeviceId));
+    // gpuAssert(cudaMemPrefetchAsync(nextGrid, gridBytes, cudaCpuDeviceId));
     gpuAssert(cudaDeviceSynchronize());
+
+    // simply swap buffers to avoid reallocation
+    bool *tmpGrid = grid;
+    grid = nextGrid;
+    nextGrid = tmpGrid;
 }
 
 void updateGridBuffers() {
@@ -175,7 +185,7 @@ void updateGridBuffers() {
 
     // launch kernel
     updateGridBuffers<<<gpuBlocks, gpuThreadsPerBlock>>>(
-        grid, config::rows, config::cols, gridVertices);
+        grid, gridVertices, config::rows, config::cols);
     gpuAssert(cudaGetLastError());
 
     // unmap buffer object
@@ -185,6 +195,7 @@ void updateGridBuffers() {
 void cleanUp() {
     // free the grid
     gpuAssert(cudaFree(grid));
+    gpuAssert(cudaFree(nextGrid));
     gpuAssert(cudaFree(globalRandState));
 }
 
