@@ -1,12 +1,10 @@
 /**
  * Author: Bryan Lincoln
  * Email: bryanufg@gmail.com
- * Grid drawing inspired by
- * https://github.com/asegizek/418-Final-Project/blob/master/display.cpp
+ *
+ * This must be compiled with nvcc so required libraries are properly loaded
  */
-
-#include <GL/glu.h>
-#include <GL/glut.h>
+#include <iostream>
 #include <chrono>
 #include <thread>
 
@@ -15,32 +13,45 @@
 #include "config.hpp"
 #include "display.hpp"
 #include "grid.hpp"
+#include "kernels.hpp"
+
+Display *display;
+unsigned long iterations = 0;
 
 void loop();
 
-int main(int argc, char** argv) {
-    srand(time(NULL));
+int main(int argc, char **argv) {
+    unsigned long randSeed = time(NULL);
+    srand(randSeed);
 
-    grid = initGrid(true);
+    gpu::setup(randSeed);
+    // grid = initGrid(true);
     // insertGlider(config::rows / 2 - 12, config::cols / 2 - 12);
     // insertBlinker(config::rows / 2, config::cols / 2);
 
-    glutInit(&argc, argv);
-    glutInitWindowSize(config::width, config::height);
-    glutCreateWindow(config::program_name.c_str());
+    display = new Display(&argc, argv, loop);
+    display->start();
 
-    glClear(GL_COLOR_BUFFER_BIT);
-    glutDisplayFunc(loop);
-    glutReshapeFunc(reshape);
-    glutMainLoop();
+    std::cout << "Exiting after " << iterations << " iterations." << std::endl;
+    gpu::cleanUp();
+
     return 0;
 }
 
 void loop() {
     // limit framerate
-    std::this_thread::sleep_for(std::chrono::milliseconds(config::render_delay_ms));
-    // display initial grid
-    display();
+    if (config::render_delay_ms > 0)
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(config::render_delay_ms));
+
+    // update display buffers (required for CPU only)
+    display->updateGridBuffersCPU();
+    // display current grid
+    display->draw();
     // compute next grid
-    computeGrid();
+    gpu::computeGrid();
+
+    iterations++;
+    if (config::max_iterations > 0 && iterations >= config::max_iterations)
+        display->stop();
 }
