@@ -19,13 +19,19 @@ Display::Display(int *argc, char **argv, void (*loopFunc)()) {
     glClear(GL_COLOR_BUFFER_BIT);
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
 
+    GLenum gl_error = glGetError();
+    if (glGetError() != GL_NO_ERROR) {
+        fprintf(stderr, "GLUT Error: %d\n", gl_error);
+        exit(EXIT_FAILURE);
+    }
+
     // init glew
     // this is required to setup GL functions (like glGenBuffers)
     GLenum err = glewInit();
     if (GLEW_OK != err) {
         /* glewInit failed, something is seriously wrong */
-        fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-        exit(1);
+        fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(err));
+        exit(EXIT_FAILURE);
     }
 
     // setup shaders
@@ -99,15 +105,16 @@ void Display::draw() {
     Display::calcFrameRate();
 }
 
+// this could be on the automata file
 void Display::updateGridBuffersCPU() {
     // update vertice states
-    for (unsigned int vidx = 0; vidx < Display::nGridVertices; vidx++) {
+    for (unsigned int idx = 0; idx < Display::nGridVertices; idx++) {
         // remember we have 4 contiguous vertices for each cell, so each vertice
         // index/4 corresponds to the grid cell
-        gridVertices[vidx].state = (float)grid[int(vidx / 4)];
+        gridVertices[idx].state = (float)grid[int(idx / 4)];
     }
 
-    // bind VBO, which be updated
+    // bind VBO to be updated
     glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
     // update the VBO data
     glBufferData(GL_ARRAY_BUFFER, gridVerticesSize, gridVertices,
@@ -211,8 +218,8 @@ void Display::setupShaderProgram() {
 void Display::setupGridBuffers() {
     // we should probably free the vertices arrays at Display::stop, but we're
     // destroying the program after they are no longer needed
-    gridVerticesSize = Display::nGridVertices * sizeof(vec3);
-    gridVertices = (vec3 *)malloc(gridVerticesSize);
+    gridVerticesSize = Display::nGridVertices * sizeof(vec3s);
+    gridVertices = (vec3s *)malloc(gridVerticesSize);
     size_t indicesSize = Display::nGridVertices * sizeof(unsigned int);
     unsigned int *indices = (unsigned int *)malloc(indicesSize);
 
@@ -248,14 +255,14 @@ void Display::setupGridBuffers() {
     // tell OpenGL how to interpret the vertex buffer data
     // params:
     //      *location* of the position vertex (as in the vertex shader)
-    //      size of the vertex attribute, which is a vec3 (size 3)
-    //      type of each attribute (vec3 is made of floats)
+    //      size of the vertex attribute, which is a vec3s (size 3)
+    //      type of each attribute (vec3s is made of floats)
     //      use_normalization?
     //      stride of each position vertex in the array. It could be 0 as data
     //      is tightly packed. offset in bytes where the data start in the
     //      buffer
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3), (void *)0);
-    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(vec3),
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vec3s), (void *)0);
+    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(vec3s),
                           (void *)(3 * sizeof(float)));
     // enable the vertex attributes ixn location 0 for the currently bound VBO
     glEnableVertexAttribArray(0);
@@ -266,7 +273,7 @@ void Display::setupGridBuffers() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void Display::setupGridVertices(vec3 *vertices, unsigned int *indices) {
+void Display::setupGridVertices(vec3s *vertices, unsigned int *indices) {
     // setup vertices
     // iterate over the number of cells
     for (unsigned int y = 0, idx = 0; y < config::rows; y++) {
@@ -274,25 +281,27 @@ void Display::setupGridVertices(vec3 *vertices, unsigned int *indices) {
             // vertices live in an (-1, 1) tridimensional space
             // we need to calculate the position of each vertice inside a 2d
             // grid top left
-            vertices[idx] = vec3(-1.0f + x * (2.0f / config::cols),
-                                 -1.0f + y * (2.0f / config::rows), 0.0f, 0.0f);
+            vertices[idx] =
+                vec3s(-1.0f + x * (2.0f / config::cols),
+                      -1.0f + y * (2.0f / config::rows), 0.0f, 0.0f);
             indices[idx] = idx;
             idx++;
             // top right
-            vertices[idx] = vec3(-1.0f + (x + 1) * (2.0f / config::cols),
-                                 -1.0f + y * (2.0f / config::rows), 0.0f, 0.0f);
+            vertices[idx] =
+                vec3s(-1.0f + (x + 1) * (2.0f / config::cols),
+                      -1.0f + y * (2.0f / config::rows), 0.0f, 0.0f);
             indices[idx] = idx;
             idx++;
             // bottom right
             vertices[idx] =
-                vec3(-1.0f + (x + 1) * (2.0f / config::cols),
-                     -1.0f + (y + 1) * (2.0f / config::rows), 0.0f, 0.0f);
+                vec3s(-1.0f + (x + 1) * (2.0f / config::cols),
+                      -1.0f + (y + 1) * (2.0f / config::rows), 0.0f, 0.0f);
             indices[idx] = idx;
             idx++;
             // bottom left
             vertices[idx] =
-                vec3(-1.0f + x * (2.0f / config::cols),
-                     -1.0f + (y + 1) * (2.0f / config::rows), 0.0f, 0.0f);
+                vec3s(-1.0f + x * (2.0f / config::cols),
+                      -1.0f + (y + 1) * (2.0f / config::rows), 0.0f, 0.0f);
             indices[idx] = idx;
             idx++;
         }

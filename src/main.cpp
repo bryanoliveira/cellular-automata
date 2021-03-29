@@ -9,7 +9,6 @@
 #include <thread>
 
 #include "automata.hpp"
-#include "automata_gpu.h"
 #include "config.hpp"
 #include "display.hpp"
 #include "grid.hpp"
@@ -24,12 +23,14 @@ int main(int argc, char **argv) {
     unsigned long randSeed = time(NULL);
     srand(randSeed);
 
-    gpu::setup(randSeed);
     // grid = initGrid(true);
     // insertGlider(config::rows / 2 - 12, config::cols / 2 - 12);
     // insertBlinker(config::rows / 2, config::cols / 2);
 
     display = new Display(&argc, argv, loop);
+
+    gpu::setup(randSeed, display->gridVBO);
+
     display->start();
 
     std::cout << "Exiting after " << iterations << " iterations." << std::endl;
@@ -44,8 +45,10 @@ void loop() {
         std::this_thread::sleep_for(
             std::chrono::milliseconds(config::render_delay_ms));
 
-    // update display buffers (required for CPU only)
-    display->updateGridBuffersCPU();
+    // update display buffers
+    // display->updateGridBuffersCPU();
+    gpu::updateGridBuffers();
+
     // display current grid
     display->draw();
     // compute next grid

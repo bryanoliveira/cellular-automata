@@ -4,15 +4,15 @@
 #include "config.hpp"
 #include "grid.hpp"
 
+typedef struct _vec3s {
+    float x, y, z;
+    float state;
+    _vec3s(float _x, float _y, float _z, float _s)
+        : x(_x), y(_y), z(_z), state(_s){};
+} vec3s;
+
 class Display {
   private:
-    typedef struct _vec3 {
-        float x, y, z;
-        float state;
-        _vec3(float _x, float _y, float _z, float _s)
-            : x(_x), y(_y), z(_z), state(_s){};
-    } vec3;
-
     const char *vertexShaderSource =
         "#version 460 core\n"
         "layout (location = 0) in vec3 aPos;\n"
@@ -36,17 +36,19 @@ class Display {
     unsigned int nGridVertices = 4 * config::rows * config::cols;
     unsigned int nGridCells = config::rows * config::cols;
     unsigned int gridVAO;
-    unsigned int gridVBO;
-    vec3 *gridVertices;
+    vec3s *gridVertices;
     size_t gridVerticesSize;
 
     static void reshape(int w, int h);
     void calcFrameRate();
     void setupShaderProgram();
     void setupGridBuffers();
-    void setupGridVertices(vec3 *vertices, unsigned int *indices);
+    void setupGridVertices(vec3s *vertices, unsigned int *indices);
 
   public:
+    // cuda code may probably have to update this
+    unsigned int gridVBO;
+
     Display(int *argc, char **argv, void (*loopFunc)());
     void start();
     void stop();
