@@ -3,6 +3,7 @@ automata
 build/
 *.qdrep
 *.sqlite
+callgrind.out*
 
 # Prerequisites
 *.d

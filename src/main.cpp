@@ -24,7 +24,7 @@ void loop();
 int main(int argc, char **argv) {
     unsigned long randSeed = time(NULL);
 
-    display = new Display(&argc, argv, loop);
+    display = new Display(&argc, argv, loop, USE_GPU);
 
     if (USE_GPU)
         gpu::setup(randSeed, display->gridVBO);
@@ -38,11 +38,12 @@ int main(int argc, char **argv) {
     std::cout << "Exiting after " << iterations << " iterations." << std::endl;
 
     // clean up
-    delete display;
     if (USE_GPU)
         gpu::cleanUp();
     else
         cpu::cleanUp();
+
+    delete display;
 
     return 0;
 }

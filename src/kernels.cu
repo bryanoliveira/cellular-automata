@@ -13,6 +13,7 @@ curandState *globalRandState;
 size_t gridSize = config::rows * config::cols;
 size_t gridBytes = gridSize * sizeof(bool);
 struct cudaGraphicsResource *gridVBOResource;
+cudaStream_t evolveStream, bufferUpdateStream;
 
 #define gpuAssert(ans)                                                         \
     { _gpuAssert((ans), __FILE__, __LINE__); }
@@ -96,7 +97,7 @@ __global__ void evolveGrid(bool *grid, bool *nextGrid, unsigned int rows,
     }
 }
 
-__global__ void updateGridBuffers(bool *grid, vec3s *gridVertices,
+__global__ void updateGridBuffers(bool *grid, vec2s *gridVertices,
                                   unsigned int rows, unsigned int cols) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
@@ -105,13 +106,7 @@ __global__ void updateGridBuffers(bool *grid, vec3s *gridVertices,
         for (int x = blockDim.x * blockIdx.x + threadIdx.x; x < cols;
              x += stride.x) {
             int idx = y * cols + x;
-            float state = grid[idx]; // implicit bool->float conversion (faster)
-
-            int vidx = y * cols * 4 + x * 4; // 4 vertices per grid cell
-            gridVertices[vidx].state = state;
-            gridVertices[vidx + 1].state = state;
-            gridVertices[vidx + 2].state = state;
-            gridVertices[vidx + 3].state = state;
+            gridVertices[idx].state = (float)grid[idx];
         }
     }
 }
@@ -156,17 +151,18 @@ void setup(unsigned long randSeed, unsigned long gridVBO) {
     // register OpenGL VBO to use with CUDA
     gpuAssert(cudaGraphicsGLRegisterBuffer(&gridVBOResource, gridVBO,
                                            cudaGraphicsMapFlagsWriteDiscard));
+
+    // create secondary streams
+    cudaStreamCreate(&evolveStream);
+    cudaStreamCreate(&bufferUpdateStream);
 }
 
 void computeGrid() {
-    // gpuAssert(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
-    // gpuAssert(cudaMemPrefetchAsync(nextGrid, gridBytes, gpuDeviceId));
-    evolveGrid<<<gpuBlocks, gpuThreadsPerBlock>>>(grid, nextGrid, config::rows,
-                                                  config::cols);
+    evolveGrid<<<gpuBlocks, gpuThreadsPerBlock, 0, evolveStream>>>(
+        grid, nextGrid, config::rows, config::cols);
     gpuAssert(cudaGetLastError());
-    // gpuAssert(cudaMemPrefetchAsync(grid, gridBytes, cudaCpuDeviceId));
-    // gpuAssert(cudaMemPrefetchAsync(nextGrid, gridBytes, cudaCpuDeviceId));
-    gpuAssert(cudaDeviceSynchronize());
+    // should I call cudaDeviceSynchronize?
+    // gpuAssert(cudaDeviceSynchronize());
 
     // simply swap buffers to avoid reallocation
     bool *tmpGrid = grid;
@@ -176,7 +172,7 @@ void computeGrid() {
 
 void updateGridBuffers() {
     // map OpenGL buffer object for writing from CUDA
-    vec3s *gridVertices;
+    vec2s *gridVertices;
     gpuAssert(cudaGraphicsMapResources(1, &gridVBOResource, 0));
     size_t numBytes;
     gpuAssert(cudaGraphicsResourceGetMappedPointer((void **)&gridVertices,
@@ -187,12 +183,20 @@ void updateGridBuffers() {
     updateGridBuffers<<<gpuBlocks, gpuThreadsPerBlock>>>(
         grid, gridVertices, config::rows, config::cols);
     gpuAssert(cudaGetLastError());
+    // should I call cudaDeviceSynchronize?
 
     // unmap buffer object
     gpuAssert(cudaGraphicsUnmapResources(1, &gridVBOResource, 0));
 }
 
 void cleanUp() {
+    // wait for pending operations to complete
+    gpuAssert(cudaDeviceSynchronize());
+    // destroy secondary streams
+    cudaStreamDestroy(evolveStream);
+    cudaStreamDestroy(bufferUpdateStream);
+    // unregister mapped resource (needs the GL context to still be set)
+    // gpuAssert(cudaGraphicsUnregisterResource(gridVBOResource));
     // free the grid
     gpuAssert(cudaFree(grid));
     gpuAssert(cudaFree(nextGrid));

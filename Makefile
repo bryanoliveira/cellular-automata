@@ -9,7 +9,7 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 CUSOURCES := $(shell find $(SRCDIR) -type f -name *.$(CUEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CUOBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(CUSOURCES:.$(CUEXT)=.o))
-CFLAGS := -g -Wall 
+CFLAGS := -g -Wall
 LIB := -lGL -lGLU -lglut -lGLEW -lcudart
 INC := -I include
 
@@ -37,7 +37,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(CUEXT)
 
 clean:
 	@echo "\033[1;37mCleaning...\033[0m"; 
-	$(RM) -r $(BUILDDIR) $(TARGET) *.qdrep *.sqlite
+	$(RM) -r $(BUILDDIR) $(TARGET) *.qdrep *.sqlite callgrind.out*
 
 
 .PHONY: clean

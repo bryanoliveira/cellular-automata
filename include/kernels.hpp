@@ -2,7 +2,7 @@
 #define KERNELS_HPP_
 
 #include "config.hpp"
-#include "display.hpp" // for the vec3s type
+#include "display.hpp" // for the vec2s type
 #include "grid.hpp"
 
 namespace gpu {
