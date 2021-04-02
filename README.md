@@ -32,6 +32,7 @@ It is possible to run this program in a CPU-only mode, so if you don't have a CU
 -   Clone this repository
 -   Building and executing:
     -   Run `make` to build and run
+    -   Run `make build` to only build
     -   Run `make run` to only run
     -   Run `make clean` to remove generated build files
     -   Run `make profile` to run [NVIDIA's nsys](https://developer.nvidia.com/nsight-systems) profiling.
