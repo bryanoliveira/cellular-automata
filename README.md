@@ -2,7 +2,7 @@
 
 <img src="docs/100x100.gif" align="right">
 
-A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, CUDA and OpenGL. It's built to run on a GPU but it also supports CPU-only execution (mainly for relative speedup comparisons). On the right there's an example execution of [Conway's Game of life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 grid randomly initialized.
+A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, CUDA and OpenGL. It's built to run on a GPU but it also supports CPU-only execution (mainly for relative speedup comparisons). On the right there's an example execution of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 grid randomly initialized.
 
 The main objective of this project is to allow scaling up to a fairly large number of cells while maintaining the code legibility and allowing for further customizations.
 
