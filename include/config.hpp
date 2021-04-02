@@ -14,6 +14,7 @@ extern GLfloat top;
 extern GLfloat bottom;
 extern GLfloat left;
 extern GLfloat right;
+extern unsigned int start_delay;
 extern unsigned int render_delay_ms;
 extern unsigned int rows;
 extern unsigned int cols;
