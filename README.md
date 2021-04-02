@@ -10,6 +10,8 @@ It doesn't yet support headless mode or definition of the evolution rules at run
 
 This program can currently evolve a 144 million cell Conway's Game of Life grid (12000x12000) with up to 15 FPS on a Ryzen 7 3700X / RTX 3080 using up to 2GB RAM and 9GB VRAM (which is the actual scaling limiter).
 
+<br />
+
 <img src="docs/12000x12000.png">
 
 > A 12000x12000 grid running Conway's Game of life.
