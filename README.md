@@ -16,13 +16,13 @@ This program can currently evolve a 144 million cell Conway's Game of Life grid 
 
 ## Requirements
 
--   Debian-ish linux distro (I only tested this on Ubuntu 20)
--   Make
+-   Debian-like linux distro (I only tested this on Ubuntu 20)
+-   make
 -   g++ (C++ 17)
--   OpenGL: GLEW, GLUT
+-   OpenGL (GLEW and GLUT)
 -   CUDA (nvcc) and CUDA runtime libraries
 
-It is possible to run this program CPU-only, so if you don't have a CUDA-capable video card you may skip the last step. You'll also need to set `USE_GPU` to `false` in `src/main.cpp` for that.
+It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that you will need to set `USE_GPU` to `false` in `src/main.cpp` and disable `*.cu` file compilation on `Makefile`.
 
 ## Usage
 
