@@ -2,7 +2,7 @@
 
 <img src="docs/100x100.gif" align="right">
 
-A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, CUDA and OpenGL. It's built to run on a GPU but it also supports CPU-only execution (mainly for relative speedup comparisons). On the right there's an example execution of [Conway's Game of life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 grid randomly initialized.
+A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, CUDA and OpenGL. It's built to run on a GPU but it also supports CPU-only execution (mainly for relative speedup comparisons). On the right there's an example execution of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 grid randomly initialized.
 
 The main objective of this project is to allow scaling up to a fairly large number of cells while maintaining the code legibility and allowing for further customizations.
 
@@ -10,19 +10,21 @@ It doesn't yet support headless mode or definition of the evolution rules at run
 
 This program can currently evolve a 144 million cell Conway's Game of Life grid (12000x12000) with up to 15 FPS on a Ryzen 7 3700X / RTX 3080 using up to 2GB RAM and 9GB VRAM (which is the actual scaling limiter).
 
+<br />
+
 <img src="docs/12000x12000.png">
 
 > A 12000x12000 grid running Conway's Game of life.
 
 ## Requirements
 
--   Debian-ish linux distro (I only tested this on Ubuntu 20)
--   Make
+-   Debian-like linux distro (I only tested this on Ubuntu 20)
+-   make
 -   g++ (C++ 17)
--   OpenGL: GLEW, GLUT
+-   OpenGL (GLEW and GLUT)
 -   CUDA (nvcc) and CUDA runtime libraries
 
-It is possible to run this program CPU-only, so if you don't have a CUDA-capable video card you may skip the last step. You'll also need to set `USE_GPU` to `false` in `src/main.cpp` for that.
+It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that you will need to set `USE_GPU` to `false` in `src/main.cpp` and disable `*.cu` file compilation on `Makefile`.
 
 ## Usage
 
