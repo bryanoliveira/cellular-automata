@@ -149,7 +149,8 @@ void Display::reshape(int w, int h) {
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(config::left, config::right, config::bottom, config::top);
+    // left, right, bottom, top
+    gluOrtho2D(0, 1, 1, 0);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();

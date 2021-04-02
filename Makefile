@@ -10,7 +10,7 @@ CUSOURCES := $(shell find $(SRCDIR) -type f -name *.$(CUEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CUOBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(CUSOURCES:.$(CUEXT)=.o))
 CFLAGS := -g -Wall
-LIB := -lGL -lGLU -lglut -lGLEW -lcudart
+LIB := -lGL -lGLU -lglut -lGLEW -lcudart -lboost_program_options
 INC := -I include
 
 run: $(TARGET)

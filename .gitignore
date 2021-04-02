@@ -4,6 +4,7 @@ build/
 *.qdrep
 *.sqlite
 callgrind.out*
+.vscode/
 
 # Prerequisites
 *.d

@@ -24,6 +24,8 @@ void loop();
 int main(int argc, char **argv) {
     unsigned long randSeed = time(NULL);
 
+    config::loadCmd(argc, argv);
+
     display = new Display(&argc, argv, loop, USE_GPU);
 
     if (USE_GPU)
@@ -34,7 +36,6 @@ int main(int argc, char **argv) {
     // insertGlider(config::rows / 2 - 12, config::cols / 2 - 12);
     // insertBlinker(config::rows / 2, config::cols / 2);
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(config::start_delay));
     display->start();
 
     std::cout << "Exiting after " << iterations << " iterations." << std::endl;
