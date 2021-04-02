@@ -6,7 +6,7 @@ A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program 
 
 The main objective of this project is to allow scaling up to a fairly large number of cells while maintaining the code legibility and allowing for further customizations.
 
-It doesn't yet support headless mode or definition of the evolution rules at runtime (or any other config), but I'm working to add those in future versions.
+It doesn't yet support headless mode or definition of the evolution rules at runtime, but I'm working to add those in future versions.
 
 This program can currently evolve a 144 million cell Conway's Game of Life grid (12000x12000) with up to 15 FPS on a Ryzen 7 3700X / RTX 3080 using up to 2GB RAM and 9GB VRAM (which is the actual scaling limiter).
 
@@ -22,6 +22,7 @@ This program can currently evolve a 144 million cell Conway's Game of Life grid 
 -   make
 -   g++ (C++ 17)
 -   OpenGL (GLEW and GLUT)
+-   Boost C++ Libraty (program_options)
 -   CUDA (nvcc) and CUDA runtime libraries
 
 It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that you will need to set `USE_GPU` to `false` in `src/main.cpp` and disable `*.cu` file compilation on `Makefile`.
