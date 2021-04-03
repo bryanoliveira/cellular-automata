@@ -6,7 +6,7 @@
 extern bool *grid;
 extern bool *nextGrid;
 
-void insertGlider(int row, int col);
-void insertBlinker(int row, int col);
+void insert_glider(int row, int col);
+void insert_blinker(int row, int col);
 
 #endif

@@ -2,10 +2,21 @@
  * Author: Bryan Lincoln
  * Email: bryanufg@gmail.com
  *
- * This must be compiled with nvcc so required libraries are properly loaded
+ * Conventions (a variation of STL/Boost Style Guides):
+ *  - use spaces instead of tabs
+ *  - indent with 4 spaces
+ *  - variables are camelCased
+ *    - params are prefixed with p (e.g. pFillProb)
+ *    - member variables are prefixed with m (e.g. mFillProb)
+ *    - globals are prefixed with g (e.g. gDisplay)
+ *       - the 'config' namespace doesn't follow this as the 'config::' prefix
+ *         is always made explicit
+ *  - methods are snake_cased
+ *  - CUDA kernels are prefixed with k (e.g. k_compute_grid())
+ *  - Macros are UPPER_CASED (e.g. CUDA_ASSERT())
  */
-#include <iostream>
 #include <chrono>
+#include <iostream>
 #include <thread>
 
 #include "automata.hpp"
@@ -14,64 +25,62 @@
 #include "grid.hpp"
 #include "kernels.hpp"
 
-#define USE_GPU true
-
-Display *display;
-unsigned long iterations = 0;
+Display *gDisplay;
+unsigned long gIterations = 0;
 
 void loop();
 
 int main(int argc, char **argv) {
     unsigned long randSeed = time(NULL);
 
-    config::loadCmd(argc, argv);
+    config::load_cmd(argc, argv);
 
-    display = new Display(&argc, argv, loop, USE_GPU);
+    gDisplay = new Display(&argc, argv, loop, config::cpuOnly);
 
-    if (USE_GPU)
-        gpu::setup(randSeed, display->gridVBO);
+    if (config::cpuOnly)
+        cpu::setup(randSeed, config::fillProb);
     else
-        cpu::setup(randSeed, config::fill_prob);
+        gpu::setup(randSeed, gDisplay->grid_vbo());
 
-    // insertGlider(config::rows / 2 - 12, config::cols / 2 - 12);
-    // insertBlinker(config::rows / 2, config::cols / 2);
+    // insert_glider(config::rows / 2 - 12, config::cols / 2 - 12);
+    // insert_blinker(config::rows / 2, config::cols / 2);
 
-    display->start();
+    gDisplay->start();
 
-    std::cout << "Exiting after " << iterations << " iterations." << std::endl;
+    std::cout << "Exiting after " << gIterations << " iterations." << std::endl;
 
     // clean up
-    if (USE_GPU)
-        gpu::cleanUp();
+    if (config::cpuOnly)
+        cpu::clean_up();
     else
-        cpu::cleanUp();
+        gpu::clean_up();
 
-    delete display;
+    delete gDisplay;
 
     return 0;
 }
 
 void loop() {
     // limit framerate
-    if (config::render_delay_ms > 0)
+    if (config::renderDelayMs > 0)
         std::this_thread::sleep_for(
-            std::chrono::milliseconds(config::render_delay_ms));
+            std::chrono::milliseconds(config::renderDelayMs));
 
     // update display buffers
-    if (USE_GPU)
-        gpu::updateGridBuffers();
+    if (config::cpuOnly)
+        gDisplay->update_grid_buffers_cpu();
     else
-        display->updateGridBuffersCPU();
+        gpu::update_grid_buffers();
 
     // display current grid
-    display->draw();
+    gDisplay->draw();
     // compute next grid
-    if (USE_GPU)
-        gpu::computeGrid();
+    if (config::cpuOnly)
+        cpu::compute_grid();
     else
-        cpu::computeGrid();
+        gpu::compute_grid();
 
-    iterations++;
-    if (config::max_iterations > 0 && iterations >= config::max_iterations)
-        display->stop();
+    gIterations++;
+    if (config::maxIterations > 0 && gIterations >= config::maxIterations)
+        gDisplay->stop();
 }

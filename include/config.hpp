@@ -8,18 +8,19 @@
 namespace config {
 
 // global configs
-extern std::string program_name;
-extern unsigned long max_iterations;
+extern std::string programName;
+extern unsigned long maxIterations;
+extern bool cpuOnly;
 extern GLint width;
 extern GLint height;
-extern unsigned int render_delay_ms;
+extern unsigned int renderDelayMs;
 extern unsigned int rows;
 extern unsigned int cols;
-extern float fill_prob;
-extern float virtual_fill_prob;
+extern float fillProb;
+extern float virtualFillProb;
 
-void loadFile();
-void loadCmd(int argc, char **argv);
+void load_file();
+void load_cmd(int argc, char **argv);
 
 } // namespace config
 

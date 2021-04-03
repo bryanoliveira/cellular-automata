@@ -25,7 +25,7 @@ This program can currently evolve a 144 million cell Conway's Game of Life grid 
 -   Boost C++ Libraty (program_options)
 -   CUDA (nvcc) and CUDA runtime libraries
 
-It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that you will need to set `USE_GPU` to `false` in `src/main.cpp` and disable `*.cu` file compilation on `Makefile`.
+It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that to work you will need to run the program with `./automata --cpu` and disable `*.cu` file compilation on `Makefile`.
 
 ## Usage
 

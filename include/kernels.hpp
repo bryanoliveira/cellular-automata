@@ -8,9 +8,9 @@
 namespace gpu {
 
 void setup(unsigned long seed, unsigned long gridVBO);
-void computeGrid();
-void updateGridBuffers();
-void cleanUp();
+void compute_grid();
+void update_grid_buffers();
+void clean_up();
 
 } // namespace gpu
 

@@ -15,20 +15,20 @@ size_t gridBytes = gridSize * sizeof(bool);
 struct cudaGraphicsResource *gridVBOResource;
 cudaStream_t evolveStream, bufferUpdateStream;
 
-#define gpuAssert(ans)                                                         \
-    { _gpuAssert((ans), __FILE__, __LINE__); }
-inline void _gpuAssert(cudaError_t code, const char *file, int line,
-                       bool abort = true) {
+#define CUDA_ASSERT(ans)                                                       \
+    { cuda_assert((ans), __FILE__, __LINE__); }
+inline void cuda_assert(cudaError_t code, const char *file, int line,
+                        bool abort = true) {
     if (code != cudaSuccess) {
-        fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file,
-                line);
+        fprintf(stderr, "CUDA_ASSERT: %s %s %d\n", cudaGetErrorString(code),
+                file, line);
         if (abort)
             exit(code);
     }
 }
 
-__global__ void setupRNG(unsigned int rows, unsigned int cols,
-                         curandState *globalRandState, unsigned long seed) {
+__global__ void k_setup_rng(unsigned int rows, unsigned int cols,
+                            curandState *globalRandState, unsigned long seed) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     for (int y = blockDim.y * blockIdx.y + threadIdx.y; y < rows;
@@ -41,8 +41,9 @@ __global__ void setupRNG(unsigned int rows, unsigned int cols,
     }
 }
 
-__global__ void initGrid(bool *grid, unsigned int rows, unsigned int cols,
-                         curandState *globalRandState, float spawnProbability) {
+__global__ void k_init_grid(bool *grid, unsigned int rows, unsigned int cols,
+                            curandState *globalRandState,
+                            float spawnProbability) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     for (int y = blockDim.y * blockIdx.y + threadIdx.y; y < rows;
@@ -56,8 +57,8 @@ __global__ void initGrid(bool *grid, unsigned int rows, unsigned int cols,
     }
 }
 
-__global__ void evolveGrid(bool *grid, bool *nextGrid, unsigned int rows,
-                           unsigned int cols) {
+__global__ void k_compute_grid(bool *grid, bool *nextGrid, unsigned int rows,
+                               unsigned int cols) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     for (int y = blockDim.y * blockIdx.y + threadIdx.y; y < rows;
@@ -97,8 +98,8 @@ __global__ void evolveGrid(bool *grid, bool *nextGrid, unsigned int rows,
     }
 }
 
-__global__ void updateGridBuffers(bool *grid, vec2s *gridVertices,
-                                  unsigned int rows, unsigned int cols) {
+__global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
+                                      unsigned int rows, unsigned int cols) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     for (int y = blockDim.y * blockIdx.y + threadIdx.y; y < rows;
@@ -129,40 +130,40 @@ void setup(unsigned long randSeed, unsigned long gridVBO) {
         gpuProps.warpSize / 2); // 256 on a 3080 - 8 threads per SP (I think)
 
     // allocate memory
-    gpuAssert(
+    CUDA_ASSERT(
         cudaMalloc(&globalRandState,
                    gridSize * sizeof(curandState))); // gpu only, not managed
-    gpuAssert(cudaMallocManaged(&grid, gridBytes));
-    gpuAssert(cudaMallocManaged(&nextGrid, gridBytes));
+    CUDA_ASSERT(cudaMallocManaged(&grid, gridBytes));
+    CUDA_ASSERT(cudaMallocManaged(&nextGrid, gridBytes));
     // prefetch grid to GPU
-    gpuAssert(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
-    gpuAssert(cudaMemPrefetchAsync(nextGrid, gridBytes, gpuDeviceId));
+    CUDA_ASSERT(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
+    CUDA_ASSERT(cudaMemPrefetchAsync(nextGrid, gridBytes, gpuDeviceId));
 
     // initialize RNG
-    setupRNG<<<gpuBlocks, gpuThreadsPerBlock>>>(config::rows, config::cols,
-                                                globalRandState, randSeed);
+    k_setup_rng<<<gpuBlocks, gpuThreadsPerBlock>>>(config::rows, config::cols,
+                                                   globalRandState, randSeed);
 
     // initialize grid
-    initGrid<<<gpuBlocks, gpuThreadsPerBlock>>>(
-        grid, config::rows, config::cols, globalRandState, config::fill_prob);
-    gpuAssert(cudaGetLastError());
-    gpuAssert(cudaDeviceSynchronize());
+    k_init_grid<<<gpuBlocks, gpuThreadsPerBlock>>>(
+        grid, config::rows, config::cols, globalRandState, config::fillProb);
+    CUDA_ASSERT(cudaGetLastError());
+    CUDA_ASSERT(cudaDeviceSynchronize());
 
     // register OpenGL VBO to use with CUDA
-    gpuAssert(cudaGraphicsGLRegisterBuffer(&gridVBOResource, gridVBO,
-                                           cudaGraphicsMapFlagsWriteDiscard));
+    CUDA_ASSERT(cudaGraphicsGLRegisterBuffer(&gridVBOResource, gridVBO,
+                                             cudaGraphicsMapFlagsWriteDiscard));
 
     // create secondary streams
     cudaStreamCreate(&evolveStream);
     cudaStreamCreate(&bufferUpdateStream);
 }
 
-void computeGrid() {
-    evolveGrid<<<gpuBlocks, gpuThreadsPerBlock, 0, evolveStream>>>(
+void compute_grid() {
+    k_compute_grid<<<gpuBlocks, gpuThreadsPerBlock, 0, evolveStream>>>(
         grid, nextGrid, config::rows, config::cols);
-    gpuAssert(cudaGetLastError());
+    CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?
-    // gpuAssert(cudaDeviceSynchronize());
+    // CUDA_ASSERT(cudaDeviceSynchronize());
 
     // simply swap buffers to avoid reallocation
     bool *tmpGrid = grid;
@@ -170,37 +171,37 @@ void computeGrid() {
     nextGrid = tmpGrid;
 }
 
-void updateGridBuffers() {
+void update_grid_buffers() {
     // map OpenGL buffer object for writing from CUDA
     vec2s *gridVertices;
-    gpuAssert(cudaGraphicsMapResources(1, &gridVBOResource, 0));
+    CUDA_ASSERT(cudaGraphicsMapResources(1, &gridVBOResource, 0));
     size_t numBytes;
-    gpuAssert(cudaGraphicsResourceGetMappedPointer((void **)&gridVertices,
-                                                   &numBytes, gridVBOResource));
+    CUDA_ASSERT(cudaGraphicsResourceGetMappedPointer(
+        (void **)&gridVertices, &numBytes, gridVBOResource));
     // printf("CUDA mapped VBO: May access %ld bytes\n", numBytes);
 
     // launch kernel
-    updateGridBuffers<<<gpuBlocks, gpuThreadsPerBlock>>>(
+    k_update_grid_buffers<<<gpuBlocks, gpuThreadsPerBlock>>>(
         grid, gridVertices, config::rows, config::cols);
-    gpuAssert(cudaGetLastError());
+    CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?
 
     // unmap buffer object
-    gpuAssert(cudaGraphicsUnmapResources(1, &gridVBOResource, 0));
+    CUDA_ASSERT(cudaGraphicsUnmapResources(1, &gridVBOResource, 0));
 }
 
-void cleanUp() {
+void clean_up() {
     // wait for pending operations to complete
-    gpuAssert(cudaDeviceSynchronize());
+    CUDA_ASSERT(cudaDeviceSynchronize());
     // destroy secondary streams
     cudaStreamDestroy(evolveStream);
     cudaStreamDestroy(bufferUpdateStream);
     // unregister mapped resource (needs the GL context to still be set)
-    // gpuAssert(cudaGraphicsUnregisterResource(gridVBOResource));
+    // CUDA_ASSERT(cudaGraphicsUnregisterResource(gridVBOResource));
     // free the grid
-    gpuAssert(cudaFree(grid));
-    gpuAssert(cudaFree(nextGrid));
-    gpuAssert(cudaFree(globalRandState));
+    CUDA_ASSERT(cudaFree(grid));
+    CUDA_ASSERT(cudaFree(nextGrid));
+    CUDA_ASSERT(cudaFree(globalRandState));
 }
 
 } // namespace gpu

@@ -9,14 +9,14 @@
 /**
  * Sets up GLUT, GLEW, OpenGL methods and buffers.
  */
-Display::Display(int *argc, char **argv, void (*loopFunc)(), bool _gpuOnly) {
-    Display::gpuOnly = _gpuOnly;
+Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
+    Display::mGpuOnly = !pCpuOnly;
 
     // init glut
-    glutInit(argc, argv);
+    glutInit(pArgc, pArgv);
     glutInitWindowSize(config::width, config::height);
-    glutCreateWindow(config::program_name.c_str());
-    glutDisplayFunc(loopFunc);
+    glutCreateWindow(config::programName.c_str());
+    glutDisplayFunc(pLoopFunc);
     glutReshapeFunc(reshape);
     glClear(GL_COLOR_BUFFER_BIT);
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
@@ -39,18 +39,18 @@ Display::Display(int *argc, char **argv, void (*loopFunc)(), bool _gpuOnly) {
     glPointSize(5.0f);
 
     // setup shaders
-    Display::setupShaderProgram();
+    Display::setup_shader_program();
     // setup grid & OpenGL buffers
-    Display::setupGridBuffers();
+    Display::setup_grid_buffers();
 }
 
 Display::~Display() {
     // free buffer objects
-    glDeleteVertexArrays(1, &gridVAO);
-    glDeleteBuffers(1, &gridVBO);
+    glDeleteVertexArrays(1, &mGridVAO);
+    glDeleteBuffers(1, &mGridVBO);
     // free RAM vertices
-    if (!Display::gpuOnly)
-        free(gridVertices);
+    if (!Display::mGpuOnly)
+        free(mGridVertices);
 }
 
 void Display::start() { glutMainLoop(); }
@@ -63,7 +63,7 @@ void Display::stop() {
 /**
  * Draws on screen by iterating on the grid, the naive way.
  */
-void Display::drawNaive() {
+void Display::draw_naive() {
     // draw grid without proper OpenGL Buffers, the naive way
     // glClear(GL_COLOR_BUFFER_BIT);
 
@@ -90,7 +90,7 @@ void Display::drawNaive() {
     glFlush();
     glutSwapBuffers();
     glutPostRedisplay();
-    Display::calcFrameRate();
+    calc_frameRate();
 }
 
 /**
@@ -99,14 +99,14 @@ void Display::drawNaive() {
  */
 void Display::draw() {
     // use configured shaders
-    glUseProgram(shaderProgram);
+    glUseProgram(mShaderProgram);
     // bind VAO, which implicitly binds our VBO
-    glBindVertexArray(gridVAO);
+    glBindVertexArray(mGridVAO);
     // params:
     //      the OpenGL primitive we will draw
     //      the starting index of the vertex array
     //      how many vertices to draw (a square has 4 vertices)
-    glDrawArrays(GL_POINTS, 0, Display::nGridVertices);
+    glDrawArrays(GL_POINTS, 0, mNumGridVertices);
     // unbind VAO
     glBindVertexArray(0);
 
@@ -114,36 +114,36 @@ void Display::draw() {
     glFlush();
     glutSwapBuffers();
     glutPostRedisplay();
-    Display::calcFrameRate();
+    calc_frameRate();
 }
 
 // this could be on the automata file
-void Display::updateGridBuffersCPU() {
-    if (Display::gpuOnly) {
+void Display::update_grid_buffers_cpu() {
+    if (mGpuOnly) {
         fprintf(stderr, "Display Error: cannot call updateGridBuffersCPU on "
                         "GPU Only mode!\n");
         exit(EXIT_FAILURE);
     }
 
     // update vertice states
-    for (unsigned int idx = 0; idx < Display::nGridVertices; idx++) {
+    for (unsigned int idx = 0; idx < mNumGridVertices; idx++) {
         // remember we have 4 contiguous vertices for each cell, so each vertice
         // index/4 corresponds to the grid cell
-        gridVertices[idx].state = (float)grid[idx]; // int(idx / 4)];
+        mGridVertices[idx].state = (float)grid[idx]; // int(idx / 4)];
     }
 
     // bind VBO to be updated
-    glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, mGridVBO);
     // update the VBO data
-    glBufferData(GL_ARRAY_BUFFER, gridVerticesSize, gridVertices,
+    glBufferData(GL_ARRAY_BUFFER, mGridVerticesSize, mGridVertices,
                  GL_STATIC_DRAW);
     // unbind VBO
-    glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, mGridVBO);
 }
 
-void Display::reshape(int w, int h) {
-    config::width = w;
-    config::height = h;
+void Display::reshape(int pWidth, int pHeight) {
+    config::width = pWidth;
+    config::height = pHeight;
 
     glViewport(0, 0, config::width, config::height);
 
@@ -158,7 +158,7 @@ void Display::reshape(int w, int h) {
     glutPostRedisplay();
 }
 
-void Display::calcFrameRate() {
+void Display::calc_frameRate() {
     static clock_t delta_ticks;
     static clock_t current_ticks = 0;
     static clock_t fps = 0;
@@ -173,14 +173,33 @@ void Display::calcFrameRate() {
         fps = CLOCKS_PER_SEC / delta_ticks;
 
     std::ostringstream title;
-    title << config::program_name << " (" << fps << " fps)";
+    title << config::programName << " (" << fps << " fps)";
     glutSetWindowTitle(title.str().c_str());
 
     // get clock for the next call
     current_ticks = clock();
 }
 
-void Display::setupShaderProgram() {
+void Display::setup_shader_program() {
+    // define shaders
+    const char *vertexShaderSource =
+        "#version 460 core\n"
+        "layout (location = 0) in vec2 posA;\n"
+        "layout (location = 1) in float state;\n"
+        "out float v_state;\n"
+        "void main() {\n"
+        "   gl_Position = vec4(posA.x, posA.y, 0, 1.0);\n"
+        "   v_state = state;\n"
+        "}\0";
+
+    const char *fragmentShaderSource =
+        "#version 460 core\n"
+        "in float v_state;\n"
+        "out vec4 FragColor;\n"
+        "void main() {\n"
+        "    FragColor = vec4(v_state, v_state, v_state, v_state);\n"
+        "}\0";
+
     // variables to store shader compiling errors
     int success;
     char infoLog[512];
@@ -216,15 +235,15 @@ void Display::setupShaderProgram() {
     }
 
     // create a shader program to link our shaders
-    shaderProgram = glCreateProgram();
+    mShaderProgram = glCreateProgram();
     // link the shaders
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
+    glAttachShader(mShaderProgram, vertexShader);
+    glAttachShader(mShaderProgram, fragmentShader);
+    glLinkProgram(mShaderProgram);
     // check linker errors
-    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    glGetProgramiv(mShaderProgram, GL_LINK_STATUS, &success);
     if (!success) {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        glGetProgramInfoLog(mShaderProgram, 512, NULL, infoLog);
         fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n",
                 infoLog);
         exit(1);
@@ -234,31 +253,31 @@ void Display::setupShaderProgram() {
     glDeleteShader(fragmentShader);
 }
 
-void Display::setupGridBuffers() {
+void Display::setup_grid_buffers() {
     // we should probably free the vertices arrays at Display::stop, but we're
     // destroying the program after they are no longer needed
-    gridVerticesSize = Display::nGridVertices * sizeof(vec2s);
-    gridVertices = (vec2s *)malloc(gridVerticesSize);
+    mGridVerticesSize = Display::mNumGridVertices * sizeof(vec2s);
+    mGridVertices = (vec2s *)malloc(mGridVerticesSize);
 
     // configure vertices
-    Display::setupGridVertices(gridVertices);
+    Display::setup_grid_vertices(mGridVertices);
 
     // configure the Vertex Array Object so we configure our objects only once
-    glGenVertexArrays(1, &gridVAO);
+    glGenVertexArrays(1, &mGridVAO);
     // bind it
-    glBindVertexArray(gridVAO);
+    glBindVertexArray(mGridVAO);
 
     // generate Vertex Buffer Object and store it's ID
-    glGenBuffers(1, &gridVBO);
+    glGenBuffers(1, &mGridVBO);
     // only 1 buffer of a type can be bound simultaneously, that's how OpenGL
     // knows what object we're talking about on each command that refers to the
     // type (GL_ARRAY_BUFFER in this case) bind buffer to context
-    glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, mGridVBO);
     // copy vertext data to buffer
     //  GL_STREAM_DRAW: the data is set only once and used by the GPU at most a
     //  few times. GL_STATIC_DRAW: the data is set only once and used many
     //  times. GL_DYNAMIC_DRAW: the data is changed a lot and used many times.
-    glBufferData(GL_ARRAY_BUFFER, gridVerticesSize, gridVertices,
+    glBufferData(GL_ARRAY_BUFFER, mGridVerticesSize, mGridVertices,
                  GL_STATIC_DRAW);
 
     // tell OpenGL how to interpret the vertex buffer data
@@ -281,11 +300,11 @@ void Display::setupGridBuffers() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // free RAM since vertices will be updated in GPU
-    if (Display::gpuOnly)
-        free(gridVertices);
+    if (Display::mGpuOnly)
+        free(mGridVertices);
 }
 
-void Display::setupGridVertices(vec2s *vertices) {
+void Display::setup_grid_vertices(vec2s *vertices) {
     // setup vertices
     // iterate over the number of cells
     for (unsigned int y = 0, idx = 0; y < config::rows; y++) {
@@ -296,20 +315,6 @@ void Display::setupGridVertices(vec2s *vertices) {
             vertices[idx] = vec2s(-1.0f + x * (2.0f / config::cols),
                                   -1.0f + y * (2.0f / config::rows), false);
             idx++;
-            // // top right
-            // vertices[idx] = vec2s(-1.0f + (x + 1) * (2.0f / config::cols),
-            //                       -1.0f + y * (2.0f / config::rows), false);
-            // idx++;
-            // // bottom right
-            // vertices[idx] =
-            //     vec2s(-1.0f + (x + 1) * (2.0f / config::cols),
-            //           -1.0f + (y + 1) * (2.0f / config::rows), false);
-            // idx++;
-            // // bottom left
-            // vertices[idx] =
-            //     vec2s(-1.0f + x * (2.0f / config::cols),
-            //           -1.0f + (y + 1) * (2.0f / config::rows), false);
-            // idx++;
         }
     }
 }

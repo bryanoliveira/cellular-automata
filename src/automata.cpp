@@ -2,26 +2,26 @@
 
 namespace cpu {
 
-void setup(unsigned long randSeed, float fill_prob) {
-    srand(randSeed);
+void setup(unsigned long pRandSeed, float pFillProb) {
+    srand(pRandSeed);
 
     grid = (bool *)calloc(config::rows * config::cols, sizeof(bool));
     nextGrid = (bool *)calloc(config::rows * config::cols, sizeof(bool));
 
-    if (fill_prob > 0)
+    if (pFillProb > 0)
         for (unsigned int i = 0; i < config::rows; i++) {
             for (unsigned int j = 0; j < config::cols; j++)
                 grid[i * config::cols + j] =
-                    (float(rand()) / RAND_MAX) < fill_prob;
+                    (float(rand()) / RAND_MAX) < pFillProb;
         }
 }
 
-void cleanUp() {
+void clean_up() {
     free(grid);
     free(nextGrid);
 }
 
-bool computeCell(unsigned int i, unsigned int j) {
+bool compute_cell(unsigned int i, unsigned int j) {
     int livingNeighbours = 0;
 
     // iterate over neighbourhood row by row
@@ -52,13 +52,13 @@ bool computeCell(unsigned int i, unsigned int j) {
         return false;
 }
 
-void computeGrid() {
+void compute_grid() {
     for (unsigned int i = 0; i < config::rows; i++) {
         for (unsigned int j = 0; j < config::cols; j++) {
             // add a "virtual particle" spawn probability
             nextGrid[i * config::cols + j] =
-                (float(rand()) / RAND_MAX) < config::virtual_fill_prob ||
-                computeCell(i, j);
+                (float(rand()) / RAND_MAX) < config::virtualFillProb ||
+                compute_cell(i, j);
         }
     }
     bool *tmpGrid = grid;

@@ -8,9 +8,9 @@
 
 namespace cpu {
 
-void setup(unsigned long randSeed, float fill_prob = 0);
-void cleanUp();
-void computeGrid();
+void setup(unsigned long pRandSeed, float pFillProb = 0);
+void clean_up();
+void compute_grid();
 
 } // namespace cpu
 

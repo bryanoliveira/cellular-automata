@@ -6,19 +6,20 @@ namespace po = boost::program_options;
 
 namespace config {
 
-std::string program_name = "Automata";
-unsigned long max_iterations = 0;
+std::string programName = "Automata";
+unsigned long maxIterations = 0;
+bool cpuOnly = false;
 GLint width = 600;
 GLint height = 600;
-unsigned int render_delay_ms = 200;
+unsigned int renderDelayMs = 200;
 // 12000 x 12000 uses up to 2GB RAM and 8.5GB VRAM
 unsigned int rows = 100;
 unsigned int cols = 100;
-float fill_prob = 0.08;
-float virtual_fill_prob = 0; //.0001;
+float fillProb = 0.08;
+float virtualFillProb = 0; //.0001;
 
-void loadFile() {}
-void loadCmd(int argc, char **argv) {
+void load_file() {}
+void load_cmd(int argc, char **argv) {
     po::options_description description("Usage");
 
     description.add_options()("help,h", "Display this help message") //
@@ -29,8 +30,9 @@ void loadCmd(int argc, char **argv) {
         ("render-delay,rd", po::value<unsigned int>(),
          "Render delay between frames (in milliseconds)") //
         ("fill-probability,fp", po::value<float>(),
-         "Cell probability to start alive") //
-        ("max,m", po::value<unsigned long>(), "Max iterations");
+         "Cell probability to start alive")                     //
+        ("max,m", po::value<unsigned long>(), "Max iterations") //
+        ("cpu", "CPU-only mode");                               //
 
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(description).run(),
@@ -50,11 +52,13 @@ void loadCmd(int argc, char **argv) {
     if (vm.count("cols"))
         cols = vm["cols"].as<unsigned int>();
     if (vm.count("render-delay"))
-        render_delay_ms = vm["render-delay"].as<unsigned int>();
+        renderDelayMs = vm["render-delay"].as<unsigned int>();
     if (vm.count("fill-probability"))
-        fill_prob = vm["fill-probability"].as<float>();
+        fillProb = vm["fill-probability"].as<float>();
     if (vm.count("max"))
-        max_iterations = vm["max"].as<unsigned long>();
+        maxIterations = vm["max"].as<unsigned long>();
+    if (vm.count("cpu"))
+        cpuOnly = true;
 }
 
 } // namespace config
