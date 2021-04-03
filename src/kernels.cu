@@ -12,7 +12,7 @@ dim3 gpuBlocks, gpuThreadsPerBlock;
 curandState *globalRandState;
 size_t gridSize = config::rows * config::cols;
 size_t gridBytes = gridSize * sizeof(bool);
-struct cudaGraphicsResource *gridVBOResource;
+struct cudaGraphicsResource *gridVBOResource = NULL;
 cudaStream_t evolveStream, bufferUpdateStream;
 
 #define CUDA_ASSERT(ans)                                                       \
@@ -121,7 +121,7 @@ __global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
     }
 }
 
-void setup(unsigned long randSeed, unsigned long gridVBO) {
+void setup(unsigned long randSeed, const unsigned int *gridVBO) {
     cudaDeviceProp gpuProps;
 
     // define common kernel configs
@@ -158,13 +158,17 @@ void setup(unsigned long randSeed, unsigned long gridVBO) {
     CUDA_ASSERT(cudaGetLastError());
     CUDA_ASSERT(cudaDeviceSynchronize());
 
-    // register OpenGL VBO to use with CUDA
-    CUDA_ASSERT(cudaGraphicsGLRegisterBuffer(&gridVBOResource, gridVBO,
-                                             cudaGraphicsMapFlagsWriteDiscard));
+    // create grid evolving CUDA stream
+    CUDA_ASSERT(cudaStreamCreate(&evolveStream));
 
-    // create secondary streams
-    cudaStreamCreate(&evolveStream);
-    cudaStreamCreate(&bufferUpdateStream);
+    // if rendering is enabled
+    if (gridVBO) {
+        // create buffer updating CUDA stream
+        CUDA_ASSERT(cudaStreamCreate(&bufferUpdateStream));
+        // register OpenGL VBO to use with CUDA
+        CUDA_ASSERT(cudaGraphicsGLRegisterBuffer(
+            &gridVBOResource, *gridVBO, cudaGraphicsMapFlagsWriteDiscard));
+    }
 }
 
 void compute_grid() {
@@ -182,6 +186,12 @@ void compute_grid() {
 }
 
 void update_grid_buffers() {
+    if (!gridVBOResource) {
+        fprintf(stderr, "ERROR: Cannot call update_grid_buffers with rendering "
+                        "disabled.\n");
+        exit(EXIT_FAILURE);
+    }
+
     // map OpenGL buffer object for writing from CUDA
     vec2s *gridVertices;
     CUDA_ASSERT(cudaGraphicsMapResources(1, &gridVBOResource, 0));

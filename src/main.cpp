@@ -18,6 +18,7 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <signal.h>
 
 #include "automata.hpp"
 #include "config.hpp"
@@ -26,26 +27,43 @@
 #include "kernels.hpp"
 
 Display *gDisplay;
+bool gLooping = true;
 unsigned long gIterations = 0;
 
 void loop();
+void sigint_handler(int s);
 
 int main(int argc, char **argv) {
     unsigned long randSeed = time(NULL);
+    struct sigaction sigIntHandler;
 
+    // configure interrupt signal handler
+    sigIntHandler.sa_handler = sigint_handler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+    sigaction(SIGINT, &sigIntHandler, NULL);
+
+    // load command line arguments
     config::load_cmd(argc, argv);
 
-    gDisplay = new Display(&argc, argv, loop, config::cpuOnly);
+    if (config::render)
+        gDisplay = new Display(&argc, argv, loop, config::cpuOnly);
 
     if (config::cpuOnly)
         cpu::setup(randSeed, config::fillProb);
+    else if (config::render)
+        gpu::setup(randSeed, &gDisplay->grid_vbo());
     else
-        gpu::setup(randSeed, gDisplay->grid_vbo());
+        gpu::setup(randSeed);
 
     // insert_glider(config::rows / 2 - 12, config::cols / 2 - 12);
     // insert_blinker(config::rows / 2, config::cols / 2);
-
-    gDisplay->start();
+    if (config::render)
+        gDisplay->start();
+    else {
+        while (gLooping)
+            loop();
+    }
 
     std::cout << "Exiting after " << gIterations << " iterations." << std::endl;
 
@@ -55,7 +73,8 @@ int main(int argc, char **argv) {
     else
         gpu::clean_up();
 
-    delete gDisplay;
+    if (config::render)
+        delete gDisplay;
 
     return 0;
 }
@@ -66,14 +85,17 @@ void loop() {
         std::this_thread::sleep_for(
             std::chrono::milliseconds(config::renderDelayMs));
 
-    // update display buffers
-    if (config::cpuOnly)
-        gDisplay->update_grid_buffers_cpu();
-    else
-        gpu::update_grid_buffers();
+    if (config::render) {
+        // update display buffers
+        if (config::cpuOnly)
+            gDisplay->update_grid_buffers_cpu();
+        else
+            gpu::update_grid_buffers();
 
-    // display current grid
-    gDisplay->draw();
+        // display current grid
+        gDisplay->draw();
+    }
+
     // compute next grid
     if (config::cpuOnly)
         cpu::compute_grid();
@@ -81,6 +103,16 @@ void loop() {
         gpu::compute_grid();
 
     gIterations++;
-    if (config::maxIterations > 0 && gIterations >= config::maxIterations)
-        gDisplay->stop();
+    if (!gLooping ||
+        (config::maxIterations > 0 && gIterations >= config::maxIterations)) {
+        if (config::render)
+            gDisplay->stop();
+        else
+            gLooping = false;
+    }
+}
+
+void sigint_handler(int s) {
+    gLooping = false;
+    std::cout << std::endl;
 }

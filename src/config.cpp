@@ -24,17 +24,17 @@ void load_cmd(int argc, char **argv) {
     po::options_description description("Usage");
 
     description.add_options()("help,h", "Display this help message") //
-        ("width,w", po::value<GLint>(), "Window width")              //
-        ("height,h", po::value<GLint>(), "Window height")            //
+        ("width", po::value<GLint>(), "Window width")                //
+        ("height", po::value<GLint>(), "Window height")              //
         ("rows,y", po::value<unsigned int>(), "Grid rows")           //
         ("cols,x", po::value<unsigned int>(), "Grid cols")           //
         ("render,r",
          "Enable render (default is to run in headless mode)") //
-        ("render-delay,rd", po::value<unsigned int>(),
+        ("render-delay,d", po::value<unsigned int>(),
          "Render delay between frames (in milliseconds)") //
-        ("fill-probability,fp", po::value<float>(),
+        ("fill-probability,p", po::value<float>(),
          "Cell probability to start alive") //
-        ("virtual-fill-probability,vfp", po::value<float>(),
+        ("virtual-fill-probability,v", po::value<float>(),
          "Cell probability to become alive")                    //
         ("max,m", po::value<unsigned long>(), "Max iterations") //
         ("cpu", "Enable CPU-only mode");                        //

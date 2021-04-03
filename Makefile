@@ -15,7 +15,7 @@ INC := -I include
 
 run: $(TARGET)
 	@echo "\033[1;37mRunning" $(TARGET) "\033[0m"; 
-	./$(TARGET)
+	./$(TARGET) --render
 
 profile: $(TARGET)
 	@echo "\033[1;37mProfiling" $(TARGET) "\033[0m"; 
