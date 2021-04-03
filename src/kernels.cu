@@ -1,6 +1,8 @@
 // isolate cuda specific imports
+#include <chrono>
 #include <curand_kernel.h>
 #include <cuda_gl_interop.h>
+#include <sstream>
 
 #include "kernels.hpp"
 
@@ -14,6 +16,8 @@ size_t gridSize = config::rows * config::cols;
 size_t gridBytes = gridSize * sizeof(bool);
 struct cudaGraphicsResource *gridVBOResource = NULL;
 cudaStream_t evolveStream, bufferUpdateStream;
+unsigned int *activeCellCount;
+std::ostringstream *liveLogBuffer;
 
 #define CUDA_ASSERT(ans)                                                       \
     { cuda_assert((ans), __FILE__, __LINE__); }
@@ -59,7 +63,8 @@ __global__ void k_init_grid(bool *grid, unsigned int rows, unsigned int cols,
 
 __global__ void k_compute_grid(bool *grid, bool *nextGrid, unsigned int rows,
                                unsigned int cols, curandState *globalRandState,
-                               float virtualSpawnProbability) {
+                               float virtualSpawnProbability,
+                               unsigned int *activeCellCount) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     for (int y = blockDim.y * blockIdx.y + threadIdx.y; y < rows;
@@ -102,6 +107,8 @@ __global__ void k_compute_grid(bool *grid, bool *nextGrid, unsigned int rows,
             else
                 newState = false;
 
+            if (newState)
+                atomicAdd(activeCellCount, 1);
             nextGrid[idx] = newState;
         }
     }
@@ -121,7 +128,8 @@ __global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
     }
 }
 
-void setup(unsigned long randSeed, const unsigned int *gridVBO) {
+void setup(unsigned long randSeed, std::ostringstream *pLiveLogBuffer,
+           const unsigned int *gridVBO) {
     cudaDeviceProp gpuProps;
 
     // define common kernel configs
@@ -144,6 +152,7 @@ void setup(unsigned long randSeed, const unsigned int *gridVBO) {
                    gridSize * sizeof(curandState))); // gpu only, not managed
     CUDA_ASSERT(cudaMallocManaged(&grid, gridBytes));
     CUDA_ASSERT(cudaMallocManaged(&nextGrid, gridBytes));
+    CUDA_ASSERT(cudaMallocManaged(&activeCellCount, sizeof(unsigned int)));
     // prefetch grid to GPU
     CUDA_ASSERT(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
     CUDA_ASSERT(cudaMemPrefetchAsync(nextGrid, gridBytes, gpuDeviceId));
@@ -169,20 +178,35 @@ void setup(unsigned long randSeed, const unsigned int *gridVBO) {
         CUDA_ASSERT(cudaGraphicsGLRegisterBuffer(
             &gridVBOResource, *gridVBO, cudaGraphicsMapFlagsWriteDiscard));
     }
+
+    // define the live log buffer
+    liveLogBuffer = pLiveLogBuffer;
 }
 
 void compute_grid() {
+    std::chrono::steady_clock::time_point timeStart =
+        std::chrono::steady_clock::now();
+
+    *activeCellCount = 0; // this will be moved CPU<->GPU automatically
     k_compute_grid<<<gpuBlocks, gpuThreadsPerBlock, 0, evolveStream>>>(
         grid, nextGrid, config::rows, config::cols, globalRandState,
-        config::virtualFillProb);
+        config::virtualFillProb, activeCellCount);
     CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?
-    // CUDA_ASSERT(cudaDeviceSynchronize());
+    CUDA_ASSERT(cudaDeviceSynchronize());
 
     // simply swap buffers to avoid reallocation
     bool *tmpGrid = grid;
     grid = nextGrid;
     nextGrid = tmpGrid;
+
+    std::chrono::steady_clock::time_point timeEnd =
+        std::chrono::steady_clock::now();
+    *liveLogBuffer << "| Evolve Kernel: "
+                   << std::chrono::duration_cast<std::chrono::nanoseconds>(
+                          timeEnd - timeStart)
+                          .count()
+                   << " ns | Active cells: " << *activeCellCount << " |";
 }
 
 void update_grid_buffers() {

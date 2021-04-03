@@ -19,6 +19,7 @@
 #include <iostream>
 #include <thread>
 #include <signal.h>
+#include <sstream>
 
 #include "automata.hpp"
 #include "config.hpp"
@@ -29,8 +30,14 @@
 Display *gDisplay;
 bool gLooping = true;
 unsigned long gIterations = 0;
+unsigned long gLastIterationCount = 0;
+unsigned long gNsBetweenSeconds = 0;
+std::chrono::steady_clock::time_point gLastPrintClock =
+    std::chrono::steady_clock::now();
+std::ostringstream gLiveLogBuffer;
 
 void loop();
+void live_log();
 void sigint_handler(int s);
 
 int main(int argc, char **argv) {
@@ -52,12 +59,12 @@ int main(int argc, char **argv) {
     if (config::cpuOnly)
         cpu::setup(randSeed, config::fillProb);
     else if (config::render)
-        gpu::setup(randSeed, &gDisplay->grid_vbo());
+        gpu::setup(randSeed, &gLiveLogBuffer, &gDisplay->grid_vbo());
     else
-        gpu::setup(randSeed);
+        gpu::setup(randSeed, &gLiveLogBuffer);
 
-    // insert_glider(config::rows / 2 - 12, config::cols / 2 - 12);
-    // insert_blinker(config::rows / 2, config::cols / 2);
+    insert_glider(config::rows / 2 - 12, config::cols / 2 - 12);
+    insert_blinker(config::rows / 2, config::cols / 2);
     if (config::render)
         gDisplay->start();
     else {
@@ -65,7 +72,8 @@ int main(int argc, char **argv) {
             loop();
     }
 
-    std::cout << "Exiting after " << gIterations << " iterations." << std::endl;
+    std::cout << std::endl
+              << "Exiting after " << gIterations << " iterations." << std::endl;
 
     // clean up
     if (config::cpuOnly)
@@ -85,6 +93,13 @@ void loop() {
         std::this_thread::sleep_for(
             std::chrono::milliseconds(config::renderDelayMs));
 
+    // loop timer
+    std::chrono::steady_clock::time_point timeStart =
+        std::chrono::steady_clock::now();
+
+    // carriage return
+    gLiveLogBuffer << "\rIt: " << gIterations << " ";
+
     if (config::render) {
         // update display buffers
         if (config::cpuOnly)
@@ -102,6 +117,13 @@ void loop() {
     else
         gpu::compute_grid();
 
+    // calculate loop time and iterations per second
+    gNsBetweenSeconds += std::chrono::duration_cast<std::chrono::nanoseconds>(
+                             std::chrono::steady_clock::now() - timeStart)
+                             .count();
+    live_log();
+
+    // check if number of iterations reached max
     gIterations++;
     if (!gLooping ||
         (config::maxIterations > 0 && gIterations >= config::maxIterations)) {
@@ -110,6 +132,32 @@ void loop() {
         else
             gLooping = false;
     }
+}
+
+void live_log() {
+    // calculate loop time and iterations per second
+    unsigned long iterationsPerSecond = gIterations - gLastIterationCount;
+    // return if it's not time to update the log
+    if (iterationsPerSecond <= 0 ||
+        std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::steady_clock::now() - gLastPrintClock)
+                .count() < 1)
+        return;
+
+    // add main loop info to the buffer
+    gLiveLogBuffer << "| It/s: " << iterationsPerSecond
+                   << " | Main Loop: "
+                   // average time per iteration
+                   << gNsBetweenSeconds / iterationsPerSecond << " ns |";
+    // print the buffer
+    std::cout << gLiveLogBuffer.str() << std::flush;
+    // reset the buffer
+    gLiveLogBuffer.str("");
+    gLiveLogBuffer.clear();
+    // update global counters
+    gNsBetweenSeconds = 0;
+    gLastIterationCount = gIterations;
+    gLastPrintClock = std::chrono::steady_clock::now();
 }
 
 void sigint_handler(int s) {
