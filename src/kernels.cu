@@ -58,14 +58,14 @@ __global__ void k_init_grid(bool *grid, unsigned int rows, unsigned int cols,
 }
 
 __global__ void k_compute_grid(bool *grid, bool *nextGrid, unsigned int rows,
-                               unsigned int cols) {
+                               unsigned int cols, curandState *globalRandState,
+                               float virtualSpawnProbability) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     for (int y = blockDim.y * blockIdx.y + threadIdx.y; y < rows;
          y += stride.y) {
         for (int x = blockDim.x * blockIdx.x + threadIdx.x; x < cols;
              x += stride.x) {
-            int idx = y * cols + x;
             int livingNeighbours = 0;
 
             // iterate over neighbourhood row by row
@@ -84,16 +84,25 @@ __global__ void k_compute_grid(bool *grid, bool *nextGrid, unsigned int rows,
                 }
             }
 
+            int idx = y * cols + x;
+            bool newState = false;
+
+            // 0. Virtual particle spawn probability
+            if (virtualSpawnProbability > 0 &&
+                curand_uniform(&globalRandState[idx]) < virtualSpawnProbability)
+                newState = true;
             // 1. Any live cell with two or three live neighbours survives.
-            if (grid[idx])
-                nextGrid[idx] = livingNeighbours == 2 || livingNeighbours == 3;
+            else if (grid[idx])
+                newState = livingNeighbours == 2 || livingNeighbours == 3;
             // 2. Any dead cell with three live neighbours becomes a live cell.
             else if (livingNeighbours == 3)
-                nextGrid[idx] = true;
+                newState = true;
             // 3. All other live cells die in the next generation. Similarly,
             // all other dead cells stay dead.
             else
-                nextGrid[idx] = false;
+                newState = false;
+
+            nextGrid[idx] = newState;
         }
     }
 }
@@ -160,7 +169,8 @@ void setup(unsigned long randSeed, unsigned long gridVBO) {
 
 void compute_grid() {
     k_compute_grid<<<gpuBlocks, gpuThreadsPerBlock, 0, evolveStream>>>(
-        grid, nextGrid, config::rows, config::cols);
+        grid, nextGrid, config::rows, config::cols, globalRandState,
+        config::virtualFillProb);
     CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?
     // CUDA_ASSERT(cudaDeviceSynchronize());
