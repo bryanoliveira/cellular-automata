@@ -25,9 +25,11 @@
 #include "config.hpp"
 #include "display.hpp"
 #include "grid.hpp"
-#include "kernels.hpp"
+#include "gpu_automata.cuh"
 
 Display *gDisplay;
+gpu::BaseAutomata *gGpuAutomata;
+
 bool gLooping = true;
 unsigned long gIterations = 0;
 unsigned long gLastIterationCount = 0;
@@ -59,9 +61,10 @@ int main(int argc, char **argv) {
     if (config::cpuOnly)
         cpu::setup(randSeed, config::fillProb);
     else if (config::render)
-        gpu::setup(randSeed, &gLiveLogBuffer, &gDisplay->grid_vbo());
+        gGpuAutomata = new gpu::BaseAutomata(randSeed, &gLiveLogBuffer,
+                                             &gDisplay->grid_vbo());
     else
-        gpu::setup(randSeed, &gLiveLogBuffer);
+        gGpuAutomata = new gpu::BaseAutomata(randSeed, &gLiveLogBuffer);
 
     insert_glider(config::rows / 2 - 12, config::cols / 2 - 12);
     insert_blinker(config::rows / 2, config::cols / 2);
@@ -79,7 +82,7 @@ int main(int argc, char **argv) {
     if (config::cpuOnly)
         cpu::clean_up();
     else
-        gpu::clean_up();
+        delete gGpuAutomata;
 
     if (config::render)
         delete gDisplay;
@@ -105,7 +108,7 @@ void loop() {
         if (config::cpuOnly)
             gDisplay->update_grid_buffers_cpu();
         else
-            gpu::update_grid_buffers();
+            gGpuAutomata->update_grid_buffers();
 
         // display current grid
         gDisplay->draw();
@@ -115,7 +118,7 @@ void loop() {
     if (config::cpuOnly)
         cpu::compute_grid();
     else
-        gpu::compute_grid();
+        gGpuAutomata->compute_grid();
 
     // calculate loop time and iterations per second
     gNsBetweenSeconds += std::chrono::duration_cast<std::chrono::nanoseconds>(

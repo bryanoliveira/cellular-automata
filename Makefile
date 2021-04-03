@@ -10,8 +10,8 @@ CUSOURCES := $(shell find $(SRCDIR) -type f -name *.$(CUEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CUOBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(CUSOURCES:.$(CUEXT)=.o))
 CFLAGS := -g -Wall
-LIB := -lGL -lGLU -lglut -lGLEW -lcudart -lboost_program_options
-INC := -I include
+LIB := -lGL -lGLU -lglut -lGLEW -lboost_program_options -lcudart
+INC := -I include -I/usr/local/cuda/include
 
 run: $(TARGET)
 	@echo "\033[1;37mRunning" $(TARGET) "\033[0m"; 
