@@ -81,22 +81,6 @@ bool AutomataBase::compute_cell(unsigned int y, unsigned int x) {
         if (grid[neighbours[nidx]])
             livingNeighbours++;
 
-    // iterate over neighbourhood row by row
-    // for (int a = y - 1; a <= y + 1; a++) {
-    //     // skip out-of-grid neighbours
-    //     if (a < 0 || a >= config::rows)
-    //         continue;
-    //     // iterate over neighbourhood col by col
-    //     for (int b = x - 1; b <= x + 1; b++) {
-    //         // skip out-of-grid neighbours and self position
-    //         if (b < 0 || b >= config::cols || (a == y && b == x))
-    //             continue;
-    //         // if cell is alive, increase neighbours
-    //         if (grid[a * config::cols + b])
-    //             livingNeighbours++;
-    //     }
-    // }
-
     // 1. Any live cell with two or three live neighbours survives.
     if (grid[idx])
         return livingNeighbours == 2 || livingNeighbours == 3;
