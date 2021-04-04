@@ -1,4 +1,5 @@
 #include <boost/program_options.hpp>
+#include <iostream>
 
 #include "config.hpp"
 
@@ -7,8 +8,8 @@ namespace po = boost::program_options;
 namespace config {
 
 std::string programName = "Automata";
-GLint width = 600;
-GLint height = 600;
+unsigned int width = 600;
+unsigned int height = 600;
 // 12000 x 12000 uses up to 2GB RAM and 8.5GB VRAM
 unsigned int rows = 100;
 unsigned int cols = 100;
@@ -24,8 +25,8 @@ void load_cmd(int argc, char **argv) {
     po::options_description description("Usage");
 
     description.add_options()("help,h", "Display this help message") //
-        ("width", po::value<GLint>(), "Window width")                //
-        ("height", po::value<GLint>(), "Window height")              //
+        ("width", po::value<unsigned int>(), "Window width")         //
+        ("height", po::value<unsigned int>(), "Window height")       //
         ("rows,y", po::value<unsigned int>(), "Grid rows")           //
         ("cols,x", po::value<unsigned int>(), "Grid cols")           //
         ("render,r",
@@ -49,9 +50,9 @@ void load_cmd(int argc, char **argv) {
         exit(0);
     }
     if (vm.count("width"))
-        width = vm["width"].as<GLint>();
+        width = vm["width"].as<unsigned int>();
     if (vm.count("height"))
-        height = vm["height"].as<GLint>();
+        height = vm["height"].as<unsigned int>();
     if (vm.count("rows"))
         rows = vm["rows"].as<unsigned int>();
     if (vm.count("cols"))

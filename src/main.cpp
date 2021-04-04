@@ -2,6 +2,8 @@
  * Author: Bryan Lincoln
  * Email: bryanufg@gmail.com
  *
+ * Using ISO C++ 17 (C++ 11 may be compatible)
+ *
  * Conventions (a variation of STL/Boost Style Guides):
  *  - use spaces instead of tabs
  *  - indent with 4 spaces
@@ -21,14 +23,14 @@
 #include <signal.h>
 #include <sstream>
 
-#include "automata.hpp"
+#include "automata_interface.hpp"
+#include "automata_base_cpu.hpp"
+#include "automata_count_gpu.cuh"
 #include "config.hpp"
 #include "display.hpp"
-#include "grid.hpp"
-#include "gpu_automata.cuh"
 
 Display *gDisplay;
-gpu::BaseAutomata *gGpuAutomata;
+AutomataInterface *gAutomata;
 
 bool gLooping = true;
 unsigned long gIterations = 0;
@@ -55,19 +57,28 @@ int main(int argc, char **argv) {
     // load command line arguments
     config::load_cmd(argc, argv);
 
+    // configure display
     if (config::render)
         gDisplay = new Display(&argc, argv, loop, config::cpuOnly);
 
+    // configure automata object
     if (config::cpuOnly)
-        cpu::setup(randSeed, config::fillProb);
+        // the CPU implementation uses the buffer update function provided by
+        // the display class and we configure it here to reduce complexity by
+        // maintaining the AutomataInterface predictable
+        gAutomata = new cpu::AutomataBase(randSeed, &gLiveLogBuffer, []() {
+            gDisplay->update_grid_buffers_cpu();
+        });
     else if (config::render)
-        gGpuAutomata = new gpu::BaseAutomata(randSeed, &gLiveLogBuffer,
-                                             &gDisplay->grid_vbo());
+        // the GPU implementation updates the VBO using the CUDA<>GL interop
+        gAutomata = new gpu::CountAutomata(randSeed, &gLiveLogBuffer,
+                                           &gDisplay->grid_vbo());
     else
-        gGpuAutomata = new gpu::BaseAutomata(randSeed, &gLiveLogBuffer);
+        gAutomata = new gpu::CountAutomata(randSeed, &gLiveLogBuffer);
 
-    insert_glider(config::rows / 2 - 12, config::cols / 2 - 12);
-    insert_blinker(config::rows / 2, config::cols / 2);
+    // insert_glider(config::rows / 2 - 12, config::cols / 2 - 12);
+    // insert_blinker(config::rows / 2, config::cols / 2);
+
     if (config::render)
         gDisplay->start();
     else {
@@ -79,10 +90,7 @@ int main(int argc, char **argv) {
               << "Exiting after " << gIterations << " iterations." << std::endl;
 
     // clean up
-    if (config::cpuOnly)
-        cpu::clean_up();
-    else
-        delete gGpuAutomata;
+    delete gAutomata;
 
     if (config::render)
         delete gDisplay;
@@ -105,20 +113,14 @@ void loop() {
 
     if (config::render) {
         // update display buffers
-        if (config::cpuOnly)
-            gDisplay->update_grid_buffers_cpu();
-        else
-            gGpuAutomata->update_grid_buffers();
+        gAutomata->update_grid_buffers();
 
         // display current grid
         gDisplay->draw();
     }
 
     // compute next grid
-    if (config::cpuOnly)
-        cpu::compute_grid();
-    else
-        gGpuAutomata->compute_grid();
+    gAutomata->compute_grid();
 
     // calculate loop time and iterations per second
     gNsBetweenSeconds += std::chrono::duration_cast<std::chrono::nanoseconds>(

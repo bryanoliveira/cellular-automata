@@ -1,15 +1,14 @@
 // isolate cuda specific imports
 #include <chrono>
-#include <curand_kernel.h>
 #include <cuda_gl_interop.h>
 #include <sstream>
 
-#include "gpu_automata.cuh"
+#include "automata_base_gpu.cuh"
 
 namespace gpu {
 
-BaseAutomata::BaseAutomata(unsigned long randSeed,
-                           std::ostringstream *pLiveLogBuffer,
+AutomataBase::AutomataBase(unsigned long randSeed,
+                           std::ostringstream *const pLiveLogBuffer,
                            const unsigned int *gridVBO) {
     int gpuDeviceId;
     cudaDeviceProp gpuProps;
@@ -40,6 +39,7 @@ BaseAutomata::BaseAutomata(unsigned long randSeed,
     // prefetch grid to GPU
     CUDA_ASSERT(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
     CUDA_ASSERT(cudaMemPrefetchAsync(nextGrid, gridBytes, gpuDeviceId));
+    CUDA_ASSERT(cudaMemset(grid, 0, gridBytes)); // init grid with zeros
 
     // initialize RNG
     k_setup_rng<<<mGpuBlocks, mGpuThreadsPerBlock>>>(
@@ -67,7 +67,7 @@ BaseAutomata::BaseAutomata(unsigned long randSeed,
     mLiveLogBuffer = pLiveLogBuffer;
 }
 
-BaseAutomata::~BaseAutomata() {
+AutomataBase::~AutomataBase() {
     // wait for pending operations to complete
     CUDA_ASSERT(cudaDeviceSynchronize());
     // destroy secondary streams
@@ -81,15 +81,12 @@ BaseAutomata::~BaseAutomata() {
     CUDA_ASSERT(cudaFree(mGlobalRandState));
 }
 
-void BaseAutomata::compute_grid() {
+void AutomataBase::compute_grid() {
     std::chrono::steady_clock::time_point timeStart =
         std::chrono::steady_clock::now();
 
     *mActiveCellCount = 0; // this will be moved CPU<->GPU automatically
-    k_compute_grid<<<mGpuBlocks, mGpuThreadsPerBlock, 0, mEvolveStream>>>(
-        grid, nextGrid, config::rows, config::cols, mGlobalRandState,
-        config::virtualFillProb, mActiveCellCount);
-    CUDA_ASSERT(cudaGetLastError());
+    run_evolution_kernel();
     // should I call cudaDeviceSynchronize?
     CUDA_ASSERT(cudaDeviceSynchronize());
 
@@ -98,6 +95,7 @@ void BaseAutomata::compute_grid() {
     grid = nextGrid;
     nextGrid = tmpGrid;
 
+    // calculate timings and update live buffer
     std::chrono::steady_clock::time_point timeEnd =
         std::chrono::steady_clock::now();
     *mLiveLogBuffer << "| Evolve Kernel: "
@@ -107,7 +105,15 @@ void BaseAutomata::compute_grid() {
                     << " ns | Active cells: " << *mActiveCellCount << " |";
 }
 
-void BaseAutomata::update_grid_buffers() {
+void AutomataBase::run_evolution_kernel() {
+    k_compute_grid_count_rule<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
+                                mEvolveStream>>>(
+        grid, nextGrid, config::rows, config::cols, mGlobalRandState,
+        config::virtualFillProb, mActiveCellCount);
+    CUDA_ASSERT(cudaGetLastError());
+}
+
+void AutomataBase::update_grid_buffers() {
     if (!mGridVBOResource) {
         fprintf(stderr, "ERROR: Cannot call update_grid_buffers with rendering "
                         "disabled.\n");

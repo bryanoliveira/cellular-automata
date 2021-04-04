@@ -1,10 +1,11 @@
-#ifndef GPU_AUTOMATA_HPP_
-#define GPU_AUTOMATA_HPP_
+#ifndef AUTOMATA_BASE_GPU_HPP_
+#define AUTOMATA_BASE_GPU_HPP_
 
-// this is needed to declare CUDA-specific private variables
+// this is needed to declare CUDA-specific variable types
 #include <cuda_runtime.h>
-#include <curand_kernel.h>
+#include <curand_kernel.h> // for the curandStatate type
 
+#include "automata_interface.hpp"
 #include "config.hpp"
 #include "display.hpp" // for the vec2s type
 #include "grid.hpp"
@@ -12,15 +13,15 @@
 
 namespace gpu {
 
-class BaseAutomata {
+class AutomataBase : public AutomataInterface {
   public:
-    BaseAutomata(unsigned long seed, std::ostringstream *pLiveLogBuffer,
+    AutomataBase(unsigned long seed, std::ostringstream *const pLiveLogBuffer,
                  const unsigned int *gridVBO = NULL);
-    ~BaseAutomata();
-    void compute_grid();
-    void update_grid_buffers();
+    virtual ~AutomataBase();
+    virtual void compute_grid();
+    virtual void update_grid_buffers();
 
-  private:
+  protected:
     dim3 mGpuBlocks;
     dim3 mGpuThreadsPerBlock;
     curandState *mGlobalRandState;
@@ -28,6 +29,8 @@ class BaseAutomata {
     cudaStream_t mEvolveStream, mBufferUpdateStream;
     unsigned int *mActiveCellCount;
     std::ostringstream *mLiveLogBuffer;
+
+    virtual void run_evolution_kernel();
 };
 
 } // namespace gpu

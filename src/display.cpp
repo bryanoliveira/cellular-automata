@@ -117,7 +117,7 @@ void Display::draw() {
     calc_frameRate();
 }
 
-// this could be on the automata file
+// this method is implemented here so it can access the vertice array directly
 void Display::update_grid_buffers_cpu() {
     if (mGpuOnly) {
         fprintf(stderr, "Display Error: cannot call updateGridBuffersCPU on "
