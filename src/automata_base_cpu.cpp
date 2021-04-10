@@ -30,9 +30,10 @@ AutomataBase::~AutomataBase() {
     free(nextGrid);
 }
 
-void AutomataBase::compute_grid() {
-    std::chrono::steady_clock::time_point timeStart =
-        std::chrono::steady_clock::now();
+void AutomataBase::compute_grid(bool logEnabled) {
+    std::chrono::steady_clock::time_point timeStart;
+    if (logEnabled)
+        timeStart = std::chrono::steady_clock::now();
 
     mActiveCellCount = 0;
 
@@ -52,14 +53,13 @@ void AutomataBase::compute_grid() {
     grid = nextGrid;
     nextGrid = tmpGrid;
 
-    // calculate timings and update live buffer
-    std::chrono::steady_clock::time_point timeEnd =
-        std::chrono::steady_clock::now();
-    *mLiveLogBuffer << "| Evolve Function: "
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(
-                           timeEnd - timeStart)
-                           .count()
-                    << " ns | Active cells: " << mActiveCellCount << " |";
+    if (logEnabled)
+        // calculate timings and update live buffer
+        *mLiveLogBuffer << "| Evolve Function: "
+                        << std::chrono::duration_cast<std::chrono::nanoseconds>(
+                               std::chrono::steady_clock::now() - timeStart)
+                               .count()
+                        << " ns | Active cells: " << mActiveCellCount << " |";
 }
 
 bool AutomataBase::compute_cell(unsigned int y, unsigned int x) {

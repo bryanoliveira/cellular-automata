@@ -19,7 +19,7 @@ class CountAutomata : public AutomataBase {
     ~CountAutomata();
 
   protected:
-    void run_evolution_kernel() override;
+    void run_evolution_kernel(bool countAliveCells) override;
 };
 
 } // namespace gpu

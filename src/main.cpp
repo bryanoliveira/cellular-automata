@@ -35,12 +35,14 @@ AutomataInterface *gAutomata;
 bool gLooping = true;
 unsigned long gIterations = 0;
 unsigned long gLastIterationCount = 0;
+unsigned long gIterationsPerSecond = 0;
 unsigned long gNsBetweenSeconds = 0;
 std::chrono::steady_clock::time_point gLastPrintClock =
     std::chrono::steady_clock::now();
 std::ostringstream gLiveLogBuffer;
 
 void loop();
+bool should_log();
 void live_log();
 void sigint_handler(int s);
 
@@ -108,9 +110,13 @@ void loop() {
     std::chrono::steady_clock::time_point timeStart =
         std::chrono::steady_clock::now();
 
-    // carriage return
-    gLiveLogBuffer << "\rIt: " << gIterations << " ";
+    // prepare logging
+    bool logEnabled = should_log();
+    if (logEnabled)
+        // carriage return
+        gLiveLogBuffer << "\rIt: " << gIterations << " ";
 
+    // update buffers & render
     if (config::render) {
         // update display buffers
         gAutomata->update_grid_buffers();
@@ -120,13 +126,14 @@ void loop() {
     }
 
     // compute next grid
-    gAutomata->compute_grid();
+    gAutomata->compute_grid(logEnabled); // count alive cells if will log
 
     // calculate loop time and iterations per second
     gNsBetweenSeconds += std::chrono::duration_cast<std::chrono::nanoseconds>(
                              std::chrono::steady_clock::now() - timeStart)
                              .count();
-    live_log();
+    if (logEnabled)
+        live_log();
 
     // check if number of iterations reached max
     gIterations++;
@@ -139,21 +146,24 @@ void loop() {
     }
 }
 
-void live_log() {
+bool should_log() {
     // calculate loop time and iterations per second
-    unsigned long iterationsPerSecond = gIterations - gLastIterationCount;
+    gIterationsPerSecond = gIterations - gLastIterationCount;
     // return if it's not time to update the log
-    if (iterationsPerSecond <= 0 ||
+    if (gIterationsPerSecond <= 0 ||
         std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::steady_clock::now() - gLastPrintClock)
                 .count() < 1)
-        return;
+        return false;
+    return true;
+}
 
+void live_log() {
     // add main loop info to the buffer
-    gLiveLogBuffer << "| It/s: " << iterationsPerSecond
+    gLiveLogBuffer << "| It/s: " << gIterationsPerSecond
                    << " | Main Loop: "
                    // average time per iteration
-                   << gNsBetweenSeconds / iterationsPerSecond << " ns |";
+                   << gNsBetweenSeconds / gIterationsPerSecond << " ns |";
     // print the buffer
     std::cout << gLiveLogBuffer.str() << std::flush;
     // reset the buffer

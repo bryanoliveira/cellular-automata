@@ -18,7 +18,7 @@ class AutomataBase : public AutomataInterface {
     AutomataBase(unsigned long seed, std::ostringstream *const pLiveLogBuffer,
                  const unsigned int *gridVBO = NULL);
     virtual ~AutomataBase();
-    virtual void compute_grid();
+    virtual void compute_grid(bool logEnabled = false);
     virtual void update_grid_buffers();
 
   protected:
@@ -30,7 +30,7 @@ class AutomataBase : public AutomataInterface {
     unsigned int *mActiveCellCount;
     std::ostringstream *mLiveLogBuffer;
 
-    virtual void run_evolution_kernel();
+    virtual void run_evolution_kernel(bool countAliveCells = false);
 };
 
 } // namespace gpu

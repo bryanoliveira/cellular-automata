@@ -4,7 +4,7 @@
 class AutomataInterface {
   public:
     virtual ~AutomataInterface() {}
-    virtual void compute_grid() = 0;
+    virtual void compute_grid(bool logEnabled) = 0;
     virtual void update_grid_buffers() = 0;
 };
 

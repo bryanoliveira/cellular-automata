@@ -90,6 +90,7 @@ __global__ void k_compute_grid_count_rule(bool *grid, bool *nextGrid,
                                           unsigned int rows, unsigned int cols,
                                           curandState *globalRandState,
                                           float virtualSpawnProbability,
+                                          bool countAliveCells,
                                           unsigned int *activeCellCount) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
@@ -109,8 +110,10 @@ __global__ void k_compute_grid_count_rule(bool *grid, bool *nextGrid,
                 newState = game_of_life(
                     grid[idx], count_moore_neighbours(grid, rows, cols, idx));
 
-            if (newState)
+            // avoid atomicAdd when not necessary
+            if (countAliveCells && newState)
                 atomicAdd(activeCellCount, 1);
+
             nextGrid[idx] = newState;
         }
     }

@@ -81,12 +81,13 @@ AutomataBase::~AutomataBase() {
     CUDA_ASSERT(cudaFree(mGlobalRandState));
 }
 
-void AutomataBase::compute_grid() {
-    std::chrono::steady_clock::time_point timeStart =
-        std::chrono::steady_clock::now();
+void AutomataBase::compute_grid(bool logEnabled) {
+    std::chrono::steady_clock::time_point timeStart;
+    if (logEnabled)
+        timeStart = std::chrono::steady_clock::now();
 
     *mActiveCellCount = 0; // this will be moved CPU<->GPU automatically
-    run_evolution_kernel();
+    run_evolution_kernel(logEnabled); // count alive cells if log is enabled
     // should I call cudaDeviceSynchronize?
     CUDA_ASSERT(cudaDeviceSynchronize());
 
@@ -96,20 +97,19 @@ void AutomataBase::compute_grid() {
     nextGrid = tmpGrid;
 
     // calculate timings and update live buffer
-    std::chrono::steady_clock::time_point timeEnd =
-        std::chrono::steady_clock::now();
-    *mLiveLogBuffer << "| Evolve Kernel: "
-                    << std::chrono::duration_cast<std::chrono::nanoseconds>(
-                           timeEnd - timeStart)
-                           .count()
-                    << " ns | Active cells: " << *mActiveCellCount << " |";
+    if (logEnabled)
+        *mLiveLogBuffer << "| Evolve Kernel: "
+                        << std::chrono::duration_cast<std::chrono::nanoseconds>(
+                               std::chrono::steady_clock::now() - timeStart)
+                               .count()
+                        << " ns | Active cells: " << *mActiveCellCount << " |";
 }
 
-void AutomataBase::run_evolution_kernel() {
+void AutomataBase::run_evolution_kernel(bool countAliveCells) {
     k_compute_grid_count_rule<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                                 mEvolveStream>>>(
         grid, nextGrid, config::rows, config::cols, mGlobalRandState,
-        config::virtualFillProb, mActiveCellCount);
+        config::virtualFillProb, countAliveCells, mActiveCellCount);
     CUDA_ASSERT(cudaGetLastError());
 }
 

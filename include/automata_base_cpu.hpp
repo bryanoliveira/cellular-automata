@@ -13,7 +13,7 @@ class AutomataBase : public AutomataInterface {
                  std::ostringstream *const pLiveLogBuffer,
                  void (*pUpdateBuffersFunc)());
     virtual ~AutomataBase();
-    virtual void compute_grid();
+    virtual void compute_grid(bool logEnabled = false);
     virtual void update_grid_buffers() { mUpdateBuffersFunc(); }
 
   protected:
