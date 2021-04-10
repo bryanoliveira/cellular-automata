@@ -2,6 +2,7 @@
 #define DISPLAY_HPP_
 
 #include "config.hpp"
+#include "controls.hpp"
 #include "grid.hpp"
 
 typedef struct svec2s {

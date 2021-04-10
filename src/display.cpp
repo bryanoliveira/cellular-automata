@@ -1,6 +1,10 @@
 // isolate opengl specific imports
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <ctime>
 #include <sstream>
 
@@ -16,10 +20,15 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     glutInit(pArgc, pArgv);
     glutInitWindowSize(config::width, config::height);
     glutCreateWindow(config::programName.c_str());
-    glutDisplayFunc(pLoopFunc);
-    glutReshapeFunc(reshape);
-    glClear(GL_COLOR_BUFFER_BIT);
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
+    // callbacks
+    glutDisplayFunc(pLoopFunc);
+    glutMouseFunc(controls::mouse);
+    glutMotionFunc(controls::motion);
+    glutReshapeFunc(reshape);
+    // default initialization
+    glClear(GL_COLOR_BUFFER_BIT);
+    glPointSize(5.0f);
 
     GLenum gl_error = glGetError();
     if (glGetError() != GL_NO_ERROR) {
@@ -35,8 +44,6 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
         fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(err));
         exit(EXIT_FAILURE);
     }
-    // unchanging gl param
-    glPointSize(5.0f);
 
     // setup shaders
     Display::setup_shader_program();
@@ -67,9 +74,22 @@ void Display::draw_naive() {
     // draw grid without proper OpenGL Buffers, the naive way
     // glClear(GL_COLOR_BUFFER_BIT);
 
+    // set camera matrices
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    // rotate
+    glRotatef(controls::rotate_x, 1.0, 0.0, 0.0);
+    glRotatef(controls::rotate_y, 0.0, 1.0, 0.0);
+    // space is set to -0.5 to 0.5 in x, y
+    glScalef(controls::scale, controls::scale, 1.0); // scale at 0, 0
+    // set it to 0 to 1 in x, y
+    glTranslatef(-0.5, -0.5, 0);
+    // translate to user set center
+    glTranslatef(controls::center[0], controls::center[1], 0);
+
+    // draw objects
     float xSize = 1.0f / ((float)config::cols);
     float ySize = 1.0f / ((float)config::rows);
-
     for (unsigned int y = 0; y < config::rows; y++) {
         for (unsigned int x = 0; x < config::cols; x++) {
             unsigned int gridIdx = y * config::cols + x;
@@ -87,7 +107,8 @@ void Display::draw_naive() {
             glEnd();
         }
     }
-    glFlush();
+
+    // glFlush();
     glutSwapBuffers();
     glutPostRedisplay();
     calc_frameRate();
@@ -98,6 +119,26 @@ void Display::draw_naive() {
  * Requires that the buffers are updated before this function is called.
  */
 void Display::draw() {
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    // create transform matrix
+    glm::mat4 trans = glm::mat4(1.0f);
+    // rotate
+    trans =
+        glm::rotate(trans, controls::rotate_x / 50, glm::vec3(1.0, 0.0, 0.0));
+    trans =
+        glm::rotate(trans, controls::rotate_y / 50, glm::vec3(0.0, 1.0, 0.0));
+    // scale
+    trans = glm::scale(trans, glm::vec3(controls::scale, controls::scale, 1));
+    // translate
+    trans = glm::translate(
+        trans, glm::vec3(controls::center[0], -controls::center[1], 0.0f));
+
+    // apply transforms to the shaders
+    unsigned int transformLoc =
+        glGetUniformLocation(mShaderProgram, "transform");
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
     // use configured shaders
     glUseProgram(mShaderProgram);
     // bind VAO, which implicitly binds our VBO
@@ -150,7 +191,7 @@ void Display::reshape(int pWidth, int pHeight) {
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     // left, right, bottom, top
-    gluOrtho2D(0, 1, 1, 0);
+    gluOrtho2D(-0.5, 0.5, 0.5, -0.5);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -187,8 +228,9 @@ void Display::setup_shader_program() {
         "layout (location = 0) in vec2 posA;\n"
         "layout (location = 1) in float state;\n"
         "out float v_state;\n"
+        "uniform mat4 transform;\n"
         "void main() {\n"
-        "   gl_Position = vec4(posA.x, posA.y, 0, 1.0);\n"
+        "   gl_Position = transform * vec4(posA.x, posA.y, 0, 1.0);\n"
         "   v_state = state;\n"
         "}\0";
 
