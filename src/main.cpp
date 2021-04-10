@@ -28,6 +28,7 @@
 #include "automata_count_gpu.cuh"
 #include "config.hpp"
 #include "display.hpp"
+#include "rule.hpp"
 
 Display *gDisplay;
 AutomataInterface *gAutomata;
@@ -80,6 +81,7 @@ int main(int argc, char **argv) {
 
     // insert_glider(config::rows / 2 - 12, config::cols / 2 - 12);
     // insert_blinker(config::rows / 2, config::cols / 2);
+    load_rule(config::rows / 2, config::cols / 2);
 
     if (config::render)
         gDisplay->start();
