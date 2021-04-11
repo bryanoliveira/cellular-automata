@@ -28,6 +28,7 @@
 #include "automata_count_gpu.cuh"
 #include "config.hpp"
 #include "display.hpp"
+#include "rule.hpp"
 
 Display *gDisplay;
 AutomataInterface *gAutomata;
@@ -58,6 +59,7 @@ int main(int argc, char **argv) {
 
     // load command line arguments
     config::load_cmd(argc, argv);
+    controls::paused = config::startPaused;
 
     // configure display
     if (config::render)
@@ -78,8 +80,7 @@ int main(int argc, char **argv) {
     else
         gAutomata = new gpu::CountAutomata(randSeed, &gLiveLogBuffer);
 
-    // insert_glider(config::rows / 2 - 12, config::cols / 2 - 12);
-    // insert_blinker(config::rows / 2, config::cols / 2);
+    load_rule(config::ruleFileName);
 
     if (config::render)
         gDisplay->start();
@@ -122,11 +123,13 @@ void loop() {
         gAutomata->update_grid_buffers();
 
         // display current grid
-        gDisplay->draw();
+        gDisplay->draw(logEnabled);
     }
 
     // compute next grid
-    gAutomata->compute_grid(logEnabled); // count alive cells if will log
+    if (!controls::paused || controls::singleStep)
+        gAutomata->compute_grid(logEnabled); // count alive cells if will log
+    controls::singleStep = false;
 
     // calculate loop time and iterations per second
     gNsBetweenSeconds += std::chrono::duration_cast<std::chrono::nanoseconds>(

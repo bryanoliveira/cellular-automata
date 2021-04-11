@@ -17,6 +17,8 @@ extern float fillProb;
 extern float virtualFillProb;
 extern unsigned long maxIterations;
 extern bool cpuOnly;
+extern std::string ruleFileName;
+extern bool startPaused;
 
 void load_file();
 void load_cmd(int argc, char **argv);
