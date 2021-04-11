@@ -79,9 +79,7 @@ int main(int argc, char **argv) {
     else
         gAutomata = new gpu::CountAutomata(randSeed, &gLiveLogBuffer);
 
-    // insert_glider(config::rows / 2 - 12, config::cols / 2 - 12);
-    // insert_blinker(config::rows / 2, config::cols / 2);
-    load_rule(config::rows / 2, config::cols / 2);
+    load_rule(config::ruleFileName);
 
     if (config::render)
         gDisplay->start();
@@ -124,7 +122,7 @@ void loop() {
         gAutomata->update_grid_buffers();
 
         // display current grid
-        gDisplay->draw();
+        gDisplay->draw(logEnabled);
     }
 
     // compute next grid

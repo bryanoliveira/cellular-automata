@@ -19,6 +19,7 @@ float fillProb = 0.08;
 float virtualFillProb = 0.0001;
 unsigned long maxIterations = 0;
 bool cpuOnly = false;
+std::string ruleFileName;
 
 void load_file() {}
 void load_cmd(int argc, char **argv) {
@@ -36,9 +37,10 @@ void load_cmd(int argc, char **argv) {
         ("fill-probability,p", po::value<float>(),
          "Cell probability to start alive") //
         ("virtual-fill-probability,v", po::value<float>(),
-         "Cell probability to become alive")                    //
-        ("max,m", po::value<unsigned long>(), "Max iterations") //
-        ("cpu", "Enable CPU-only mode");                        //
+         "Cell probability to become alive")                         //
+        ("max,m", po::value<unsigned long>(), "Max iterations")      //
+        ("cpu", "Enable CPU-only mode")                              //
+        ("file,f", po::value<std::string>(), "Pattern file (.rle)"); //
 
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(description).run(),
@@ -69,6 +71,8 @@ void load_cmd(int argc, char **argv) {
         maxIterations = vm["max"].as<unsigned long>();
     if (vm.count("cpu"))
         cpuOnly = true;
+    if (vm.count("file"))
+        ruleFileName = vm["file"].as<std::string>();
 }
 
 } // namespace config

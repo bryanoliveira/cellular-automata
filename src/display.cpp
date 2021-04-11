@@ -6,6 +6,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <ctime>
+#include <iostream>
+#include <iomanip>
 #include <sstream>
 
 #include "display.hpp"
@@ -29,6 +31,8 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     // default initialization
     glClear(GL_COLOR_BUFFER_BIT);
     glPointSize(5.0f);
+    // set the starting camera params
+    controls::scale = 5 * config::rows / (float)config::width;
 
     GLenum gl_error = glGetError();
     if (glGetError() != GL_NO_ERROR) {
@@ -70,7 +74,7 @@ void Display::stop() {
 /**
  * Draws on screen by iterating on the grid, the naive way.
  */
-void Display::draw_naive() {
+void Display::draw_naive(bool logEnabled) {
     // draw grid without proper OpenGL Buffers, the naive way
     // glClear(GL_COLOR_BUFFER_BIT);
 
@@ -111,14 +115,15 @@ void Display::draw_naive() {
     // glFlush();
     glutSwapBuffers();
     glutPostRedisplay();
-    calc_frameRate();
+    if (logEnabled)
+        calc_frameRate();
 }
 
 /**
  * Draws on screen using OpenGL buffers, which is much faster.
  * Requires that the buffers are updated before this function is called.
  */
-void Display::draw() {
+void Display::draw(bool logEnabled) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     // create transform matrix
@@ -155,7 +160,8 @@ void Display::draw() {
     glFlush();
     glutSwapBuffers();
     glutPostRedisplay();
-    calc_frameRate();
+    if (logEnabled)
+        calc_frameRate();
 }
 
 // this method is implemented here so it can access the vertice array directly
@@ -214,7 +220,9 @@ void Display::calc_frameRate() {
         fps = CLOCKS_PER_SEC / delta_ticks;
 
     std::ostringstream title;
-    title << config::programName << " (" << fps << " fps)";
+    title << config::programName << " | " << config::ruleFileName << " | "
+          << config::rows << "x" << config::cols << " | " << std::fixed
+          << std::setprecision(2) << controls::scale << "x | " << fps << " fps";
     glutSetWindowTitle(title.str().c_str());
 
     // get clock for the next call

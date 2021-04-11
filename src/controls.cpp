@@ -36,10 +36,10 @@ void mouse(int button, int state, int x, int y) {
     // these buttons behave differently (they don't go up and down)
     // scroll up
     if (button == 3)
-        scale = 1e-9 + scale / scaleFactor;
+        scale = (1e-2 + scale) / scaleFactor;
     // scroll down
     if (button == 4)
-        scale = 1e-9 + scale * scaleFactor;
+        scale = (1e-2 + scale) * scaleFactor;
 
     mouseOldX = x;
     mouseOldY = y;
