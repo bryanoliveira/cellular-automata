@@ -1,9 +1,12 @@
 #include <GL/freeglut.h>
+#include <iostream>
 #include "controls.hpp"
 
 namespace controls {
 
 // public
+bool paused = true;
+bool singleStep = false;
 float center[] = {0.0, 0.0};
 float scale = 1.0;
 float rotate_x = 0.0;
@@ -43,6 +46,19 @@ void mouse(int button, int state, int x, int y) {
 
     mouseOldX = x;
     mouseOldY = y;
+}
+
+void keyboard(unsigned char key, int /*x*/, int /*y*/) {
+    // std::cout << "key " << (int)key << std::endl;
+    switch (key) {
+    case 32:
+        paused = !paused;
+        break;
+
+    case 13:
+        singleStep = true;
+        break;
+    }
 }
 
 void motion(int x, int y) {

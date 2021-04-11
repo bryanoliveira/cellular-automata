@@ -126,7 +126,9 @@ void loop() {
     }
 
     // compute next grid
-    gAutomata->compute_grid(logEnabled); // count alive cells if will log
+    if (!controls::paused || controls::singleStep)
+        gAutomata->compute_grid(logEnabled); // count alive cells if will log
+    controls::singleStep = false;
 
     // calculate loop time and iterations per second
     gNsBetweenSeconds += std::chrono::duration_cast<std::chrono::nanoseconds>(

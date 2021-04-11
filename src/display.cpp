@@ -26,6 +26,7 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     // callbacks
     glutDisplayFunc(pLoopFunc);
     glutMouseFunc(controls::mouse);
+    glutKeyboardFunc(controls::keyboard);
     glutMotionFunc(controls::motion);
     glutReshapeFunc(reshape);
     // default initialization

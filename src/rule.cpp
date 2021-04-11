@@ -31,6 +31,7 @@ void load_rule(std::string filename) {
     unsigned short state = STATE_INIT;
 
     while (infile.get(ch)) {
+        // std::cout << "char: " << ch << " | state: " << state << std::endl;
         // an automata to initialize an automata
         switch (state) {
         case STATE_INIT:
@@ -60,7 +61,7 @@ void load_rule(std::string filename) {
                 state = STATE_HEADER_Y;
             }
             // read the number
-            else
+            else if (ch >= '0' && ch <= '9')
                 buffer << ch;
             break;
         case STATE_HEADER_Y:
@@ -81,7 +82,7 @@ void load_rule(std::string filename) {
                 state = STATE_RULE;
             }
             // read the number
-            else
+            else if (ch >= '0' && ch <= '9')
                 buffer << ch;
             break;
         case STATE_RULE:
@@ -94,23 +95,31 @@ void load_rule(std::string filename) {
             if (ch >= '0' && ch <= '9')
                 buffer << ch;
             // parse the current buffer
-            else if (ch == 'o' || ch == 'b') {
+            else if (ch == 'o' || ch == 'b' || ch == '$') {
                 // define segment length
                 unsigned int len = 1;
                 // check if a number was fed
                 if (buffer.rdbuf()->in_avail() > 0) {
                     buffer >> len;
+                    buffer.str(""); // clear chars
                     buffer.clear();
                 }
-                // if the char is "alive" fill in the grid
-                if (ch == 'o')
+
+                // if the char is "alive" (o) fill in the grid
+                if (ch == 'o') {
                     fill_grid(row, col, len);
-                // update cursor
-                col += len;
-            } else if (ch == '$') {
-                // move cursor to the next grid row
-                row++;
-                col = startCol;
+                    col += len; // update cursor
+                }
+                // if the char is "dead" (b) no operation needs to be done
+                else if (ch == 'b') {
+                    // just update the cursor
+                    col += len;
+                }
+                // if the char is "new line" ($) skip the number of rows set
+                else if (ch == '$') {
+                    row += len;     // skip rows
+                    col = startCol; // reset col
+                }
             } else if (ch == '!')
                 // end the read process
                 state = STATE_END;
