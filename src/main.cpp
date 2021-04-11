@@ -59,6 +59,7 @@ int main(int argc, char **argv) {
 
     // load command line arguments
     config::load_cmd(argc, argv);
+    controls::paused = config::startPaused;
 
     // configure display
     if (config::render)
