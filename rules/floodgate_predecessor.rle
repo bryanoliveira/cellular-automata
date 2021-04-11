@@ -1,0 +1,8 @@
+#N Floodgate predecessor
+#C http://conwaylife.com/wiki/Floodgate
+x = 7, y = 7, rule = B3/S23
+3o$
+b o 3$
+6bo$
+5b2o$
+6bo!
