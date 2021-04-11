@@ -3,6 +3,7 @@
 #include <sstream>
 
 #define STATE_INIT 0
+#define STATE_COMMENT 1
 #define STATE_HEADER_X 2
 #define STATE_HEADER_Y 3
 #define STATE_RULE 4
@@ -10,78 +11,77 @@
 #define STATE_END 6
 
 void load_rule(unsigned int posX, unsigned int posY) {
-    unsigned long x, y;
+    unsigned long x, y, row, col;
 
     std::ifstream infile("rules/glider.rle");
-    std::string line;
+    std::stringstream buffer;
+    char ch;
 
     unsigned short state = STATE_INIT;
 
-    while (std::getline(infile, line)) {
-        std::cout << "buf: " << line << std::endl;
+    while (infile >> ch) {
+        std::cout << "buf: " << ch << " | state: " << state << std::endl;
 
-        // skip comments
-        if (line[0] == '#')
-            continue;
-
-        std::istringstream buffer(line);
-        std::string token;
-        while (buffer >> token) {
-            std::cout << "token: " << token << " | state: " << state
-                      << std::endl;
-            bool skipLine = false;
-
-            switch (state) {
-            case STATE_INIT:
-                // since we skip all comments, the file starts with the header
-                // and sets the X value first
-                if (token == "x")
-                    state = STATE_HEADER_X;
-                break;
-            case STATE_HEADER_X:
-                // after we read the char "x" we skip the "=" and read the
-                // number without ",", which is the last char
-                if (token != "=") {
-                    x = std::stoul(token.substr(0, token.size() - 1));
-                    // the next number we'll read is Y
-                    state = STATE_HEADER_Y;
-                }
-                break;
-            case STATE_HEADER_Y:
-                // we skip "y" and "=" and read the number without ","
-                if (token != "y" && token != "=") {
-                    y = std::stoul(token.substr(0, token.size() - 1));
-                    state = STATE_RULE;
-                }
-                break;
-            case STATE_RULE:
-                // we don't read the rules yet
-                skipLine = true;
-                state = STATE_GRID;
-                break;
-            // TODO perhaps read the file char by char?
-            case STATE_GRID:
-                // iterate over the token chars
-                bool alive;
-                unsigned long repeats = 1;
-                std::ostringstream repeatStream;
-                for (int i = 0; i < token.size(); i++) {
-                    if (token[i] >= '0' && token[i] <= '9')
-                        repeatStream << token[i];
-                    else if (token[i] == 'o')
-                        alive = true;
-                    else if (token[i] == 'b')
-                        alive = false;
-                    else if (token[i] == '$') {
-                        //  TODO add cell states to grid & reset buffers
-                    }
-                }
-                break;
+        switch (state) {
+        case STATE_INIT:
+            // line init can be a comment or the file header
+            if (ch == '#')
+                state = STATE_COMMENT;
+            else if (ch == 'x')
+                state = STATE_HEADER_X;
+            break;
+        case STATE_COMMENT:
+            // ignore all chars, except for endl
+            if (ch = '\n')
+                state = STATE_INIT;
+            break;
+        case STATE_HEADER_X:
+            // after we read the char "x" we skip the " = "
+            if (ch == ' ' || ch == '=')
+                continue;
+            // if we reached ",", process the buffer into a number
+            else if (ch = ',') {
+                buffer >> x;
+                buffer.clear();
+                // the next number we'll read is Y
+                state = STATE_HEADER_Y;
             }
-
-            // skip to next line
-            if (skipLine)
-                break;
+            // read the number
+            else
+                buffer << ch;
+            break;
+        case STATE_HEADER_Y:
+            // skip "y", "=" and " "
+            if (ch == 'y' || ch == '=' || ch == ' ')
+                continue;
+            // if we reached ",", process the buffer into a number
+            else if (ch = ',') {
+                buffer >> y;
+                buffer.clear();
+                // the next thing is the rule
+                state = STATE_RULE;
+            }
+            // read the number
+            else
+                buffer << ch;
+            break;
+        case STATE_RULE:
+            // we don't read the rules yet
+            if (ch == '\n')
+                state = STATE_GRID;
+            break;
+        case STATE_GRID:
+            // put numbers into buffer
+            if (ch >= '0' && ch <= '9')
+                buffer << ch;
+            // parse the current buffer
+            else if (ch == 'o' || ch == 'b') {
+                bool alive = ch == 'o';
+                // TODO parse the buffer
+                col++;
+            } else if (ch == '$')
+                row++;
+            break;
         }
     }
 
