@@ -4,7 +4,7 @@
 
 A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, CUDA and OpenGL. It's built to run on a GPU but it also supports CPU-only execution (mainly for relative speedup comparisons). On the right there's an example execution of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 grid randomly initialized.
 
-The main objective of this project is to allow scaling up to a fairly large number of cells while maintaining the code legibility and allowing for further customizations. It supports command line arguments to set up quick configs (run `./automata -h` for details) like headless mode (which is significantly faster). It doesn't yet support the definition of evolution rules at runtime, but I'm working on that.
+The main objective of this project is to allow scaling up to a fairly large number of cells while maintaining the code legibility and allowing for further customizations. It supports command line arguments to set up quick configs (run `./automata -h` for details) like headless mode (which is significantly faster) and initial patterns (which can be loaded from the `rules` folder). It doesn't yet support the definition of evolution rules at runtime, but I'm working on that.
 
 This program can currently evolve a 144 million cell Conway's Game of Life grid (12000x12000) with rendering enabled with up to 15 FPS on a Ryzen 7 3700X / RTX 3080 using up to 2GB RAM and 9GB VRAM (which is the actual scaling limiter).
 
@@ -35,6 +35,13 @@ It is possible to run this program in a CPU-only mode, so if you don't have a CU
     -   Run `make run` to only run
     -   Run `make clean` to remove generated build files
     -   Run `make profile` to run [NVIDIA's nsys](https://developer.nvidia.com/nsight-systems) profiling.
+
+### Runtime Commands
+
+- Press `space` to start/pause the simulation
+- Press `enter/return` to run a single step of the simulation
+- Scroll to zoom in/out
+- Left click to pan, right click to rotate (not very useful yet, but it will be for the 3D version), middle click to reset the camera
 
 ## Bonus
 
