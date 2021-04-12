@@ -221,7 +221,7 @@ void Display::calc_frameRate() {
         fps = CLOCKS_PER_SEC / delta_ticks;
 
     std::ostringstream title;
-    title << config::programName << " | " << config::ruleFileName << " | "
+    title << config::programName << " | " << config::patternFileName << " | "
           << config::rows << "x" << config::cols << " | " << std::fixed
           << std::setprecision(2) << controls::scale << "x | " << fps << " fps";
     glutSetWindowTitle(title.str().c_str());

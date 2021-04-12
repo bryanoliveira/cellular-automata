@@ -2,17 +2,17 @@
 #include <fstream>
 #include <sstream>
 
-#include "rule.hpp"
+#include "pattern.hpp"
 
 #define STATE_INIT 0
 #define STATE_COMMENT 1
 #define STATE_HEADER_X 2
 #define STATE_HEADER_Y 3
 #define STATE_RULE 4
-#define STATE_GRID 5
+#define STATE_PATTERN 5
 #define STATE_END 6
 
-void load_rule(std::string filename) {
+void load_pattern(std::string filename) {
     // pattern size
     unsigned int sizeCols, sizeRows;
     // pattern start position
@@ -88,9 +88,9 @@ void load_rule(std::string filename) {
         case STATE_RULE:
             // we don't read the rules yet
             if (ch == '\n')
-                state = STATE_GRID;
+                state = STATE_PATTERN;
             break;
-        case STATE_GRID:
+        case STATE_PATTERN:
             // put numbers into buffer
             if (ch >= '0' && ch <= '9')
                 buffer << ch;

@@ -28,7 +28,7 @@
 #include "automata_count_gpu.cuh"
 #include "config.hpp"
 #include "display.hpp"
-#include "rule.hpp"
+#include "pattern.hpp"
 
 Display *gDisplay;
 AutomataInterface *gAutomata;
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     else
         gAutomata = new gpu::CountAutomata(randSeed, &gLiveLogBuffer);
 
-    load_rule(config::ruleFileName);
+    load_pattern(config::patternFileName);
 
     if (config::render)
         gDisplay->start();

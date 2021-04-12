@@ -19,7 +19,7 @@ float fillProb = 0.08;
 float virtualFillProb = 0.0001;
 unsigned long maxIterations = 0;
 bool cpuOnly = false;
-std::string ruleFileName("rules/empty.rle");
+std::string patternFileName("patterns/empty.rle");
 bool startPaused = true;
 
 void load_file() {}
@@ -74,7 +74,7 @@ void load_cmd(int argc, char **argv) {
     if (vm.count("cpu"))
         cpuOnly = true;
     if (vm.count("file"))
-        ruleFileName = vm["file"].as<std::string>();
+        patternFileName = vm["file"].as<std::string>();
     if (vm.count("start"))
         startPaused = false;
 }
