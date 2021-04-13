@@ -20,7 +20,7 @@ This program can currently evolve a dense & high entropy 144 million cell Conway
 -   make
 -   g++ (C++ 17)
 -   OpenGL (GLEW and GLUT)
--   Boost C++ Libraty (program_options)
+-   Boost C++ Library (program_options module)
 -   CUDA (nvcc) and CUDA runtime libraries
 
 It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that to work you will need to run the program with `./automata --cpu` and disable `*.cu` file compilation on `Makefile`.
