@@ -1,6 +1,6 @@
 #include <chrono>
 #include <sstream>
-
+#include <vector>
 #include "automata_base_cpu.hpp"
 
 namespace cpu {
@@ -10,8 +10,8 @@ AutomataBase::AutomataBase(unsigned long pRandSeed,
                            void (*pUpdateBuffersFunc)()) {
     srand(pRandSeed);
 
-    grid = (bool *)calloc(config::rows * config::cols, sizeof(bool));
-    nextGrid = (bool *)calloc(config::rows * config::cols, sizeof(bool));
+    grid = Grid(config::rows * config::cols, 0);
+    nextGrid = Grid(config::rows * config::cols, 0);
 
     if (config::fillProb > 0)
         // note: we're using safety borders
@@ -25,10 +25,7 @@ AutomataBase::AutomataBase(unsigned long pRandSeed,
     mUpdateBuffersFunc = pUpdateBuffersFunc;
 }
 
-AutomataBase::~AutomataBase() {
-    free(grid);
-    free(nextGrid);
-}
+AutomataBase::~AutomataBase() {}
 
 void AutomataBase::compute_grid(bool logEnabled) {
     std::chrono::steady_clock::time_point timeStart;
@@ -49,9 +46,7 @@ void AutomataBase::compute_grid(bool logEnabled) {
                 mActiveCellCount++;
         }
     }
-    bool *tmpGrid = grid;
-    grid = nextGrid;
-    nextGrid = tmpGrid;
+    grid.swap(nextGrid);
 
     if (logEnabled)
         // calculate timings and update live buffer

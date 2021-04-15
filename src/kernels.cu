@@ -1,8 +1,11 @@
+#include <stdio.h>
+
 #include "kernels.cuh"
 
 ////// DEVICE FUNCTIONS
 
-__device__ unsigned short count_moore_neighbours(bool *grid, unsigned int rows,
+__device__ unsigned short count_moore_neighbours(GridType *grid,
+                                                 unsigned int rows,
                                                  unsigned int cols,
                                                  unsigned int idx) {
     unsigned short livingNeighbours = 0;
@@ -44,49 +47,81 @@ __global__ void k_setup_rng(unsigned int rows, unsigned int cols,
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
-    for (int y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
-         y += stride.y) {
-        for (int x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
-             x += stride.x) {
-            int idx = y * cols + x;
+    for (unsigned int y = blockDim.y * blockIdx.y + threadIdx.y + 1;
+         y < rows - 1; y += stride.y) {
+        for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x + 1;
+             x < cols - 1; x += stride.x) {
+            unsigned int idx = y * cols + x;
             curand_init(seed, idx, 0, &globalRandState[idx]);
         }
     }
 }
 
-__global__ void k_init_grid(bool *grid, unsigned int rows, unsigned int cols,
-                            curandState *globalRandState,
+__global__ void k_init_grid(GridType *grid, unsigned int rows,
+                            unsigned int cols, curandState *globalRandState,
                             float spawnProbability) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
-    for (int y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
-         y += stride.y) {
-        for (int x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
-             x += stride.x) {
-            int idx = y * cols + x;
+    for (unsigned int y = blockDim.y * blockIdx.y + threadIdx.y + 1;
+         y < rows - 1; y += stride.y) {
+        for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x + 1;
+             x < cols - 1; x += stride.x) {
+            unsigned int idx = y * cols + x;
             grid[idx] =
                 curand_uniform(&globalRandState[idx]) < spawnProbability;
         }
     }
 }
 
-__global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
+__global__ void k_update_grid_buffers(GridType *grid, vec2s *gridVertices,
                                       unsigned int rows, unsigned int cols) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
-    for (int y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
-         y += stride.y) {
-        for (int x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
-             x += stride.x) {
-            int idx = y * cols + x;
+    for (unsigned int y = blockDim.y * blockIdx.y + threadIdx.y + 1;
+         y < rows - 1; y += stride.y) {
+        for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x + 1;
+             x < cols - 1; x += stride.x) {
+            unsigned int idx = y * cols + x;
             gridVertices[idx].state = (float)grid[idx];
         }
     }
 }
 
-__global__ void k_compute_grid_count_rule(bool *grid, bool *nextGrid,
+__global__ void
+k_update_grid_buffers_rescaled(GridType *grid, vec2s *gridVertices,
+                               unsigned int rows, unsigned int cols,
+                               unsigned int width, unsigned int height) {
+    dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+    float ppp = (rows * cols) / float(width * height);
+    // note: we're using safety borders
+    for (unsigned int y = blockDim.y * blockIdx.y + threadIdx.y + 1;
+         y < rows - 1; y += stride.y) {
+        for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x + 1;
+             x < cols - 1; x += stride.x) {
+            atomicAdd(&gridVertices[(y / height) * width + (x / width)].state,
+                      float(grid[y * cols + x]) / ppp);
+        }
+    }
+}
+
+__global__ void k_reset_grid_buffers(vec2s *gridVertices, unsigned int width,
+                                     unsigned int height) {
+    dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+
+    // note: we're using safety borders
+    for (unsigned int y = blockDim.y * blockIdx.y + threadIdx.y + 1;
+         y < height - 1; y += stride.y) {
+        for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x + 1;
+             x < width - 1; x += stride.x) {
+            unsigned int idx = y * width + x;
+            gridVertices[idx].state = 0;
+        }
+    }
+}
+
+__global__ void k_compute_grid_count_rule(GridType *grid, GridType *nextGrid,
                                           unsigned int rows, unsigned int cols,
                                           curandState *globalRandState,
                                           float virtualSpawnProbability,

@@ -47,7 +47,7 @@ AutomataBase::AutomataBase(unsigned long randSeed,
 
     // initialize grid
     k_init_grid<<<mGpuBlocks, mGpuThreadsPerBlock>>>(
-        grid, config::rows, config::cols, mGlobalRandState, config::fillProb);
+        &grid, config::rows, config::cols, mGlobalRandState, config::fillProb);
     CUDA_ASSERT(cudaGetLastError());
     CUDA_ASSERT(cudaDeviceSynchronize());
 
@@ -108,7 +108,7 @@ void AutomataBase::compute_grid(bool logEnabled) {
 void AutomataBase::run_evolution_kernel(bool countAliveCells) {
     k_compute_grid_count_rule<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                                 mEvolveStream>>>(
-        grid, nextGrid, config::rows, config::cols, mGlobalRandState,
+        &grid, nextGrid, config::rows, config::cols, mGlobalRandState,
         config::virtualFillProb, countAliveCells, mActiveCellCount);
     CUDA_ASSERT(cudaGetLastError());
 }
@@ -129,11 +129,22 @@ void AutomataBase::update_grid_buffers() {
     // printf("CUDA mapped VBO: May access %ld bytes\n", numBytes);
 
     // launch kernel
+    k_reset_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
+                           mBufferUpdateStream>>>(gridVertices, config::width,
+                                                  config::height);
+
     k_update_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                             mBufferUpdateStream>>>(grid, gridVertices,
                                                    config::rows, config::cols);
+
+    // k_update_grid_buffers_rescaled<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
+    //                                  mBufferUpdateStream>>>(
+    //     &grid, gridVertices, config::rows, config::cols, config::width,
+    //     config::height);
+
     CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?
+    CUDA_ASSERT(cudaDeviceSynchronize());
 
     // unmap buffer object
     CUDA_ASSERT(cudaGraphicsUnmapResources(1, &mGridVBOResource, 0));

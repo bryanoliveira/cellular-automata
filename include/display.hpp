@@ -29,7 +29,9 @@ class Display {
     unsigned int mGridVBO;
     vec2s *mGridVertices;
     size_t mGridVerticesSize;
-    unsigned int mNumGridVertices = config::rows * config::cols;
+    const unsigned int mGridVerticesRows = config::height;
+    const unsigned int mGridVerticesCols = config::width;
+    unsigned int mNumGridVertices = mGridVerticesRows * mGridVerticesCols;
     bool mGpuOnly;
 
     static void reshape(int pWidth, int pHeight);
