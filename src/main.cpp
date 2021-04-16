@@ -123,7 +123,7 @@ void loop() {
         gAutomata->update_grid_buffers();
 
         // display current grid
-        gDisplay->draw_naive(logEnabled);
+        gDisplay->draw(logEnabled);
     }
 
     // compute next grid

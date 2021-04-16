@@ -7,6 +7,10 @@
 
 namespace gpu {
 
+// global declaration of grid references
+Grid<bool> &grid;
+Grid<bool> &nextGrid;
+
 AutomataBase::AutomataBase(unsigned long randSeed,
                            std::ostringstream *const pLiveLogBuffer,
                            const unsigned int *gridVBO) {

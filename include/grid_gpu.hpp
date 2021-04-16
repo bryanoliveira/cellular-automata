@@ -22,6 +22,9 @@ template <typename GridType> class Grid : public GridInterface<Grid, GridType> {
     }
 };
 
+extern Grid<bool> &grid;
+extern Grid<bool> &nextGrid;
+
 } // namespace gpu
 
 #endif

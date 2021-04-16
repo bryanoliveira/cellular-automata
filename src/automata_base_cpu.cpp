@@ -4,6 +4,10 @@
 
 namespace cpu {
 
+// global declaration of grid references
+Grid<bool> &grid;
+Grid<bool> &nextGrid;
+
 AutomataBase::AutomataBase(unsigned long pRandSeed,
                            std::ostringstream *const pLiveLogBuffer,
                            void (*pUpdateBuffersFunc)()) {
@@ -24,7 +28,10 @@ AutomataBase::AutomataBase(unsigned long pRandSeed,
     mUpdateBuffersFunc = pUpdateBuffersFunc;
 }
 
-AutomataBase::~AutomataBase() {}
+AutomataBase::~AutomataBase() {
+    delete grid;
+    delete nextGrid;
+}
 
 void AutomataBase::compute_grid(bool logEnabled) {
     std::chrono::steady_clock::time_point timeStart;
