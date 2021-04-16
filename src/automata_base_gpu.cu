@@ -13,7 +13,6 @@ AutomataBase::AutomataBase(unsigned long randSeed,
     int gpuDeviceId;
     cudaDeviceProp gpuProps;
     size_t gridSize = config::rows * config::cols;
-    size_t gridBytes = gridSize * sizeof(bool);
 
     // define common kernel configs
     cudaGetDevice(&gpuDeviceId);
@@ -33,13 +32,10 @@ AutomataBase::AutomataBase(unsigned long randSeed,
     CUDA_ASSERT(
         cudaMalloc(&mGlobalRandState,
                    gridSize * sizeof(curandState))); // gpu only, not managed
-    CUDA_ASSERT(cudaMallocManaged(&grid, gridBytes));
-    CUDA_ASSERT(cudaMallocManaged(&nextGrid, gridBytes));
     CUDA_ASSERT(cudaMallocManaged(&mActiveCellCount, sizeof(unsigned int)));
-    // prefetch grid to GPU
-    CUDA_ASSERT(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
-    CUDA_ASSERT(cudaMemPrefetchAsync(nextGrid, gridBytes, gpuDeviceId));
-    CUDA_ASSERT(cudaMemset(grid, 0, gridBytes)); // init grid with zeros
+    // instantiate grids
+    grid = Grid(gridSize, true, false);
+    nextGrid = Grid(gridSize, false);
 
     // initialize RNG
     k_setup_rng<<<mGpuBlocks, mGpuThreadsPerBlock>>>(
@@ -76,8 +72,8 @@ AutomataBase::~AutomataBase() {
     // unregister mapped resource (needs the GL context to still be set)
     // CUDA_ASSERT(cudaGraphicsUnregisterResource(mGridVBOResource));
     // free the grid
-    CUDA_ASSERT(cudaFree(grid));
-    CUDA_ASSERT(cudaFree(nextGrid));
+    delete grid;
+    delete nextGrid;
     CUDA_ASSERT(cudaFree(mGlobalRandState));
 }
 
@@ -92,9 +88,7 @@ void AutomataBase::compute_grid(bool logEnabled) {
     CUDA_ASSERT(cudaDeviceSynchronize());
 
     // simply swap buffers to avoid reallocation
-    bool *tmpGrid = grid;
-    grid = nextGrid;
-    nextGrid = tmpGrid;
+    grid->swap(nextGrid);
 
     // calculate timings and update live buffer
     if (logEnabled)
@@ -108,7 +102,7 @@ void AutomataBase::compute_grid(bool logEnabled) {
 void AutomataBase::run_evolution_kernel(bool countAliveCells) {
     k_compute_grid_count_rule<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                                 mEvolveStream>>>(
-        &grid, nextGrid, config::rows, config::cols, mGlobalRandState,
+        &grid, &nextGrid, config::rows, config::cols, mGlobalRandState,
         config::virtualFillProb, countAliveCells, mActiveCellCount);
     CUDA_ASSERT(cudaGetLastError());
 }
@@ -129,22 +123,13 @@ void AutomataBase::update_grid_buffers() {
     // printf("CUDA mapped VBO: May access %ld bytes\n", numBytes);
 
     // launch kernel
-    k_reset_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
-                           mBufferUpdateStream>>>(gridVertices, config::width,
-                                                  config::height);
-
     k_update_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
-                            mBufferUpdateStream>>>(grid, gridVertices,
+                            mBufferUpdateStream>>>(&grid, gridVertices,
                                                    config::rows, config::cols);
-
-    // k_update_grid_buffers_rescaled<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
-    //                                  mBufferUpdateStream>>>(
-    //     &grid, gridVertices, config::rows, config::cols, config::width,
-    //     config::height);
 
     CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?
-    CUDA_ASSERT(cudaDeviceSynchronize());
+    // CUDA_ASSERT(cudaDeviceSynchronize());
 
     // unmap buffer object
     CUDA_ASSERT(cudaGraphicsUnmapResources(1, &mGridVBOResource, 0));

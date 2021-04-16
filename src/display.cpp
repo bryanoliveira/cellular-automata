@@ -31,9 +31,9 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     glutReshapeFunc(reshape);
     // default initialization
     glClear(GL_COLOR_BUFFER_BIT);
-    glPointSize(50.0f);
+    glPointSize(5.0f);
     // set the starting camera params
-    // controls::scale = 5 * config::rows / (float)config::width;
+    controls::scale = 5 * config::rows / (float)config::width;
 
     GLenum gl_error = glGetError();
     if (glGetError() != GL_NO_ERROR) {
@@ -190,11 +190,10 @@ void Display::update_grid_buffers_cpu() {
 }
 
 void Display::reshape(int pWidth, int pHeight) {
-    // config::width = pWidth;
-    // config::height = pHeight;
+    config::width = pWidth;
+    config::height = pHeight;
 
-    // glViewport(0, 0, config::width, config::height);
-    glViewport(0, 0, pWidth, pHeight);
+    glViewport(0, 0, config::width, config::height);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -359,29 +358,14 @@ void Display::setup_grid_buffers() {
 void Display::setup_grid_vertices(vec2s *vertices) {
     // setup vertices
     // iterate over the number of cells
-    for (unsigned int y = 0, idx = 0; y < mGridVerticesRows; y++) {
-        for (unsigned int x = 0; x < mGridVerticesCols; ++x) {
+    for (unsigned int y = 0, idx = 0; y < config::rows; y++) {
+        for (unsigned int x = 0; x < config::cols; ++x) {
             // vertices live in an (-1, 1) tridimensional space
             // we need to calculate the position of each vertice inside a 2d
             // grid top left
-            vertices[idx] = vec2s(-1.0f + x * (2.0f / mGridVerticesCols),
-                                  -1.0f + y * (2.0f / mGridVerticesRows), false);
+            vertices[idx] = vec2s(-1.0f + x * (2.0f / config::cols),
+                                  -1.0f + y * (2.0f / config::rows), false);
             idx++;
         }
     }
 }
-
-// void Display::setup_grid_vertices(vec2s *vertices) {
-//     // setup vertices
-//     // iterate over the number of cells
-//     for (unsigned int y = 0, idx = 0; y < config::rows; y++) {
-//         for (unsigned int x = 0; x < config::cols; ++x) {
-//             // vertices live in an (-1, 1) tridimensional space
-//             // we need to calculate the position of each vertice inside a 2d
-//             // grid top left
-//             vertices[idx] = vec2s(-1.0f + x * (2.0f / config::cols),
-//                                   -1.0f + y * (2.0f / config::rows), false);
-//             idx++;
-//         }
-//     }
-// }

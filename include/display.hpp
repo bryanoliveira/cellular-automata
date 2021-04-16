@@ -3,7 +3,7 @@
 
 #include "config.hpp"
 #include "controls.hpp"
-#include "grid.hpp"
+#include "grid_interface.hpp"
 
 typedef struct svec2s {
     float x, y;
@@ -29,9 +29,7 @@ class Display {
     unsigned int mGridVBO;
     vec2s *mGridVertices;
     size_t mGridVerticesSize;
-    const unsigned int mGridVerticesRows = config::height;
-    const unsigned int mGridVerticesCols = config::width;
-    unsigned int mNumGridVertices = mGridVerticesRows * mGridVerticesCols;
+    unsigned int mNumGridVertices = config::rows * config::cols;
     bool mGpuOnly;
 
     static void reshape(int pWidth, int pHeight);

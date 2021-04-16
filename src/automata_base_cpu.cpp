@@ -1,6 +1,5 @@
 #include <chrono>
 #include <sstream>
-#include <vector>
 #include "automata_base_cpu.hpp"
 
 namespace cpu {
@@ -10,8 +9,8 @@ AutomataBase::AutomataBase(unsigned long pRandSeed,
                            void (*pUpdateBuffersFunc)()) {
     srand(pRandSeed);
 
-    grid = Grid(config::rows * config::cols, 0);
-    nextGrid = Grid(config::rows * config::cols, 0);
+    grid = Grid<bool>(config::rows * config::cols, true, 0);
+    nextGrid = Grid<bool>(config::rows * config::cols, false);
 
     if (config::fillProb > 0)
         // note: we're using safety borders

@@ -8,7 +8,7 @@
 #include "automata_interface.hpp"
 #include "config.hpp"
 #include "display.hpp" // for the vec2s type
-#include "grid.hpp"
+#include "grid_gpu.hpp"
 #include "kernels.cuh"
 
 namespace gpu {

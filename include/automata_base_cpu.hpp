@@ -3,7 +3,7 @@
 
 #include "automata_interface.hpp"
 #include "config.hpp"
-#include "grid.hpp"
+#include "grid_cpu.hpp"
 
 namespace cpu {
 

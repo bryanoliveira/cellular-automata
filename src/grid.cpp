@@ -1,5 +1,5 @@
-#include "grid.hpp"
+#include "grid_interface.hpp"
 
-// global grid
-Grid grid;
-Grid nextGrid;
+// global declaration of grid references
+GridInterface &grid;
+GridInterface &nextGrid;
