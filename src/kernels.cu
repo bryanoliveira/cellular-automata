@@ -2,9 +2,10 @@
 
 ////// DEVICE FUNCTIONS
 
-__device__ unsigned short count_moore_neighbours(bool *grid, unsigned int rows,
-                                                 unsigned int cols,
-                                                 unsigned int idx) {
+__device__ inline unsigned short count_moore_neighbours(bool *grid,
+                                                        unsigned int rows,
+                                                        unsigned int cols,
+                                                        unsigned int idx) {
     unsigned short livingNeighbours = 0;
     // we can calculate the neighbours directly since we're using safety borders
     unsigned int neighbours[] = {
@@ -24,7 +25,8 @@ __device__ unsigned short count_moore_neighbours(bool *grid, unsigned int rows,
     return livingNeighbours;
 }
 
-__device__ bool game_of_life(bool isAlive, unsigned short livingNeighbours) {
+__device__ inline bool game_of_life(bool isAlive,
+                                    unsigned short livingNeighbours) {
     // 1. Any live cell with two or three live neighbours survives.
     if (isAlive)
         return livingNeighbours == 2 || livingNeighbours == 3;
