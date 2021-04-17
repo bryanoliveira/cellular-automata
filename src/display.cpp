@@ -32,8 +32,6 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     // default initialization
     glClear(GL_COLOR_BUFFER_BIT);
     glPointSize(5.0f);
-    // set the starting camera params
-    controls::scale = 5 * config::rows / (float)config::width;
 
     GLenum gl_error = glGetError();
     if (glGetError() != GL_NO_ERROR) {
@@ -79,19 +77,6 @@ void Display::draw_naive(bool logEnabled) {
     // draw grid without proper OpenGL Buffers, the naive way
     // glClear(GL_COLOR_BUFFER_BIT);
 
-    // set camera matrices
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    // rotate
-    glRotatef(controls::rotate_x, 1.0, 0.0, 0.0);
-    glRotatef(controls::rotate_y, 0.0, 1.0, 0.0);
-    // space is set to -0.5 to 0.5 in x, y
-    glScalef(controls::scale, controls::scale, 1.0); // scale at 0, 0
-    // set it to 0 to 1 in x, y
-    glTranslatef(-0.5, -0.5, 0);
-    // translate to user set center
-    glTranslatef(controls::center[0], controls::center[1], 0);
-
     // draw objects
     float xSize = 1.0f / ((float)config::cols);
     float ySize = 1.0f / ((float)config::rows);
@@ -126,24 +111,6 @@ void Display::draw_naive(bool logEnabled) {
  */
 void Display::draw(bool logEnabled) {
     glClear(GL_COLOR_BUFFER_BIT);
-
-    // create transform matrix
-    glm::mat4 trans = glm::mat4(1.0f);
-    // rotate
-    trans =
-        glm::rotate(trans, controls::rotate_x / 50, glm::vec3(1.0, 0.0, 0.0));
-    trans =
-        glm::rotate(trans, controls::rotate_y / 50, glm::vec3(0.0, 1.0, 0.0));
-    // scale
-    trans = glm::scale(trans, glm::vec3(controls::scale, controls::scale, 1));
-    // translate
-    trans = glm::translate(
-        trans, glm::vec3(controls::center[0], -controls::center[1], 0.0f));
-
-    // apply transforms to the shaders
-    unsigned int transformLoc =
-        glGetUniformLocation(mShaderProgram, "transform");
-    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
     // use configured shaders
     glUseProgram(mShaderProgram);
@@ -237,9 +204,8 @@ void Display::setup_shader_program() {
         "layout (location = 0) in vec2 posA;\n"
         "layout (location = 1) in float state;\n"
         "out float v_state;\n"
-        "uniform mat4 transform;\n"
         "void main() {\n"
-        "   gl_Position = transform * vec4(posA.x, posA.y, 0, 1.0);\n"
+        "   gl_Position = vec4(posA.x, posA.y, 0, 1.0);\n"
         "   v_state = state;\n"
         "}\0";
 
