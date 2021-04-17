@@ -46,11 +46,11 @@ __global__ void k_setup_rng(unsigned int rows, unsigned int cols,
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
-    for (int y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
-         y += stride.y) {
-        for (int x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
-             x += stride.x) {
-            int idx = y * cols + x;
+    for (unsigned int y = blockDim.y * blockIdx.y + threadIdx.y + 1;
+         y < rows - 1; y += stride.y) {
+        for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x + 1;
+             x < cols - 1; x += stride.x) {
+            unsigned int idx = y * cols + x;
             curand_init(seed, idx, 0, &globalRandState[idx]);
         }
     }
@@ -62,11 +62,11 @@ __global__ void k_init_grid(bool *grid, unsigned int rows, unsigned int cols,
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
-    for (int y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
-         y += stride.y) {
-        for (int x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
-             x += stride.x) {
-            int idx = y * cols + x;
+    for (unsigned int y = blockDim.y * blockIdx.y + threadIdx.y + 1;
+         y < rows - 1; y += stride.y) {
+        for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x + 1;
+             x < cols - 1; x += stride.x) {
+            unsigned int idx = y * cols + x;
             grid[idx] =
                 curand_uniform(&globalRandState[idx]) < spawnProbability;
         }
