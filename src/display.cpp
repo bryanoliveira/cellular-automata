@@ -16,6 +16,20 @@
  * Sets up GLUT, GLEW, OpenGL methods and buffers.
  */
 Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
+    // define sizes & proportions
+    mGridVerticesX =
+        config::cols > config::width ? config::width : config::cols;
+    mGridVerticesY =
+        config::rows > config::height ? config::height : config::rows;
+    mNumGridVertices = mGridVerticesX * mGridVerticesY;
+    mCellsPerVerticeX = config::cols / mGridVerticesX;
+    mCellsPerVerticeY = config::rows / mGridVerticesY;
+
+    std::cout << config::rows << " " << config::cols << " " << mGridVerticesX
+              << " " << mGridVerticesY << " " << mNumGridVertices << " "
+              << mCellsPerVerticeX << " " << mCellsPerVerticeY << std::endl;
+
+    // will we be using only gpu?
     Display::mGpuOnly = !pCpuOnly;
 
     // init glut
@@ -32,6 +46,7 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     // default initialization
     glClear(GL_COLOR_BUFFER_BIT);
     glPointSize(5.0f);
+    reshape(config::width, config::height); // set viewport, etc
 
     GLenum gl_error = glGetError();
     if (glGetError() != GL_NO_ERROR) {
@@ -141,10 +156,13 @@ void Display::update_grid_buffers_cpu() {
     }
 
     // update vertice states
-    for (unsigned int idx = 0; idx < mNumGridVertices; idx++) {
-        // remember we have 4 contiguous vertices for each cell, so each vertice
-        // index/4 corresponds to the grid cell
-        mGridVertices[idx].state = (float)grid[idx]; // int(idx / 4)];
+    for (unsigned int y = 0; y < config::rows; y++) {
+        for (unsigned int x = 0; x < config::cols; ++x) {
+            unsigned int idx = y * config::cols + x;
+            unsigned int vx = x / mCellsPerVerticeX;
+            unsigned int vy = y / mCellsPerVerticeY;
+            mGridVertices[vy * mGridVerticesX + vx].state = (float)grid[idx];
+        }
     }
 
     // bind VBO to be updated
@@ -157,15 +175,12 @@ void Display::update_grid_buffers_cpu() {
 }
 
 void Display::reshape(int pWidth, int pHeight) {
-    config::width = pWidth;
-    config::height = pHeight;
-
-    glViewport(0, 0, config::width, config::height);
+    glViewport(0, 0, pWidth, pHeight);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     // left, right, bottom, top
-    gluOrtho2D(-0.5, 0.5, 0.5, -0.5);
+    gluOrtho2D(-1, 1, 1, -1);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -324,13 +339,13 @@ void Display::setup_grid_buffers() {
 void Display::setup_grid_vertices(vec2s *vertices) {
     // setup vertices
     // iterate over the number of cells
-    for (unsigned int y = 0, idx = 0; y < config::rows; y++) {
-        for (unsigned int x = 0; x < config::cols; ++x) {
+    for (unsigned int y = 0, idx = 0; y < mGridVerticesY; y++) {
+        for (unsigned int x = 0; x < mGridVerticesX; ++x) {
             // vertices live in an (-1, 1) tridimensional space
             // we need to calculate the position of each vertice inside a 2d
             // grid top left
-            vertices[idx] = vec2s(-1.0f + x * (2.0f / config::cols),
-                                  -1.0f + y * (2.0f / config::rows), false);
+            vertices[idx] = vec2s(-1.0f + x * (2.0f / mGridVerticesX),
+                                  -1.0f + y * (2.0f / mGridVerticesY), false);
             idx++;
         }
     }
