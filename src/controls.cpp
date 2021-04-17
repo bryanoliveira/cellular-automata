@@ -8,9 +8,11 @@ namespace controls {
 bool paused = true;
 bool singleStep = false;
 float center[] = {0.0, 0.0};
-float scale = 1.0;
 float rotate_x = 0.0;
 float rotate_y = 0.0;
+float scale = 1.0;
+float minScale = 1.0;
+float maxScale = 10.0;
 
 // private
 int mouseOldX;
@@ -43,6 +45,11 @@ void mouse(int button, int state, int x, int y) {
     // scroll down
     if (button == 4)
         scale = (1e-2 + scale) * scaleFactor;
+
+    if (scale < minScale)
+        scale = minScale;
+    else if (scale > maxScale)
+        scale = maxScale;
 
     mouseOldX = x;
     mouseOldY = y;

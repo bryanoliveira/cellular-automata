@@ -26,6 +26,11 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     mRenderInfo.cellsPerVerticeX = config::cols / mRenderInfo.numVerticesX;
     mRenderInfo.cellsPerVerticeY = config::rows / mRenderInfo.numVerticesY;
 
+    // config min and max scale
+    controls::minScale = 1;
+    controls::maxScale =
+        std::max(mRenderInfo.cellsPerVerticeX, mRenderInfo.cellsPerVerticeY);
+
     // will we be using only gpu?
     Display::mGpuOnly = !pCpuOnly;
 
@@ -157,9 +162,14 @@ void Display::update_grid_buffers_cpu() {
         mGridVertices[idx].state = 0;
     }
 
+    unsigned int sectionSizeX = 0; //(config::cols / controls::scale) / 2;
+    unsigned int sectionSizeY = 0; //(config::rows / controls::scale) / 2;
+    std::cout << sectionSizeX << " " << sectionSizeY << std::endl;
+
     // update vertice states
-    for (unsigned int y = 0; y < config::rows; y++) {
-        for (unsigned int x = 0; x < config::cols; ++x) {
+    for (unsigned int y = sectionSizeY; y < config::rows - sectionSizeY; y++) {
+        for (unsigned int x = sectionSizeX; x < config::cols - sectionSizeX;
+             ++x) {
             unsigned int idx = y * config::cols + x;
             if (grid[idx]) {
                 unsigned int vx = x / mRenderInfo.cellsPerVerticeX;
