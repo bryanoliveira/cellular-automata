@@ -124,7 +124,7 @@ void loop() {
         gAutomata->update_grid_buffers();
 
         // display current grid
-        gDisplay->draw(logEnabled);
+        gDisplay->draw(logEnabled, gIterationsPerSecond);
     }
 
     // compute next grid

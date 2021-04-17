@@ -85,7 +85,7 @@ void Display::stop() {
 /**
  * Draws on screen by iterating on the grid, the naive way.
  */
-void Display::draw_naive(bool logEnabled) {
+void Display::draw_naive(bool logEnabled, unsigned long itsPerSecond) {
     // draw grid without proper OpenGL Buffers, the naive way
     // glClear(GL_COLOR_BUFFER_BIT);
 
@@ -114,14 +114,14 @@ void Display::draw_naive(bool logEnabled) {
     glutSwapBuffers();
     glutPostRedisplay();
     if (logEnabled)
-        calc_frameRate();
+        update_title(itsPerSecond);
 }
 
 /**
  * Draws on screen using OpenGL buffers, which is much faster.
  * Requires that the buffers are updated before this function is called.
  */
-void Display::draw(bool logEnabled) {
+void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     // use configured shaders
@@ -141,7 +141,7 @@ void Display::draw(bool logEnabled) {
     glutSwapBuffers();
     glutPostRedisplay();
     if (logEnabled)
-        calc_frameRate();
+        update_title(itsPerSecond);
 }
 
 // this method is implemented here so it can access the vertice array directly
@@ -161,11 +161,12 @@ void Display::update_grid_buffers_cpu() {
     for (unsigned int y = 0; y < config::rows; y++) {
         for (unsigned int x = 0; x < config::cols; ++x) {
             unsigned int idx = y * config::cols + x;
-            unsigned int vx = x / mRenderInfo.cellsPerVerticeX;
-            unsigned int vy = y / mRenderInfo.cellsPerVerticeY;
-            mGridVertices[vy * mRenderInfo.numVerticesX + vx].state +=
-                float(grid[idx]) /
-                (mRenderInfo.cellsPerVerticeX * mRenderInfo.cellsPerVerticeY);
+            if (grid[idx]) {
+                unsigned int vx = x / mRenderInfo.cellsPerVerticeX;
+                unsigned int vy = y / mRenderInfo.cellsPerVerticeY;
+                mGridVertices[vy * mRenderInfo.numVerticesX + vx].state =
+                    int(grid[idx]);
+            }
         }
     }
 
@@ -176,6 +177,15 @@ void Display::update_grid_buffers_cpu() {
                  GL_STATIC_DRAW);
     // unbind VBO
     glBindBuffer(GL_ARRAY_BUFFER, mGridVBO);
+}
+
+void Display::update_title(unsigned long itsPerSecond) {
+    std::ostringstream title;
+    title << config::programName << " | " << config::patternFileName << " | "
+          << config::rows << "x" << config::cols << " | " << std::fixed
+          << std::setprecision(2) << controls::scale << "x | " << itsPerSecond
+          << " it/s";
+    glutSetWindowTitle(title.str().c_str());
 }
 
 void Display::reshape(int pWidth, int pHeight) {
@@ -192,36 +202,13 @@ void Display::reshape(int pWidth, int pHeight) {
     glutPostRedisplay();
 }
 
-void Display::calc_frameRate() {
-    static clock_t delta_ticks;
-    static clock_t current_ticks = 0;
-    static clock_t fps = 0;
-
-    // init clock if needed
-    if (current_ticks == 0)
-        current_ticks = clock();
-
-    // the time, in ms, that took to render the scene
-    delta_ticks = clock() - current_ticks;
-    if (delta_ticks > 0)
-        fps = CLOCKS_PER_SEC / delta_ticks;
-
-    std::ostringstream title;
-    title << config::programName << " | " << config::patternFileName << " | "
-          << config::rows << "x" << config::cols << " | " << std::fixed
-          << std::setprecision(2) << controls::scale << "x | " << fps << " fps";
-    glutSetWindowTitle(title.str().c_str());
-
-    // get clock for the next call
-    current_ticks = clock();
-}
-
 void Display::setup_shader_program() {
     // define shaders
     const char *vertexShaderSource =
         "#version 460 core\n"
         "layout (location = 0) in vec2 posA;\n"
-        "layout (location = 1) in float state;\n"
+        // implicit int->float conversion
+        "layout (location = 1) in int state;\n"
         "out float v_state;\n"
         "void main() {\n"
         "   gl_Position = vec4(posA.x, posA.y, 0, 1.0);\n"
@@ -318,15 +305,15 @@ void Display::setup_grid_buffers() {
 
     // tell OpenGL how to interpret the vertex buffer data
     // params:
-    //      *location* of the position vertex (as in the vertex shader)
-    //      size of the vertex attribute, which is a vec2s (size 2)
-    //      type of each attribute (vec2s is made of floats)
-    //      use_normalization?
-    //      stride of each position vertex in the array. It could be 0 as data
+    //      - *location* of the position vertex (as in the vertex shader)
+    //      - size of the vertex attribute, which is a vec2s (size 2)
+    //      - type of each attribute (vec2s is made of floats)
+    //      - use_normalization?
+    //      - stride of each position vertex in the array. It could be 0 as data
     //      is tightly packed. offset in bytes where the data start in the
     //      buffer
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vec2s), (void *)0);
-    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(vec2s),
+    glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, sizeof(vec2s),
                           (void *)(2 * sizeof(float)));
     // enable the vertex attributes ixn location 0 for the currently bound VBO
     glEnableVertexAttribArray(0);

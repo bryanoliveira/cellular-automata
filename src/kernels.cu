@@ -85,11 +85,15 @@ __global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
          y < rows - 1; y += stride.y) {
         for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x + 1;
              x < cols - 1; x += stride.x) {
-            unsigned int vx = x / cellsPerVerticeX;
-            unsigned int vy = y / cellsPerVerticeY;
-            float cellsPerVertice = cellsPerVerticeX * cellsPerVerticeY;
-            atomicAdd(&gridVertices[vy * numVerticesX + vx].state,
-                      float(grid[y * cols + x]) / cellsPerVertice);
+            // try avoiding further operations when not needed
+            if (grid[y * cols + x]) {
+                unsigned int vx = x / cellsPerVerticeX;
+                unsigned int vy = y / cellsPerVerticeY;
+                // no need to be atomic on this read
+                if (gridVertices[vy * numVerticesX + vx].state == 0)
+                    atomicMax(&gridVertices[vy * numVerticesX + vx].state,
+                              (int)grid[y * cols + x]);
+            }
         }
     }
 }

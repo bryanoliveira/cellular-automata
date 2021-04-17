@@ -7,8 +7,8 @@
 
 typedef struct svec2s {
     float x, y;
-    float state;
-    svec2s(float _x, float _y, float _s) : x(_x), y(_y), state(_s){};
+    int state;
+    svec2s(float _x, float _y, int _s) : x(_x), y(_y), state(_s){};
 } vec2s;
 
 typedef struct sGridRenderInfo {
@@ -25,9 +25,9 @@ class Display {
     ~Display();
     void start();
     void stop();
-    void draw(bool logEnabled = false);
+    void draw(bool logEnabled = false, unsigned long itsPerSecond = 0);
     void update_grid_buffers_cpu();
-    void draw_naive(bool logEnabled = false);
+    void draw_naive(bool logEnabled = false, unsigned long itsPerSecond = 0);
     // cuda code may need to register this buffer
     unsigned int const &grid_vbo() const { return mGridVBO; }
     GridRenderInfo const &get_grid_render_info() const { return mRenderInfo; }
@@ -42,7 +42,7 @@ class Display {
     bool mGpuOnly;
 
     static void reshape(int pWidth, int pHeight);
-    void calc_frameRate();
+    void update_title(unsigned long itsPerSecond);
     void setup_shader_program();
     void setup_grid_buffers();
     void setup_grid_vertices(vec2s *vertices);
