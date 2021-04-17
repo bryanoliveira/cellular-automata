@@ -25,7 +25,7 @@
 
 #include "automata_interface.hpp"
 #include "automata_base_cpu.hpp"
-#include "automata_count_gpu.cuh"
+#include "automata_base_gpu.cuh"
 #include "config.hpp"
 #include "display.hpp"
 #include "pattern.hpp"
@@ -75,10 +75,11 @@ int main(int argc, char **argv) {
         });
     else if (config::render)
         // the GPU implementation updates the VBO using the CUDA<>GL interop
-        gAutomata = new gpu::CountAutomata(randSeed, &gLiveLogBuffer,
-                                           &gDisplay->grid_vbo());
+        gAutomata = new gpu::AutomataBase(randSeed, &gLiveLogBuffer,
+                                          &(gDisplay->grid_vbo()),
+                                          &(gDisplay->get_grid_render_info()));
     else
-        gAutomata = new gpu::CountAutomata(randSeed, &gLiveLogBuffer);
+        gAutomata = new gpu::AutomataBase(randSeed, &gLiveLogBuffer);
 
     load_pattern(config::patternFileName);
 

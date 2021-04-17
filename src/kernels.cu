@@ -74,16 +74,36 @@ __global__ void k_init_grid(bool *grid, unsigned int rows, unsigned int cols,
 }
 
 __global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
-                                      unsigned int rows, unsigned int cols) {
+                                      unsigned int rows, unsigned int cols,
+                                      unsigned int numVerticesX,
+                                      unsigned int cellsPerVerticeX,
+                                      unsigned int cellsPerVerticeY) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
-    for (int y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
-         y += stride.y) {
-        for (int x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
-             x += stride.x) {
-            int idx = y * cols + x;
-            gridVertices[idx].state = (float)grid[idx];
+    for (unsigned int y = blockDim.y * blockIdx.y + threadIdx.y + 1;
+         y < rows - 1; y += stride.y) {
+        for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x + 1;
+             x < cols - 1; x += stride.x) {
+            unsigned int vx = x / cellsPerVerticeX;
+            unsigned int vy = y / cellsPerVerticeY;
+            float cellsPerVertice = cellsPerVerticeX * cellsPerVerticeY;
+            atomicAdd(&gridVertices[vy * numVerticesX + vx].state,
+                      float(grid[y * cols + x]) / cellsPerVertice);
+        }
+    }
+}
+
+__global__ void k_reset_grid_buffers(vec2s *gridVertices,
+                                     unsigned int numVerticesX,
+                                     unsigned int numVerticesY) {
+    dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+
+    for (unsigned int y = blockDim.y * blockIdx.y + threadIdx.y;
+         y < numVerticesY; y += stride.y) {
+        for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x;
+             x < numVerticesX; x += stride.x) {
+            gridVertices[y * numVerticesX + x].state = 0;
         }
     }
 }

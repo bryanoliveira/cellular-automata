@@ -17,17 +17,14 @@
  */
 Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     // define sizes & proportions
-    mGridVerticesX =
+    mRenderInfo.numVerticesX =
         config::cols > config::width ? config::width : config::cols;
-    mGridVerticesY =
+    mRenderInfo.numVerticesY =
         config::rows > config::height ? config::height : config::rows;
-    mNumGridVertices = mGridVerticesX * mGridVerticesY;
-    mCellsPerVerticeX = config::cols / mGridVerticesX;
-    mCellsPerVerticeY = config::rows / mGridVerticesY;
-
-    std::cout << config::rows << " " << config::cols << " " << mGridVerticesX
-              << " " << mGridVerticesY << " " << mNumGridVertices << " "
-              << mCellsPerVerticeX << " " << mCellsPerVerticeY << std::endl;
+    mRenderInfo.numVertices =
+        mRenderInfo.numVerticesX * mRenderInfo.numVerticesY;
+    mRenderInfo.cellsPerVerticeX = config::cols / mRenderInfo.numVerticesX;
+    mRenderInfo.cellsPerVerticeY = config::rows / mRenderInfo.numVerticesY;
 
     // will we be using only gpu?
     Display::mGpuOnly = !pCpuOnly;
@@ -135,7 +132,7 @@ void Display::draw(bool logEnabled) {
     //      the OpenGL primitive we will draw
     //      the starting index of the vertex array
     //      how many vertices to draw (a square has 4 vertices)
-    glDrawArrays(GL_POINTS, 0, mNumGridVertices);
+    glDrawArrays(GL_POINTS, 0, mRenderInfo.numVertices);
     // unbind VAO
     glBindVertexArray(0);
 
@@ -155,13 +152,20 @@ void Display::update_grid_buffers_cpu() {
         exit(EXIT_FAILURE);
     }
 
+    // reset vertices
+    for (unsigned int idx = 0; idx < mRenderInfo.numVertices; idx++) {
+        mGridVertices[idx].state = 0;
+    }
+
     // update vertice states
     for (unsigned int y = 0; y < config::rows; y++) {
         for (unsigned int x = 0; x < config::cols; ++x) {
             unsigned int idx = y * config::cols + x;
-            unsigned int vx = x / mCellsPerVerticeX;
-            unsigned int vy = y / mCellsPerVerticeY;
-            mGridVertices[vy * mGridVerticesX + vx].state = (float)grid[idx];
+            unsigned int vx = x / mRenderInfo.cellsPerVerticeX;
+            unsigned int vy = y / mRenderInfo.cellsPerVerticeY;
+            mGridVertices[vy * mRenderInfo.numVerticesX + vx].state +=
+                float(grid[idx]) /
+                (mRenderInfo.cellsPerVerticeX * mRenderInfo.cellsPerVerticeY);
         }
     }
 
@@ -288,11 +292,11 @@ void Display::setup_shader_program() {
 void Display::setup_grid_buffers() {
     // we should probably free the vertices arrays at Display::stop, but we're
     // destroying the program after they are no longer needed
-    mGridVerticesSize = Display::mNumGridVertices * sizeof(vec2s);
+    mGridVerticesSize = mRenderInfo.numVertices * sizeof(vec2s);
     mGridVertices = (vec2s *)malloc(mGridVerticesSize);
 
     // configure vertices
-    Display::setup_grid_vertices(mGridVertices);
+    setup_grid_vertices(mGridVertices);
 
     // configure the Vertex Array Object so we configure our objects only once
     glGenVertexArrays(1, &mGridVAO);
@@ -332,20 +336,21 @@ void Display::setup_grid_buffers() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // free RAM since vertices will be updated in GPU
-    if (Display::mGpuOnly)
+    if (mGpuOnly)
         free(mGridVertices);
 }
 
 void Display::setup_grid_vertices(vec2s *vertices) {
     // setup vertices
     // iterate over the number of cells
-    for (unsigned int y = 0, idx = 0; y < mGridVerticesY; y++) {
-        for (unsigned int x = 0; x < mGridVerticesX; ++x) {
+    for (unsigned int y = 0, idx = 0; y < mRenderInfo.numVerticesY; y++) {
+        for (unsigned int x = 0; x < mRenderInfo.numVerticesX; ++x) {
             // vertices live in an (-1, 1) tridimensional space
             // we need to calculate the position of each vertice inside a 2d
             // grid top left
-            vertices[idx] = vec2s(-1.0f + x * (2.0f / mGridVerticesX),
-                                  -1.0f + y * (2.0f / mGridVerticesY), false);
+            vertices[idx] =
+                vec2s(-1.0f + x * (2.0f / mRenderInfo.numVerticesX),
+                      -1.0f + y * (2.0f / mRenderInfo.numVerticesY), false);
             idx++;
         }
     }

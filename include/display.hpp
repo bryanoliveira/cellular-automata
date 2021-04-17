@@ -11,6 +11,14 @@ typedef struct svec2s {
     svec2s(float _x, float _y, float _s) : x(_x), y(_y), state(_s){};
 } vec2s;
 
+typedef struct sGridRenderInfo {
+    unsigned int numVertices;
+    unsigned int numVerticesX;
+    unsigned int numVerticesY;
+    unsigned int cellsPerVerticeX;
+    unsigned int cellsPerVerticeY;
+} GridRenderInfo;
+
 class Display {
   public:
     Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly);
@@ -22,6 +30,7 @@ class Display {
     void draw_naive(bool logEnabled = false);
     // cuda code may need to register this buffer
     unsigned int const &grid_vbo() const { return mGridVBO; }
+    GridRenderInfo const &get_grid_render_info() const { return mRenderInfo; }
 
   private:
     unsigned int mShaderProgram;
@@ -29,11 +38,7 @@ class Display {
     unsigned int mGridVBO;
     vec2s *mGridVertices;
     size_t mGridVerticesSize;
-    unsigned int mGridVerticesX;
-    unsigned int mGridVerticesY;
-    unsigned int mNumGridVertices;
-    unsigned int mCellsPerVerticeX;
-    unsigned int mCellsPerVerticeY;
+    GridRenderInfo mRenderInfo;
     bool mGpuOnly;
 
     static void reshape(int pWidth, int pHeight);
