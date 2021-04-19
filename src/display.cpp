@@ -16,6 +16,11 @@
  * Sets up GLUT, GLEW, OpenGL methods and buffers.
  */
 Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
+    if (config::width % 2 == 1 || config::height % 2 == 1) {
+        fprintf(stderr, "Width and Height must be even integers!\n");
+        exit(EXIT_FAILURE);
+    }
+
     // define sizes & proportions
     mRenderInfo.numVerticesX =
         config::cols > config::width ? config::width : config::cols;
@@ -162,20 +167,46 @@ void Display::update_grid_buffers_cpu() {
         mGridVertices[idx].state = 0;
     }
 
-    unsigned int sectionSizeX = 0; //(config::cols / controls::scale) / 2;
-    unsigned int sectionSizeY = 0; //(config::rows / controls::scale) / 2;
-    std::cout << sectionSizeX << " " << sectionSizeY << std::endl;
+    unsigned int sectionSizeX =
+        std::floor(config::cols / float(controls::scale));
+    unsigned int sectionSizeY =
+        std::floor(config::rows / float(controls::scale));
+    unsigned int densityX =
+        std::ceil(sectionSizeX / float(mRenderInfo.numVerticesX));
+    unsigned int densityY =
+        std::ceil(sectionSizeY / float(mRenderInfo.numVerticesY));
+    unsigned int startY = config::rows / 2 - sectionSizeY / 2;
+    unsigned int endY = config::rows / 2 + sectionSizeY / 2;
+    unsigned int startX = config::cols / 2 - sectionSizeX / 2;
+    unsigned int endX = config::cols / 2 + sectionSizeX / 2;
+
+    std::cout << sectionSizeX << " - " << sectionSizeY << " sec xy / " << startX
+              << " - " << endX << " x / " << startY << " - " << endY << " y / "
+              << densityX << " - " << densityY << " dens xy / "
+              << sectionSizeX / densityX << " - " << sectionSizeY / densityY
+              << " map xy / " << controls::scale << " scale / "
+              << (endX - startX - 1) / densityX << " maxX / cmaxV "
+              << ((endY - startY - 1) / densityY) * mRenderInfo.numVerticesX +
+                     (endX - 1) / densityX
+              << " - maxV " << mRenderInfo.numVertices << std::endl;
 
     // update vertice states
-    for (unsigned int y = sectionSizeY; y < config::rows - sectionSizeY; y++) {
-        for (unsigned int x = sectionSizeX; x < config::cols - sectionSizeX;
-             ++x) {
+    for (unsigned int y = startY; y < endY; y++) {
+        for (unsigned int x = startX; x < endX; x++) {
+            // the grid index
             unsigned int idx = y * config::cols + x;
+            // if grid state is on
             if (grid[idx]) {
-                unsigned int vx = x / mRenderInfo.cellsPerVerticeX;
-                unsigned int vy = y / mRenderInfo.cellsPerVerticeY;
+                unsigned int vx = (x - startX) / densityX;
+                unsigned int vy = (y - startY) / densityY;
+                // std::cout << vx << " " << vy << " = "
+                //           << vy * mRenderInfo.numVerticesX + vx << " | ";
+                // if (!mGridVertices[vy * mRenderInfo.numVerticesX + vx].state)
+                // if buffer state is off, store the max
                 mGridVertices[vy * mRenderInfo.numVerticesX + vx].state =
-                    int(grid[idx]);
+                    std::max(
+                        mGridVertices[vy * mRenderInfo.numVerticesX + vx].state,
+                        int(grid[idx]));
             }
         }
     }
