@@ -7,9 +7,9 @@ namespace controls {
 // public
 bool paused = true;
 bool singleStep = false;
-float center[] = {0.0, 0.0};
 float rotate_x = 0.0;
 float rotate_y = 0.0;
+float position[] = {0, 0};
 float scale = 1.0;
 float minScale = 1.0;
 float maxScale = 10.0;
@@ -18,7 +18,7 @@ float maxScale = 10.0;
 int mouseOldX;
 int mouseOldY;
 int mouseButtons = 0;
-const float translateFactor = 0.002f;
+const float translateFactor = 0.2f;
 const float scaleFactor = 0.99f;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -31,7 +31,7 @@ void mouse(int button, int state, int x, int y) {
         // middle click (for some reason it doesn't work like the others)
         if (button == GLUT_MIDDLE_BUTTON) {
             // reset
-            center[0] = center[1] = rotate_x = rotate_y = 0;
+            position[0] = position[1] = rotate_x = rotate_y = 0;
             scale = 1;
         }
     } else if (state == GLUT_UP) {
@@ -76,8 +76,8 @@ void motion(int x, int y) {
     // left click
     if (mouseButtons & 1 << GLUT_LEFT_BUTTON) {
         // motion speed should be proportional to scale
-        center[0] += dx * (translateFactor / scale);
-        center[1] += dy * (translateFactor / scale);
+        position[0] += -1 * dx * (translateFactor / scale);
+        position[1] += dy * (translateFactor / scale);
     }
     // right click
     if (mouseButtons & 1 << GLUT_RIGHT_BUTTON) {

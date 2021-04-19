@@ -31,7 +31,7 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     mRenderInfo.cellsPerVerticeX = config::cols / mRenderInfo.numVerticesX;
     mRenderInfo.cellsPerVerticeY = config::rows / mRenderInfo.numVerticesY;
 
-    // config min and max scale
+    // config controls mins and maxes
     controls::minScale = 1;
     controls::maxScale =
         std::max(mRenderInfo.cellsPerVerticeX, mRenderInfo.cellsPerVerticeY);
@@ -175,14 +175,26 @@ void Display::update_grid_buffers_cpu() {
         std::ceil(sectionSizeX / float(mRenderInfo.numVerticesX));
     unsigned int densityY =
         std::ceil(sectionSizeY / float(mRenderInfo.numVerticesY));
-    unsigned int startY = config::rows / 2 - sectionSizeY / 2;
-    unsigned int endY = config::rows / 2 + sectionSizeY / 2;
-    unsigned int startX = config::cols / 2 - sectionSizeX / 2;
-    unsigned int endX = config::cols / 2 + sectionSizeX / 2;
+    int startY = (config::rows / 2 + controls::position[1]) - sectionSizeY / 2;
+    int endY =
+        (config::rows / 2 + controls::position[1]) / 2 + sectionSizeY / 2;
+    int startX = (config::cols / 2 + controls::position[0]) - sectionSizeX / 2;
+    int endX = (config::cols / 2 + controls::position[0]) + sectionSizeX / 2;
 
-    std::cout << sectionSizeX << " - " << sectionSizeY << " sec xy / " << startX
-              << " - " << endX << " x / " << startY << " - " << endY << " y / "
-              << densityX << " - " << densityY << " dens xy / "
+    // fix out of border positions
+    if (startX < 0)
+        startX = 0;
+    if (endX > config::cols)
+        endX = config::cols;
+    if (startY < 0)
+        startY = 0;
+    if (endY > config::rows)
+        endY = config::rows;
+
+    std::cout << controls::position[0] << " x " << controls::position[1]
+              << " | " << sectionSizeX << " - " << sectionSizeY << " sec xy / "
+              << startX << " - " << endX << " x / " << startY << " - " << endY
+              << " y / " << densityX << " - " << densityY << " dens xy / "
               << sectionSizeX / densityX << " - " << sectionSizeY / densityY
               << " map xy / " << controls::scale << " scale / "
               << (endX - startX - 1) / densityX << " maxX / cmaxV "

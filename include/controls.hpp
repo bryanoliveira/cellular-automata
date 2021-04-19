@@ -5,9 +5,9 @@ namespace controls {
 
 extern bool paused;
 extern bool singleStep;
-extern float center[];
 extern float rotate_x;
 extern float rotate_y;
+extern float position[]; // must be float or translation is too fast
 extern float scale;
 extern float minScale;
 extern float maxScale;
