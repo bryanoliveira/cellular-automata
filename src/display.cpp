@@ -175,21 +175,37 @@ void Display::update_grid_buffers_cpu() {
         std::ceil(sectionSizeX / float(mRenderInfo.numVerticesX));
     unsigned int densityY =
         std::ceil(sectionSizeY / float(mRenderInfo.numVerticesY));
+
+    int startX = (config::cols / 2 + controls::position[0]) - sectionSizeX / 2;
+    int endX = (config::cols / 2 + controls::position[0]) + sectionSizeX / 2;
     int startY = (config::rows / 2 + controls::position[1]) - sectionSizeY / 2;
     int endY =
         (config::rows / 2 + controls::position[1]) / 2 + sectionSizeY / 2;
-    int startX = (config::cols / 2 + controls::position[0]) - sectionSizeX / 2;
-    int endX = (config::cols / 2 + controls::position[0]) + sectionSizeX / 2;
+
+    unsigned int gridStartX, gridEndX, gridStartY, gridEndY, vStartX, vEndX,
+        vStartY, vEndY;
 
     // fix out of border positions
+    // startX
     if (startX < 0)
-        startX = 0;
-    if (endX > config::cols)
-        endX = config::cols;
+        gridStartX = vStartX = 0;
+    else
+        gridStartX = vStartX = startX;
+    // endX
+    if (endX > (int)config::cols)
+        gridEndX = vEndX = config::cols;
+    else
+        gridEndX = vEndX = endX;
+    // startY
     if (startY < 0)
-        startY = 0;
-    if (endY > config::rows)
-        endY = config::rows;
+        gridStartY = vStartY = 0;
+    else
+        gridStartY = vStartY = startY;
+    // endY
+    if (endY > (int)config::rows)
+        gridEndY = vEndY = config::rows;
+    else
+        gridEndY = vEndY = endY;
 
     std::cout << controls::position[0] << " x " << controls::position[1]
               << " | " << sectionSizeX << " - " << sectionSizeY << " sec xy / "
@@ -203,14 +219,14 @@ void Display::update_grid_buffers_cpu() {
               << " - maxV " << mRenderInfo.numVertices << std::endl;
 
     // update vertice states
-    for (unsigned int y = startY; y < endY; y++) {
-        for (unsigned int x = startX; x < endX; x++) {
+    for (unsigned int y = gridStartY; y < gridEndY; y++) {
+        for (unsigned int x = gridStartX; x < gridEndX; x++) {
             // the grid index
             unsigned int idx = y * config::cols + x;
             // if grid state is on
             if (grid[idx]) {
-                unsigned int vx = (x - startX) / densityX;
-                unsigned int vy = (y - startY) / densityY;
+                unsigned int vx = (x - vStartX) / densityX;
+                unsigned int vy = (y - vStartY) / densityY;
                 // std::cout << vx << " " << vy << " = "
                 //           << vy * mRenderInfo.numVerticesX + vx << " | ";
                 // if (!mGridVertices[vy * mRenderInfo.numVerticesX + vx].state)
@@ -235,9 +251,10 @@ void Display::update_grid_buffers_cpu() {
 void Display::update_title(unsigned long itsPerSecond) {
     std::ostringstream title;
     title << config::programName << " | " << config::patternFileName << " | "
-          << config::rows << "x" << config::cols << " | " << std::fixed
-          << std::setprecision(2) << controls::scale << "x | " << itsPerSecond
-          << " it/s";
+          << config::rows << "x" << config::cols << " | pos "
+          << (int)controls::position[0] << "x" << (int)controls::position[1]
+          << " | " << std::fixed << std::setprecision(2) << controls::scale
+          << "x | " << itsPerSecond << " it/s";
     glutSetWindowTitle(title.str().c_str());
 }
 
@@ -390,7 +407,7 @@ void Display::setup_grid_vertices(vec2s *vertices) {
             // grid top left
             vertices[idx] =
                 vec2s(-1.0f + x * (2.0f / mRenderInfo.numVerticesX),
-                      -1.0f + y * (2.0f / mRenderInfo.numVerticesY), false);
+                      1.0f - y * (2.0f / mRenderInfo.numVerticesY), false);
             idx++;
         }
     }

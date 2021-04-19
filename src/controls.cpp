@@ -18,7 +18,7 @@ float maxScale = 10.0;
 int mouseOldX;
 int mouseOldY;
 int mouseButtons = 0;
-const float translateFactor = 0.2f;
+const float translateFactor = 1.2f;
 const float scaleFactor = 0.99f;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -76,8 +76,8 @@ void motion(int x, int y) {
     // left click
     if (mouseButtons & 1 << GLUT_LEFT_BUTTON) {
         // motion speed should be proportional to scale
-        position[0] += -1 * dx * (translateFactor / scale);
-        position[1] += dy * (translateFactor / scale);
+        position[0] -= dx * (translateFactor / scale);
+        position[1] -= dy * (translateFactor / scale);
     }
     // right click
     if (mouseButtons & 1 << GLUT_RIGHT_BUTTON) {
