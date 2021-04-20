@@ -167,53 +167,52 @@ void Display::update_grid_buffers_cpu() {
         mGridVertices[idx].state = 0;
     }
 
-    unsigned int sectionSizeX =
-        std::floor(config::cols / float(controls::scale));
-    unsigned int sectionSizeY =
-        std::floor(config::rows / float(controls::scale));
-    unsigned int densityX =
-        std::ceil(sectionSizeX / float(mRenderInfo.numVerticesX));
-    unsigned int densityY =
-        std::ceil(sectionSizeY / float(mRenderInfo.numVerticesY));
+    // NOTE: when one of the row/col dimensions is smaller and the vertices
+    // dimensions are square, the mapping will not use all of the vertices from
+    // that dimension
+    float sectionSizeX = std::floor(config::cols / float(controls::scale));
+    float sectionSizeY = std::floor(config::rows / float(controls::scale));
+    float densityX = std::ceil(sectionSizeX / float(mRenderInfo.numVerticesX));
+    float densityY = std::ceil(sectionSizeY / float(mRenderInfo.numVerticesY));
 
-    int startX = (config::cols / 2 + controls::position[0]) - sectionSizeX / 2;
-    int endX = (config::cols / 2 + controls::position[0]) + sectionSizeX / 2;
-    int startY = (config::rows / 2 + controls::position[1]) - sectionSizeY / 2;
-    int endY =
-        (config::rows / 2 + controls::position[1]) / 2 + sectionSizeY / 2;
+    int startX = (config::cols / 2.0 + std::abs(controls::position[0])) -
+                 sectionSizeX / 2;
+    int endX = (config::cols / 2.0 + std::abs(controls::position[0])) +
+               sectionSizeX / 2;
+    int startY = (config::rows / 2.0 + std::abs(controls::position[1])) -
+                 sectionSizeY / 2;
+    int endY = (config::rows / 2.0 + std::abs(controls::position[1])) +
+               sectionSizeY / 2;
 
     unsigned int gridStartX, gridEndX, gridStartY, gridEndY, vStartX, vEndX,
         vStartY, vEndY;
 
     // fix out of border positions
     // startX
-    if (startX < 0)
-        gridStartX = vStartX = 0;
-    else
-        gridStartX = vStartX = startX;
+    gridStartX = startX;
+    vStartX = controls::position[0] < 0 ? startX / controls::scale : 0;
     // endX
     if (endX > (int)config::cols)
         gridEndX = vEndX = config::cols;
     else
         gridEndX = vEndX = endX;
     // startY
-    if (startY < 0)
-        gridStartY = vStartY = 0;
-    else
-        gridStartY = vStartY = startY;
+    gridStartY = startY;
+    vStartY = controls::position[1] < 0 ? startX / controls::scale : 0;
     // endY
     if (endY > (int)config::rows)
         gridEndY = vEndY = config::rows;
     else
         gridEndY = vEndY = endY;
 
-    std::cout << controls::position[0] << " x " << controls::position[1]
-              << " | " << sectionSizeX << " - " << sectionSizeY << " sec xy / "
-              << startX << " - " << endX << " x / " << startY << " - " << endY
-              << " y / " << densityX << " - " << densityY << " dens xy / "
-              << sectionSizeX / densityX << " - " << sectionSizeY / densityY
-              << " map xy / " << controls::scale << " scale / "
-              << (endX - startX - 1) / densityX << " maxX / cmaxV "
+    std::cout << std::endl
+              << controls::position[0] << "," << controls::position[1]
+              << " / sec xy " << sectionSizeX << "," << sectionSizeY << " / x"
+              << startX << "," << endX << " / y " << startY << "," << endY
+              << " / dens xy " << densityX << "," << densityY << "  / map xy"
+              << sectionSizeX / densityX << ", " << sectionSizeY / densityY
+              << " / scale " << controls::scale << " / maxX "
+              << (endX - startX - 1) / densityX << " / cmaxV "
               << ((endY - startY - 1) / densityY) * mRenderInfo.numVerticesX +
                      (endX - 1) / densityX
               << " - maxV " << mRenderInfo.numVertices << std::endl;
@@ -225,14 +224,16 @@ void Display::update_grid_buffers_cpu() {
             unsigned int idx = y * config::cols + x;
             // if grid state is on
             if (grid[idx]) {
-                unsigned int vx = (x - vStartX) / densityX;
-                unsigned int vy = (y - vStartY) / densityY;
+                unsigned int vx = (x - gridStartX) / densityX + vStartX;
+                unsigned int vy = (y - gridStartY) / densityY + vStartY;
                 // std::cout << vx << " " << vy << " = "
                 //           << vy * mRenderInfo.numVerticesX + vx << " | ";
                 // if (!mGridVertices[vy * mRenderInfo.numVerticesX + vx].state)
                 // if buffer state is off, store the max
-                mGridVertices[vy * mRenderInfo.numVerticesX + vx].state =
-                    std::max(
+                if (vx < mRenderInfo.numVerticesX &&
+                    vy < mRenderInfo.numVerticesY)
+                    mGridVertices[vy * mRenderInfo.numVerticesX + vx]
+                        .state = std::max(
                         mGridVertices[vy * mRenderInfo.numVerticesX + vx].state,
                         int(grid[idx]));
             }

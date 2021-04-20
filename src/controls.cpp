@@ -18,7 +18,7 @@ float maxScale = 10.0;
 int mouseOldX;
 int mouseOldY;
 int mouseButtons = 0;
-const float translateFactor = 1.2f;
+const float translateFactor = 1.8f;
 const float scaleFactor = 0.99f;
 
 ////////////////////////////////////////////////////////////////////////////////
