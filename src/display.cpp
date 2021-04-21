@@ -170,52 +170,97 @@ void Display::update_grid_buffers_cpu() {
     // NOTE: when one of the row/col dimensions is smaller and the vertices
     // dimensions are square, the mapping will not use all of the vertices from
     // that dimension
-    float sectionSizeX = std::floor(config::cols / float(controls::scale));
-    float sectionSizeY = std::floor(config::rows / float(controls::scale));
+    // the considered section size should be of the same aspect ratio as the
+    // vector matrix
+
+    // section size will start with the whole grid (scale = 1)
+    float sectionSizeX = std::ceil(config::cols / float(controls::scale));
+    float sectionSizeY = std::ceil(config::rows / float(controls::scale));
+    // how many grid cells will be mapped to each vertice
     float densityX = std::ceil(sectionSizeX / float(mRenderInfo.numVerticesX));
     float densityY = std::ceil(sectionSizeY / float(mRenderInfo.numVerticesY));
+    // the indices of the considered grid sections
+    int startX = (config::cols / 2.0) - sectionSizeX / 2;
+    int endX = (config::cols / 2.0) + sectionSizeX / 2;
+    int startY = (config::rows / 2.0) - sectionSizeY / 2;
+    int endY = (config::rows / 2.0) + sectionSizeY / 2;
 
-    int startX = (config::cols / 2.0 + std::abs(controls::position[0])) -
-                 sectionSizeX / 2;
-    int endX = (config::cols / 2.0 + std::abs(controls::position[0])) +
-               sectionSizeX / 2;
-    int startY = (config::rows / 2.0 + std::abs(controls::position[1])) -
-                 sectionSizeY / 2;
-    int endY = (config::rows / 2.0 + std::abs(controls::position[1])) +
-               sectionSizeY / 2;
+    int gridStartX, gridEndX, gridStartY, gridEndY;
+    // always consider all vertices and limit the translation to the grid bounds
+    int vStartX = 0, vEndX = mRenderInfo.numVerticesX, vStartY = 0,
+        vEndY = mRenderInfo.numVerticesY;
 
-    unsigned int gridStartX, gridEndX, gridStartY, gridEndY, vStartX, vEndX,
-        vStartY, vEndY;
+    // calculate x translation
+    if (controls::position[0] < 0) {
+        // make the start of the grid visible by considering the beginning of
+        // the vector as indicated by the position - note: position is negative
+        gridStartX = startX + controls::position[0];
+        if (gridStartX < 0) {
+            gridStartX = 0;
+            // limit the knob
+            controls::position[0] = (gridStartX - startX);
+        }
+        // only modify the end limit by the amount modified on the beginning
+        // note: this will not be negative
+        gridEndX = endX - (gridStartX - startX);
+    } else {
+        // if position is positive the grid will be at the left of the canvas
+        // so we extend the considered end of the vector
+        gridEndX = endX + controls::position[0];
+        if (gridEndX > (int)config::cols) {
+            gridEndX = config::cols;
+            // limit the knob
+            controls::position[0] = (gridEndX - endX);
+        }
+        // and crop the start position by the amount modified on the end
+        gridStartX = startX + (gridEndX - endX);
+    }
 
-    // fix out of border positions
-    // startX
-    gridStartX = startX;
-    vStartX = controls::position[0] < 0 ? startX / controls::scale : 0;
-    // endX
-    if (endX > (int)config::cols)
-        gridEndX = vEndX = config::cols;
-    else
-        gridEndX = vEndX = endX;
-    // startY
-    gridStartY = startY;
-    vStartY = controls::position[1] < 0 ? startX / controls::scale : 0;
-    // endY
-    if (endY > (int)config::rows)
-        gridEndY = vEndY = config::rows;
-    else
-        gridEndY = vEndY = endY;
+    // calculate y translation
+    if (controls::position[1] < 0) {
+        // make the start of the grid visible by considering the beginning of
+        // the vector as indicated by the position - note: position is negative
+        gridStartY = startY + controls::position[1];
+        if (gridStartY < 0) {
+            gridStartY = 0;
+            // limit the knob
+            controls::position[1] = gridStartY - startY;
+        }
+        // only modify the end limit by the amount modified on the beginning
+        // note: this will not be negative
+        gridEndY = endY - (gridStartY - startY);
+    } else {
+        // if position is positive the grid will be at the left of the canvas
+        // so we extend the considered end of the vector
+        gridEndY = endY + controls::position[1];
+        if (gridEndY > (int)config::rows) {
+            gridEndY = config::rows;
+            // limit the knob
+            controls::position[1] = gridEndY - endY;
+        }
+        // and crop the start position by the amount modified on the end
+        gridStartY = startY + (gridEndY - endY);
+    }
 
-    std::cout << std::endl
-              << controls::position[0] << "," << controls::position[1]
-              << " / sec xy " << sectionSizeX << "," << sectionSizeY << " / x"
-              << startX << "," << endX << " / y " << startY << "," << endY
-              << " / dens xy " << densityX << "," << densityY << "  / map xy"
-              << sectionSizeX / densityX << ", " << sectionSizeY / densityY
-              << " / scale " << controls::scale << " / maxX "
-              << (endX - startX - 1) / densityX << " / cmaxV "
-              << ((endY - startY - 1) / densityY) * mRenderInfo.numVerticesX +
-                     (endX - 1) / densityX
-              << " - maxV " << mRenderInfo.numVertices << std::endl;
+    std::cout
+        << std::endl
+        << "pos xy " << controls::position[0] << "," << controls::position[1] //
+        << " / sec xy " << sectionSizeX << "," << sectionSizeY                //
+        << " / grid x " << gridStartX << "-" << gridEndX                      //
+        << " / grid y " << gridStartY << "-"
+        << gridEndY //
+        // << " / vert x " << vStartX << "-" << vEndX //
+        // << " / vert y " << vStartY << "-" << vEndY          //
+        // << " / dens xy " << densityX << "," << densityY //
+        //   << " / map xy" << sectionSizeX / densityX << ", "
+        //   << sectionSizeY / densityY //
+        << " / maxX "
+        << (gridEndX - 1 - gridStartX) / densityX + vStartX
+        // << " / cmaxV "
+        //   << ((endY - startY - 1) / densityY) * mRenderInfo.numVerticesX +
+        //          (endX - 1) / densityX
+        // << " - maxV " << mRenderInfo.numVertices
+        << std::endl;
 
     // update vertice states
     for (unsigned int y = gridStartY; y < gridEndY; y++) {
