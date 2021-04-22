@@ -174,11 +174,11 @@ void Display::update_grid_buffers_cpu() {
     // vector matrix
 
     // section size will start with the whole grid (scale = 1)
-    float sectionSizeX = std::ceil(config::cols / float(controls::scale));
-    float sectionSizeY = std::ceil(config::rows / float(controls::scale));
+    int sectionSizeX = std::ceil(config::cols / float(controls::scale));
+    int sectionSizeY = std::ceil(config::rows / float(controls::scale));
     // how many grid cells will be mapped to each vertice
-    float densityX = std::ceil(sectionSizeX / float(mRenderInfo.numVerticesX));
-    float densityY = std::ceil(sectionSizeY / float(mRenderInfo.numVerticesY));
+    int densityX = std::floor(sectionSizeX / float(mRenderInfo.numVerticesX));
+    int densityY = std::floor(sectionSizeY / float(mRenderInfo.numVerticesY));
     // the indices of the considered grid sections
     int startX = (config::cols / 2.0) - sectionSizeX / 2;
     int endX = (config::cols / 2.0) + sectionSizeX / 2;
