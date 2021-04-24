@@ -4,20 +4,8 @@
 #include "config.hpp"
 #include "controls.hpp"
 #include "grid.hpp"
-
-typedef struct svec2s {
-    float x, y;
-    int state;
-    svec2s(float _x, float _y, int _s) : x(_x), y(_y), state(_s){};
-} vec2s;
-
-typedef struct sGridRenderInfo {
-    unsigned int numVertices;
-    unsigned int numVerticesX;
-    unsigned int numVerticesY;
-    unsigned int cellsPerVerticeX;
-    unsigned int cellsPerVerticeY;
-} GridRenderInfo;
+#include "projection.hpp"
+#include "types.hpp"
 
 class Display {
   public:
@@ -30,22 +18,20 @@ class Display {
     void draw_naive(bool logEnabled = false, unsigned long itsPerSecond = 0);
     // cuda code may need to register this buffer
     unsigned int const &grid_vbo() const { return mGridVBO; }
-    GridRenderInfo const &get_grid_render_info() const { return mRenderInfo; }
 
   private:
     unsigned int mShaderProgram;
     unsigned int mGridVAO;
     unsigned int mGridVBO;
-    vec2s *mGridVertices;
+    fvec2s *mGridVertices;
     size_t mGridVerticesSize;
-    GridRenderInfo mRenderInfo;
     bool mGpuOnly;
 
     static void reshape(int pWidth, int pHeight);
     void update_title(unsigned long itsPerSecond);
     void setup_shader_program();
     void setup_grid_buffers();
-    void setup_grid_vertices(vec2s *vertices);
+    void setup_grid_vertices(fvec2s *vertices);
 
 }; // namespace display
 

@@ -7,17 +7,17 @@
 
 #include "automata_interface.hpp"
 #include "config.hpp"
-#include "display.hpp" // for the vec2s type
 #include "grid.hpp"
 #include "kernels.cuh"
+#include "projection.hpp"
+#include "types.hpp"
 
 namespace gpu {
 
 class AutomataBase : public AutomataInterface {
   public:
     AutomataBase(unsigned long seed, std::ostringstream *const pLiveLogBuffer,
-                 const unsigned int *gridVBO = NULL,
-                 const GridRenderInfo *pRenderInfo = NULL);
+                 const unsigned int *gridVBO = NULL);
     virtual ~AutomataBase();
     virtual void compute_grid(bool logEnabled = false);
     virtual void update_grid_buffers();
@@ -31,7 +31,6 @@ class AutomataBase : public AutomataInterface {
     std::ostringstream *mLiveLogBuffer;
     // rendering stuff
     struct cudaGraphicsResource *mGridVBOResource = NULL;
-    GridRenderInfo mRenderInfo;
 
     virtual void run_evolution_kernel(bool countAliveCells = false);
 };

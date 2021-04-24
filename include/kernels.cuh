@@ -4,8 +4,9 @@
 // this is needed to declare CUDA-specific variable types
 #include <cuda_runtime.h>
 #include <curand_kernel.h> // for the curandStatate type
+#include <stdio.h>
 
-#include "display.hpp" // for the vec2s type
+#include "types.hpp"
 
 #define CUDA_ASSERT(ans)                                                       \
     { cuda_assert((ans), __FILE__, __LINE__); }
@@ -33,13 +34,12 @@ __global__ void k_compute_grid_count_rule(bool *grid, bool *nextGrid,
                                           bool countAliveCells,
                                           unsigned int *activeCellCount);
 
-__global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
+__global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
                                       unsigned int rows, unsigned int cols,
                                       unsigned int numVerticesX,
-                                      unsigned int cellsPerVerticeX,
-                                      unsigned int cellsPerVerticeY);
+                                      uvec2 cellDensity);
 
-__global__ void k_reset_grid_buffers(vec2s *gridVertices,
+__global__ void k_reset_grid_buffers(fvec2s *gridVertices,
                                      unsigned int numVerticesX,
                                      unsigned int numVerticesY);
 

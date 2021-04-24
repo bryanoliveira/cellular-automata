@@ -73,11 +73,10 @@ __global__ void k_init_grid(bool *grid, unsigned int rows, unsigned int cols,
     }
 }
 
-__global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
+__global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
                                       unsigned int rows, unsigned int cols,
                                       unsigned int numVerticesX,
-                                      unsigned int cellsPerVerticeX,
-                                      unsigned int cellsPerVerticeY) {
+                                      uvec2 cellDensity) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
@@ -87,8 +86,8 @@ __global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
              x < cols - 1; x += stride.x) {
             // try avoiding further operations when not needed
             if (grid[y * cols + x]) {
-                unsigned int vx = x / cellsPerVerticeX;
-                unsigned int vy = y / cellsPerVerticeY;
+                unsigned int vx = x / cellDensity.x;
+                unsigned int vy = y / cellDensity.y;
                 // no need to be atomic on this read
                 if (gridVertices[vy * numVerticesX + vx].state == 0)
                     atomicMax(&gridVertices[vy * numVerticesX + vx].state,
@@ -98,7 +97,7 @@ __global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
     }
 }
 
-__global__ void k_reset_grid_buffers(vec2s *gridVertices,
+__global__ void k_reset_grid_buffers(fvec2s *gridVertices,
                                      unsigned int numVerticesX,
                                      unsigned int numVerticesY) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);

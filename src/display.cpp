@@ -21,20 +21,7 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
         exit(EXIT_FAILURE);
     }
 
-    // define sizes & proportions
-    mRenderInfo.numVerticesX =
-        config::cols > config::width ? config::width : config::cols;
-    mRenderInfo.numVerticesY =
-        config::rows > config::height ? config::height : config::rows;
-    mRenderInfo.numVertices =
-        mRenderInfo.numVerticesX * mRenderInfo.numVerticesY;
-    mRenderInfo.cellsPerVerticeX = config::cols / mRenderInfo.numVerticesX;
-    mRenderInfo.cellsPerVerticeY = config::rows / mRenderInfo.numVerticesY;
-
-    // config controls mins and maxes
-    controls::minScale = 1;
-    controls::maxScale =
-        std::max(mRenderInfo.cellsPerVerticeX, mRenderInfo.cellsPerVerticeY);
+    proj::init();
 
     // will we be using only gpu?
     Display::mGpuOnly = !pCpuOnly;
@@ -142,7 +129,7 @@ void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
     //      the OpenGL primitive we will draw
     //      the starting index of the vertex array
     //      how many vertices to draw (a square has 4 vertices)
-    glDrawArrays(GL_POINTS, 0, mRenderInfo.numVertices);
+    glDrawArrays(GL_POINTS, 0, proj::renderInfo.totalVertices);
     // unbind VAO
     glBindVertexArray(0);
 
@@ -162,125 +149,25 @@ void Display::update_grid_buffers_cpu() {
         exit(EXIT_FAILURE);
     }
 
-    // reset vertices
-    for (unsigned int idx = 0; idx < mRenderInfo.numVertices; idx++) {
+    proj::update();
+
+    // reset vertices states
+    for (uint idx = 0; idx < proj::renderInfo.totalVertices; idx++) {
         mGridVertices[idx].state = 0;
     }
 
-    // NOTE: when one of the row/col dimensions is smaller and the vertices
-    // dimensions are square, the mapping will not use all of the vertices from
-    // that dimension
-    // the considered section size should be of the same aspect ratio as the
-    // vector matrix
-
-    // section size will start with the whole grid (scale = 1)
-    int sectionSizeX = std::ceil(config::cols / float(controls::scale));
-    int sectionSizeY = std::ceil(config::rows / float(controls::scale));
-    // how many grid cells will be mapped to each vertice
-    int densityX = std::floor(sectionSizeX / float(mRenderInfo.numVerticesX));
-    int densityY = std::floor(sectionSizeY / float(mRenderInfo.numVerticesY));
-    // the indices of the considered grid sections
-    int startX = (config::cols / 2.0) - sectionSizeX / 2;
-    int endX = (config::cols / 2.0) + sectionSizeX / 2;
-    int startY = (config::rows / 2.0) - sectionSizeY / 2;
-    int endY = (config::rows / 2.0) + sectionSizeY / 2;
-
-    int gridStartX, gridEndX, gridStartY, gridEndY;
-    // always consider all vertices and limit the translation to the grid bounds
-    int vStartX = 0, vEndX = mRenderInfo.numVerticesX, vStartY = 0,
-        vEndY = mRenderInfo.numVerticesY;
-
-    // calculate x translation
-    if (controls::position[0] < 0) {
-        // make the start of the grid visible by considering the beginning of
-        // the vector as indicated by the position - note: position is negative
-        gridStartX = startX + controls::position[0];
-        if (gridStartX < 0) {
-            gridStartX = 0;
-            // limit the knob
-            controls::position[0] = (gridStartX - startX);
-        }
-        // only modify the end limit by the amount modified on the beginning
-        // note: this will not be negative
-        gridEndX = endX - (gridStartX - startX);
-    } else {
-        // if position is positive the grid will be at the left of the canvas
-        // so we extend the considered end of the vector
-        gridEndX = endX + controls::position[0];
-        if (gridEndX > (int)config::cols) {
-            gridEndX = config::cols;
-            // limit the knob
-            controls::position[0] = (gridEndX - endX);
-        }
-        // and crop the start position by the amount modified on the end
-        gridStartX = startX + (gridEndX - endX);
-    }
-
-    // calculate y translation
-    if (controls::position[1] < 0) {
-        // make the start of the grid visible by considering the beginning of
-        // the vector as indicated by the position - note: position is negative
-        gridStartY = startY + controls::position[1];
-        if (gridStartY < 0) {
-            gridStartY = 0;
-            // limit the knob
-            controls::position[1] = gridStartY - startY;
-        }
-        // only modify the end limit by the amount modified on the beginning
-        // note: this will not be negative
-        gridEndY = endY - (gridStartY - startY);
-    } else {
-        // if position is positive the grid will be at the left of the canvas
-        // so we extend the considered end of the vector
-        gridEndY = endY + controls::position[1];
-        if (gridEndY > (int)config::rows) {
-            gridEndY = config::rows;
-            // limit the knob
-            controls::position[1] = gridEndY - endY;
-        }
-        // and crop the start position by the amount modified on the end
-        gridStartY = startY + (gridEndY - endY);
-    }
-
-    std::cout
-        << std::endl
-        << "pos xy " << controls::position[0] << "," << controls::position[1] //
-        << " / sec xy " << sectionSizeX << "," << sectionSizeY                //
-        << " / grid x " << gridStartX << "-" << gridEndX                      //
-        << " / grid y " << gridStartY << "-"
-        << gridEndY //
-        // << " / vert x " << vStartX << "-" << vEndX //
-        // << " / vert y " << vStartY << "-" << vEndY          //
-        // << " / dens xy " << densityX << "," << densityY //
-        //   << " / map xy" << sectionSizeX / densityX << ", "
-        //   << sectionSizeY / densityY //
-        << " / maxX "
-        << (gridEndX - 1 - gridStartX) / densityX + vStartX
-        // << " / cmaxV "
-        //   << ((endY - startY - 1) / densityY) * mRenderInfo.numVerticesX +
-        //          (endX - 1) / densityX
-        // << " - maxV " << mRenderInfo.numVertices
-        << std::endl;
-
     // update vertice states
-    for (unsigned int y = gridStartY; y < gridEndY; y++) {
-        for (unsigned int x = gridStartX; x < gridEndX; x++) {
+    for (uint y = proj::gridStart.y; y < proj::gridEnd.y; y++) {
+        for (uint x = proj::gridStart.x; x < proj::gridEnd.x; x++) {
             // the grid index
-            unsigned int idx = y * config::cols + x;
+            uint idx = y * config::cols + x;
             // if grid state is on
             if (grid[idx]) {
-                unsigned int vx = (x - gridStartX) / densityX + vStartX;
-                unsigned int vy = (y - gridStartY) / densityY + vStartY;
-                // std::cout << vx << " " << vy << " = "
-                //           << vy * mRenderInfo.numVerticesX + vx << " | ";
-                // if (!mGridVertices[vy * mRenderInfo.numVerticesX + vx].state)
-                // if buffer state is off, store the max
-                if (vx < mRenderInfo.numVerticesX &&
-                    vy < mRenderInfo.numVerticesY)
-                    mGridVertices[vy * mRenderInfo.numVerticesX + vx]
-                        .state = std::max(
-                        mGridVertices[vy * mRenderInfo.numVerticesX + vx].state,
-                        int(grid[idx]));
+                // map
+                uint vIdx = proj::getVerticeIdx({x, y});
+                // update vertice state
+                mGridVertices[vIdx].state =
+                    std::max(mGridVertices[vIdx].state, int(grid[idx]));
             }
         }
     }
@@ -395,8 +282,8 @@ void Display::setup_shader_program() {
 void Display::setup_grid_buffers() {
     // we should probably free the vertices arrays at Display::stop, but we're
     // destroying the program after they are no longer needed
-    mGridVerticesSize = mRenderInfo.numVertices * sizeof(vec2s);
-    mGridVertices = (vec2s *)malloc(mGridVerticesSize);
+    mGridVerticesSize = proj::renderInfo.totalVertices * sizeof(fvec2s);
+    mGridVertices = (fvec2s *)malloc(mGridVerticesSize);
 
     // configure vertices
     setup_grid_vertices(mGridVertices);
@@ -428,8 +315,8 @@ void Display::setup_grid_buffers() {
     //      - stride of each position vertex in the array. It could be 0 as data
     //      is tightly packed. offset in bytes where the data start in the
     //      buffer
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vec2s), (void *)0);
-    glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, sizeof(vec2s),
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(fvec2s), (void *)0);
+    glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, sizeof(fvec2s),
                           (void *)(2 * sizeof(float)));
     // enable the vertex attributes ixn location 0 for the currently bound VBO
     glEnableVertexAttribArray(0);
@@ -443,17 +330,18 @@ void Display::setup_grid_buffers() {
         free(mGridVertices);
 }
 
-void Display::setup_grid_vertices(vec2s *vertices) {
+void Display::setup_grid_vertices(fvec2s *vertices) {
     // setup vertices
     // iterate over the number of cells
-    for (unsigned int y = 0, idx = 0; y < mRenderInfo.numVerticesY; y++) {
-        for (unsigned int x = 0; x < mRenderInfo.numVerticesX; ++x) {
+    for (unsigned int y = 0, idx = 0; y < proj::renderInfo.numVertices.y; y++) {
+        for (unsigned int x = 0; x < proj::renderInfo.numVertices.x; ++x) {
             // vertices live in an (-1, 1) tridimensional space
             // we need to calculate the position of each vertice inside a 2d
             // grid top left
             vertices[idx] =
-                vec2s(-1.0f + x * (2.0f / mRenderInfo.numVerticesX),
-                      1.0f - y * (2.0f / mRenderInfo.numVerticesY), false);
+                fvec2s({-1.0f + x * (2.0f / proj::renderInfo.numVertices.x),
+                        1.0f - y * (2.0f / proj::renderInfo.numVertices.y)},
+                       false);
             idx++;
         }
     }

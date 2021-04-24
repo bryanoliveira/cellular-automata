@@ -76,8 +76,7 @@ int main(int argc, char **argv) {
     else if (config::render)
         // the GPU implementation updates the VBO using the CUDA<>GL interop
         gAutomata = new gpu::AutomataBase(randSeed, &gLiveLogBuffer,
-                                          &(gDisplay->grid_vbo()),
-                                          &(gDisplay->get_grid_render_info()));
+                                          &(gDisplay->grid_vbo()));
     else
         gAutomata = new gpu::AutomataBase(randSeed, &gLiveLogBuffer);
 

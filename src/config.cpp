@@ -21,6 +21,7 @@ unsigned long maxIterations = 0;
 bool cpuOnly = false;
 std::string patternFileName("patterns/empty.rle");
 bool startPaused = true;
+bool noDownsample = false;
 
 void load_file() {}
 void load_cmd(int argc, char **argv) {
@@ -41,6 +42,7 @@ void load_cmd(int argc, char **argv) {
          "Cell probability to become alive")                        //
         ("max,m", po::value<unsigned long>(), "Max iterations")     //
         ("cpu", "Enable CPU-only mode")                             //
+        ("no-downsample", "Disable grid to vertice downsampling")   //
         ("file,f", po::value<std::string>(), "Pattern file (.rle)") //
         ("start", "Unpause at start (default is paused)");          //
 
@@ -77,6 +79,8 @@ void load_cmd(int argc, char **argv) {
         patternFileName = vm["file"].as<std::string>();
     if (vm.count("start"))
         startPaused = false;
+    if (vm.count("no-downsample"))
+        noDownsample = true;
 }
 
 } // namespace config

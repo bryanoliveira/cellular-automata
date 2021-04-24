@@ -9,8 +9,7 @@ namespace gpu {
 
 AutomataBase::AutomataBase(unsigned long randSeed,
                            std::ostringstream *const pLiveLogBuffer,
-                           const unsigned int *gridVBO,
-                           const GridRenderInfo *pRenderInfo) {
+                           const unsigned int *gridVBO) {
     int gpuDeviceId;
     cudaDeviceProp gpuProps;
     size_t gridSize = config::rows * config::cols;
@@ -57,8 +56,6 @@ AutomataBase::AutomataBase(unsigned long randSeed,
 
     // if rendering is enabled
     if (gridVBO) {
-        mRenderInfo = *pRenderInfo;
-
         // create buffer updating CUDA stream
         CUDA_ASSERT(cudaStreamCreate(&mBufferUpdateStream));
         // register OpenGL VBO to use with CUDA
@@ -124,7 +121,7 @@ void AutomataBase::update_grid_buffers() {
     }
 
     // map OpenGL buffer object for writing from CUDA
-    vec2s *gridVertices;
+    fvec2s *gridVertices;
     CUDA_ASSERT(cudaGraphicsMapResources(1, &mGridVBOResource, 0));
     size_t numBytes;
     CUDA_ASSERT(cudaGraphicsResourceGetMappedPointer(
@@ -135,14 +132,14 @@ void AutomataBase::update_grid_buffers() {
     // reset buffers
     k_reset_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                            mBufferUpdateStream>>>(
-        gridVertices, mRenderInfo.numVerticesX, mRenderInfo.numVerticesY);
+        gridVertices, proj::renderInfo.numVertices.x,
+        proj::renderInfo.numVertices.y);
     CUDA_ASSERT(cudaGetLastError());
     // update buffers
     k_update_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                             mBufferUpdateStream>>>(
         grid, gridVertices, config::rows, config::cols,
-        mRenderInfo.numVerticesX, mRenderInfo.cellsPerVerticeX,
-        mRenderInfo.cellsPerVerticeY);
+        proj::renderInfo.numVertices.x, proj::renderInfo.cellDensity);
     CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?
 
