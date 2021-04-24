@@ -81,10 +81,27 @@ void Display::stop() {
 
 /**
  * Draws on screen by iterating on the grid, the naive way.
+ * **CURRENLTY NOT COMPATIBLE WITH DOWNSAMPLING**
  */
 void Display::draw_naive(bool logEnabled, unsigned long itsPerSecond) {
     // draw grid without proper OpenGL Buffers, the naive way
     // glClear(GL_COLOR_BUFFER_BIT);
+
+    // only apply camera transforms if downsampling is not custom
+    if (config::noDownsample) {
+        // set camera matrices
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        // rotate
+        glRotatef(controls::rotate_x, 1.0, 0.0, 0.0);
+        glRotatef(controls::rotate_y, 0.0, 1.0, 0.0);
+        // space is set to -0.5 to 0.5 in x, y
+        glScalef(controls::scale, controls::scale, 1.0); // scale at 0, 0
+        // set it to 0 to 1 in x, y
+        glTranslatef(-0.5, -0.5, 0);
+        // translate to user set center
+        glTranslatef(controls::position[0], controls::position[1], 0);
+    }
 
     // draw objects
     float xSize = 1.0f / ((float)config::cols);
@@ -120,6 +137,28 @@ void Display::draw_naive(bool logEnabled, unsigned long itsPerSecond) {
  */
 void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
     glClear(GL_COLOR_BUFFER_BIT);
+
+    // only apply camera transforms if downsampling is not custom
+    if (config::noDownsample) {
+        // create transform matrix
+        glm::mat4 trans = glm::mat4(1.0f);
+        // rotate
+        trans = glm::rotate(trans, controls::rotate_x / 50,
+                            glm::vec3(1.0, 0.0, 0.0));
+        trans = glm::rotate(trans, controls::rotate_y / 50,
+                            glm::vec3(0.0, 1.0, 0.0));
+        // scale
+        trans =
+            glm::scale(trans, glm::vec3(controls::scale, controls::scale, 1));
+        // translate
+        trans = glm::translate(trans, glm::vec3(controls::position[0],
+                                                -controls::position[1], 0.0f));
+
+        // apply transforms to the shaders
+        unsigned int transformLoc =
+            glGetUniformLocation(mShaderProgram, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+    }
 
     // use configured shaders
     glUseProgram(mShaderProgram);

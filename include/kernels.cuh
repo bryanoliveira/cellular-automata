@@ -37,7 +37,7 @@ __global__ void k_compute_grid_count_rule(bool *grid, bool *nextGrid,
 __global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
                                       unsigned int rows, unsigned int cols,
                                       unsigned int numVerticesX,
-                                      uvec2 cellDensity);
+                                      fvec2 cellDensity);
 
 __global__ void k_reset_grid_buffers(fvec2s *gridVertices,
                                      unsigned int numVerticesX,

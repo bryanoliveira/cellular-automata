@@ -31,14 +31,14 @@ typedef struct sfvec2s {
 // Grid render info including cell density information and number of vertices
 typedef struct sGridRenderInfo {
     uint totalVertices;
-    fvec2 numVertices;
+    uvec2 numVertices;
     fvec2 cellDensity;
 
     sGridRenderInfo(){}; // no initialization
-    sGridRenderInfo(fvec2 _n, fvec2 _c) : numVertices(_n), cellDensity(_c) {
+    sGridRenderInfo(uvec2 _n, fvec2 _c) : numVertices(_n), cellDensity(_c) {
         totalVertices = _n.x * _n.y;
     };
-    sGridRenderInfo(uint _t, fvec2 _n, fvec2 _c)
+    sGridRenderInfo(uint _t, uvec2 _n, fvec2 _c)
         : totalVertices(_t), numVertices(_n), cellDensity(_c){};
 } GridRenderInfo;
 

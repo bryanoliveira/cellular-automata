@@ -47,6 +47,8 @@ void init() {
 }
 
 void update() {
+    // TODO check unsigned/signed comparisons and value usage
+
     // if downsampling is disabled, there's nothing to do
     if (config::noDownsample)
         return;

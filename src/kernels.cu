@@ -76,7 +76,7 @@ __global__ void k_init_grid(bool *grid, unsigned int rows, unsigned int cols,
 __global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
                                       unsigned int rows, unsigned int cols,
                                       unsigned int numVerticesX,
-                                      uvec2 cellDensity) {
+                                      fvec2 cellDensity) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
