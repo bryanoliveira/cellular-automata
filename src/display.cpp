@@ -89,6 +89,8 @@ void Display::draw_naive(bool logEnabled, unsigned long itsPerSecond) {
 
     // only apply camera transforms if downsampling is not custom
     if (config::noDownsample) {
+        // TODO make controls compatible with this types of transformations
+
         // set camera matrices
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
@@ -140,6 +142,8 @@ void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
 
     // only apply camera transforms if downsampling is not custom
     if (config::noDownsample) {
+        // TODO make controls compatible with this types of transformations
+
         // create transform matrix
         glm::mat4 trans = glm::mat4(1.0f);
         // rotate
