@@ -86,10 +86,10 @@ void Display::stop() {
 void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // create default transform matrix
+    glm::mat4 trans = glm::mat4(1.0f);
     // only apply camera transforms if downsampling is not custom
     if (config::noDownsample) {
-        // create transform matrix
-        glm::mat4 trans = glm::mat4(1.0f);
         // rotate
         trans = glm::rotate(trans, controls::rotate_x / 50,
                             glm::vec3(1.0, 0.0, 0.0));
@@ -101,12 +101,11 @@ void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
         // translate
         trans = glm::translate(trans, glm::vec3(-controls::position[0],
                                                 controls::position[1], 0.0f));
-
-        // apply transforms to the shaders
-        unsigned int transformLoc =
-            glGetUniformLocation(mShaderProgram, "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
     }
+    // apply transforms to the shaders
+    unsigned int transformLoc =
+        glGetUniformLocation(mShaderProgram, "transform");
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
     // use configured shaders
     glUseProgram(mShaderProgram);
