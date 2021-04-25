@@ -8,8 +8,6 @@ extern GridRenderInfo renderInfo;
 
 // The mapping from grid cells to rendering vertices
 extern uvec2 cellDensity;
-// The X,Y position where vertice updates will begin
-extern uvec2 vStart;
 // The X,Y limits where grid mapping occur
 extern ulim2 gridLimX, gridLimY;
 

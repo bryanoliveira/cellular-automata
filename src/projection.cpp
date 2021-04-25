@@ -11,8 +11,6 @@ GridRenderInfo renderInfo;
 // - dynamic values
 // default density is 1:1
 uvec2 cellDensity(1, 1);
-// we will start to render from the first vertices
-uvec2 vStart(0, 0);
 ulim2 gridLimX, gridLimY;
 
 // - private members
@@ -82,24 +80,12 @@ void update() {
     gridLimY = translateLimits(&controls::position.y, refY, config::rows);
 
     std::cout << std::endl
-              << "pos xy " << controls::position.x << ","
-              << controls::position.y                                  //
-              << " / sec xy " << sectionSize.x << "," << sectionSize.y //
-              << " / grid x " << gridLimX.start << "-" << gridLimX.end //
-              << " / grid y " << gridLimY.start << "-"
-              << gridLimY.end //
-              // << " / vert x " << vStartX << "-" << vEndX //
-              // << " / vert y " << vStartY << "-" << vEndY //
-              // << " / dens xy " << densityX << "," << densityY //
-              //   << " / map xy" << sectionSize.x / densityX << ", "
-              //   << sectionSize.y / densityY //
-              << " / maxX "
-              << (gridLimX.range()) / cellDensity.x + vStart.x
-              // << " / cmaxV "
-              //   << ((endY - startY - 1) / densityY) *
-              //   mRenderInfo.numVerticesX +
-              //          (endX - 1) / densityX
-              // << " - maxV " << mRenderInfo.numVertices
+              << "sec xy " << sectionSize.x << "," << sectionSize.y     //
+              << " / dens xy " << cellDensity.x << "," << cellDensity.y //
+              << " / grid x " << gridLimX.start << "-" << gridLimX.end  //
+              << " / grid y " << gridLimY.start << "-" << gridLimY.end  //
+              << " / maxX " << (gridLimX.range()) / cellDensity.x       //
+              << " / maxY " << (gridLimY.range()) / cellDensity.y       //
               << std::endl;
 }
 
@@ -108,8 +94,8 @@ uint getVerticeIdx(uvec2 gridPos) {
         // no conversion needed, grid index = vertice index
         return gridPos.y * config::cols + gridPos.x;
 
-    uint vx = (gridPos.x - gridLimX.start) / cellDensity.x + vStart.x;
-    uint vy = (gridPos.y - gridLimY.start) / cellDensity.y + vStart.y;
+    uint vx = (gridPos.x - gridLimX.start) / cellDensity.x;
+    uint vy = (gridPos.y - gridLimY.start) / cellDensity.y;
     // return a position when the mapping is valid
     if (vx < renderInfo.numVertices.x && vy < renderInfo.numVertices.y)
         return vy * renderInfo.numVertices.x + vx;

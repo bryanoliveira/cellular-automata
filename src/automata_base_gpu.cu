@@ -120,6 +120,9 @@ void AutomataBase::update_grid_buffers() {
         exit(EXIT_FAILURE);
     }
 
+    // update projection limits
+    proj::update();
+
     // map OpenGL buffer object for writing from CUDA
     fvec2s *gridVertices;
     CUDA_ASSERT(cudaGraphicsMapResources(1, &mGridVBOResource, 0));
@@ -138,8 +141,8 @@ void AutomataBase::update_grid_buffers() {
     // update buffers
     k_update_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                             mBufferUpdateStream>>>(
-        grid, gridVertices, config::rows, config::cols,
-        proj::renderInfo.numVertices.x, proj::renderInfo.cellDensity);
+        grid, gridVertices, config::cols, proj::renderInfo.numVertices.x,
+        proj::renderInfo.cellDensity, proj::gridLimX, proj::gridLimY);
     CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?
 

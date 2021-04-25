@@ -135,6 +135,7 @@ void Display::update_grid_buffers_cpu() {
         exit(EXIT_FAILURE);
     }
 
+    // update projection limits
     proj::update();
 
     // reset vertices states
