@@ -16,7 +16,7 @@ ulim2 gridLimX, gridLimY;
 // - private members
 
 // This modifies the param delta in order to limit it!
-ulim2 translateLimits(float *delta, ulim2 reference, int hardLimit = 0);
+ulim2 translateLimits(float *delta, ulim2 ref, int sectionSize, int hardLimit);
 
 void init() {
     controls::minScale = 1;
@@ -76,8 +76,10 @@ void update() {
                      (config::rows / 2.0) + sectionSize.y / 2);
 
     // calculate translations
-    gridLimX = translateLimits(&controls::position.x, refX, config::cols);
-    gridLimY = translateLimits(&controls::position.y, refY, config::rows);
+    gridLimX = translateLimits(&controls::position.x, refX, sectionSize.x,
+                               config::cols);
+    gridLimY = translateLimits(&controls::position.y, refY, sectionSize.y,
+                               config::rows);
 
     std::cout << std::endl
               << "sec xy " << sectionSize.x << "," << sectionSize.y     //
@@ -99,44 +101,27 @@ uint getVerticeIdx(uvec2 gridPos) {
     // return a position when the mapping is valid
     if (vx < renderInfo.numVertices.x && vy < renderInfo.numVertices.y)
         return vy * renderInfo.numVertices.x + vx;
+    // std::cout << "out of bounds" << std::endl;
     // otherwise return a default position
     return 0;
 }
 
 // This modifies the param delta in order to limit it!
-ulim2 translateLimits(float *delta, ulim2 reference, int hardLimit) {
-    // int, since it can be negative
-    int translated;
+ulim2 translateLimits(float *delta, ulim2 ref, int sectionSize, int hardLimit) {
+    ulim2 translated = {
+        uint(std::min(std::max(int(ref.start + *delta), 0), hardLimit)),
+        uint(std::max(std::min(int(ref.end + *delta), hardLimit), sectionSize)),
+    };
 
-    if (*delta > 0) {
-        // make the end of the grid invisible by shifting the beginning
-        // of the vector as indicated by delta
-        translated = reference.end + *delta;
-        // if delta is positive we may have exploded up
-        if (translated > hardLimit) {
-            // return to the limit
-            translated = hardLimit;
-            // and limit the knob
-            *delta = (translated - int(reference.end));
-        }
-        // only modify the begin limit by the amount modified on the ending
-        return {reference.start + (translated - reference.end),
-                (uint)translated};
-    } else {
-        // make the start of the grid visible by considering the beginning
-        // of the vector as indicated by delta (which is negative)
-        translated = reference.start + *delta;
-        // if delta is negative we may have exploded down
-        if (translated < 0) {
-            // return to the limit
-            translated = 0;
-            // and limit the knob
-            *delta = (translated - int(reference.start));
-        }
-        // only modify the end limit by the amount modified on the beginning
-        return {(uint)translated,
-                reference.end - (translated - reference.start)};
-    }
+    // crop delta by the amount used
+    if (*delta < 0)
+        // this may be negative - convert it before the operation
+        *delta = int(translated.start) - int(ref.start);
+    else if (*delta > 0)
+        // this will be always positive
+        *delta = translated.end - ref.end;
+
+    return translated;
 }
 
 } // namespace proj

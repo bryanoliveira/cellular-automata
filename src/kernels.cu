@@ -78,10 +78,16 @@ __global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // no need to use safety borders here
-    for (uint y = blockDim.y * blockIdx.y + threadIdx.y;
-         gridLimY.start <= y && y < gridLimY.end; y += stride.y) {
-        for (uint x = blockDim.x * blockIdx.x + threadIdx.x;
-             gridLimX.start <= x && x < gridLimX.end; x += stride.x) {
+    for (uint y = blockDim.y * blockIdx.y + threadIdx.y; y < gridLimY.end;
+         y += stride.y) {
+        // check if out of bounds
+        if (y < gridLimY.start)
+            continue;
+        for (uint x = blockDim.x * blockIdx.x + threadIdx.x; x < gridLimX.end;
+             x += stride.x) {
+            // check if out of bounds
+            if (x < gridLimX.start)
+                continue;
             uint idx = y * cols + x;
             // try avoiding further operations when not needed
             if (grid[idx]) {
@@ -91,7 +97,8 @@ __global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
                 uint vidx = vy * numVerticesX + vx;
                 // no need to be atomic on a read
                 // we check before to avoid atomic writing bottleneck
-                if (gridVertices[vidx].state == 0)
+                if (vx < numVerticesX && vy < numVerticesX &&
+                    gridVertices[vidx].state == 0)
                     atomicMax(&gridVertices[vidx].state, (int)grid[idx]);
             }
         }

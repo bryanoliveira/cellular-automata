@@ -3,6 +3,16 @@
 
 typedef unsigned int uint;
 
+// A bidimensional int limit object
+// It is essentially the same as a vec2 but with different member names for
+// semantic predictability
+typedef struct slim2 {
+    int start, end;
+
+    slim2(){}; // no initialization
+    slim2(int _s, int _e) : start(_s), end(_e){};
+} lim2;
+
 // A bidimensional unsigned int limit object
 // It is essentially the same as a uvec2 but with different member names for
 // semantic predictability
