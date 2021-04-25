@@ -73,7 +73,7 @@ __global__ void k_init_grid(bool *grid, uint rows, uint cols,
 
 __global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
                                       uint cols, uint numVerticesX,
-                                      fvec2 cellDensity, ulim2 gridLimX,
+                                      uvec2 cellDensity, ulim2 gridLimX,
                                       ulim2 gridLimY) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
@@ -97,8 +97,7 @@ __global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
                 uint vidx = vy * numVerticesX + vx;
                 // no need to be atomic on a read
                 // we check before to avoid atomic writing bottleneck
-                if (vx < numVerticesX && vy < numVerticesX &&
-                    gridVertices[vidx].state == 0)
+                if (gridVertices[vidx].state == 0)
                     atomicMax(&gridVertices[vidx].state, (int)grid[idx]);
             }
         }

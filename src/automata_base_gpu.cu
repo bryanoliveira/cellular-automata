@@ -142,7 +142,7 @@ void AutomataBase::update_grid_buffers() {
     k_update_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                             mBufferUpdateStream>>>(
         grid, gridVertices, config::cols, proj::renderInfo.numVertices.x,
-        proj::renderInfo.cellDensity, proj::gridLimX, proj::gridLimY);
+        proj::cellDensity, proj::gridLimX, proj::gridLimY);
     CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?
 

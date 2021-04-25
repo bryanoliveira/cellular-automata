@@ -60,6 +60,9 @@ typedef struct sfvec2s {
 } fvec2s;
 
 // Grid render info including cell density information and number of vertices
+// This is intended to be set at initialization and not be changed during
+// execution. Don't confuse "cellDensity" member with the dynamic variable of
+// the projection namespace
 typedef struct sGridRenderInfo {
     uint totalVertices;
     uvec2 numVertices;
