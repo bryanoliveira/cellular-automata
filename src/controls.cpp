@@ -13,11 +13,11 @@ float scale = 1.0;
 float minScale = 1.0;
 float maxScale = 10.0;
 float translateFactor = 10.0f;
+float scaleFactor = 1.0f;
 
 // private
 vec2 mouseOld;
 int mouseButtons = 0;
-const float scaleFactor = 0.99f;
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Mouse event handlers
@@ -39,10 +39,10 @@ void mouse(int button, int state, int x, int y) {
     // these buttons behave differently (they don't go up and down)
     // scroll up
     if (button == 3)
-        scale = (1e-2 + scale) / scaleFactor;
+        scale += scaleFactor;
     // scroll down
     if (button == 4)
-        scale = (1e-2 + scale) * scaleFactor;
+        scale -= scaleFactor;
 
     if (scale < minScale)
         scale = minScale;

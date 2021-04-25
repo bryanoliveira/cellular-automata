@@ -3,12 +3,15 @@
 
 typedef unsigned int uint;
 
-// A bidimensional unsigned int limit
+// A bidimensional unsigned int limit object
+// It is essentially the same as a uvec2 but with different member names for
+// semantic predictability
 typedef struct sulim2 {
     uint start, end;
 
     sulim2(){}; // no initialization
     sulim2(uint _s, uint _e) : start(_s), end(_e){};
+    uint range() { return end - start; };
 } ulim2;
 
 // A bidimensional int vector
@@ -20,6 +23,8 @@ typedef struct svec2 {
 } vec2;
 
 // A bidimensional unsigned int vector
+// It is essentially the same as a ulim2 but with different member names for
+// semantic predictability
 typedef struct suvec2 {
     uint x, y;
 

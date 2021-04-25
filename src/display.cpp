@@ -143,8 +143,8 @@ void Display::update_grid_buffers_cpu() {
     }
 
     // update vertice states
-    for (uint y = proj::gridStart.y; y < proj::gridEnd.y; y++) {
-        for (uint x = proj::gridStart.x; x < proj::gridEnd.x; x++) {
+    for (uint y = proj::gridLimY.start; y < proj::gridLimY.end; y++) {
+        for (uint x = proj::gridLimX.start; x < proj::gridLimX.end; x++) {
             // the grid index
             uint idx = y * config::cols + x;
             // if grid state is on

@@ -10,10 +10,8 @@ extern GridRenderInfo renderInfo;
 extern uvec2 cellDensity;
 // The X,Y position where vertice updates will begin
 extern uvec2 vStart;
-// The X,Y position where grid mapping will begin
-extern uvec2 gridStart;
-// The X,Y position where grid mapping will end
-extern uvec2 gridEnd;
+// The X,Y limits where grid mapping occur
+extern ulim2 gridLimX, gridLimY;
 
 // Calculate number of vertices and projection limits
 void init();
