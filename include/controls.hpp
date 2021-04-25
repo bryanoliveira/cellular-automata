@@ -11,6 +11,7 @@ extern float position[]; // must be float or translation is too fast
 extern float scale;
 extern float minScale;
 extern float maxScale;
+extern float translateFactor;
 
 void mouse(int button, int state, int x, int y);
 void keyboard(unsigned char key, int x, int y);

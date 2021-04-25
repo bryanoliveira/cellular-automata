@@ -80,60 +80,6 @@ void Display::stop() {
 }
 
 /**
- * Draws on screen by iterating on the grid, the naive way.
- * **CURRENLTY NOT COMPATIBLE WITH DOWNSAMPLING**
- */
-void Display::draw_naive(bool logEnabled, unsigned long itsPerSecond) {
-    // draw grid without proper OpenGL Buffers, the naive way
-    // glClear(GL_COLOR_BUFFER_BIT);
-
-    // only apply camera transforms if downsampling is not custom
-    if (config::noDownsample) {
-        // TODO make controls compatible with this types of transformations
-
-        // set camera matrices
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        // rotate
-        glRotatef(controls::rotate_x, 1.0, 0.0, 0.0);
-        glRotatef(controls::rotate_y, 0.0, 1.0, 0.0);
-        // space is set to -0.5 to 0.5 in x, y
-        glScalef(controls::scale, controls::scale, 1.0); // scale at 0, 0
-        // set it to 0 to 1 in x, y
-        glTranslatef(-0.5, -0.5, 0);
-        // translate to user set center
-        glTranslatef(controls::position[0], controls::position[1], 0);
-    }
-
-    // draw objects
-    float xSize = 1.0f / ((float)config::cols);
-    float ySize = 1.0f / ((float)config::rows);
-    for (unsigned int y = 0; y < config::rows; y++) {
-        for (unsigned int x = 0; x < config::cols; x++) {
-            unsigned int gridIdx = y * config::cols + x;
-
-            float c = grid[gridIdx] ? 1 : 0;
-            glColor3f(c, c, c);
-            float cx = (x + 0.5f) * xSize;
-            float cy = (y + 0.5f) * ySize;
-
-            glBegin(GL_POLYGON);
-            glVertex2f(cx - xSize / 2, cy - ySize / 2); // top left
-            glVertex2f(cx + xSize / 2, cy - ySize / 2); // top right
-            glVertex2f(cx + xSize / 2, cy + ySize / 2); // bottom right
-            glVertex2f(cx - xSize / 2, cy + ySize / 2); // bottom left
-            glEnd();
-        }
-    }
-
-    // glFlush();
-    glutSwapBuffers();
-    glutPostRedisplay();
-    if (logEnabled)
-        update_title(itsPerSecond);
-}
-
-/**
  * Draws on screen using OpenGL buffers, which is much faster.
  * Requires that the buffers are updated before this function is called.
  */
@@ -142,8 +88,6 @@ void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
 
     // only apply camera transforms if downsampling is not custom
     if (config::noDownsample) {
-        // TODO make controls compatible with this types of transformations
-
         // create transform matrix
         glm::mat4 trans = glm::mat4(1.0f);
         // rotate
@@ -155,8 +99,8 @@ void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
         trans =
             glm::scale(trans, glm::vec3(controls::scale, controls::scale, 1));
         // translate
-        trans = glm::translate(trans, glm::vec3(controls::position[0],
-                                                -controls::position[1], 0.0f));
+        trans = glm::translate(trans, glm::vec3(-controls::position[0],
+                                                controls::position[1], 0.0f));
 
         // apply transforms to the shaders
         unsigned int transformLoc =
@@ -227,10 +171,10 @@ void Display::update_grid_buffers_cpu() {
 void Display::update_title(unsigned long itsPerSecond) {
     std::ostringstream title;
     title << config::programName << " | " << config::patternFileName << " | "
-          << config::rows << "x" << config::cols << " | pos "
-          << (int)controls::position[0] << "x" << (int)controls::position[1]
-          << " | " << std::fixed << std::setprecision(2) << controls::scale
-          << "x | " << itsPerSecond << " it/s";
+          << config::rows << "x" << config::cols << " | pos " << std::fixed
+          << std::setprecision(2) << controls::position[0] << "x"
+          << controls::position[1] << " | " << controls::scale << "x | "
+          << itsPerSecond << " it/s";
     glutSetWindowTitle(title.str().c_str());
 }
 
@@ -256,8 +200,9 @@ void Display::setup_shader_program() {
         // implicit int->float conversion
         "layout (location = 1) in int state;\n"
         "out float v_state;\n"
+        "uniform mat4 transform;\n"
         "void main() {\n"
-        "   gl_Position = vec4(posA.x, posA.y, 0, 1.0);\n"
+        "   gl_Position = transform * vec4(posA.x, posA.y, 0, 1.0);\n"
         "   v_state = state;\n"
         "}\0";
 

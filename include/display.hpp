@@ -15,7 +15,6 @@ class Display {
     void stop();
     void draw(bool logEnabled = false, unsigned long itsPerSecond = 0);
     void update_grid_buffers_cpu();
-    void draw_naive(bool logEnabled = false, unsigned long itsPerSecond = 0);
     // cuda code may need to register this buffer
     unsigned int const &grid_vbo() const { return mGridVBO; }
 

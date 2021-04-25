@@ -13,12 +13,12 @@ float position[] = {0, 0};
 float scale = 1.0;
 float minScale = 1.0;
 float maxScale = 10.0;
+float translateFactor = 10.0f;
 
 // private
 int mouseOldX;
 int mouseOldY;
 int mouseButtons = 0;
-const float translateFactor = 10.0f;
 const float scaleFactor = 0.99f;
 
 ////////////////////////////////////////////////////////////////////////////////

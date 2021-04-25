@@ -19,11 +19,16 @@ uvec2 gridStart(0, 0);
 uvec2 gridEnd;
 
 void init() {
+    controls::minScale = 1;
+
     // define sizes & proportions
     if (config::noDownsample) {
         renderInfo.numVertices = {config::cols, config::rows};
         renderInfo.totalVertices = config::cols * config::rows;
         renderInfo.cellDensity = {1, 1};
+
+        controls::maxScale = 100.0f;
+        controls::translateFactor = 0.002f; // related to render space
     } else {
         renderInfo.numVertices.x =
             config::cols > config::width ? config::width : config::cols;
@@ -34,16 +39,15 @@ void init() {
         // max density
         renderInfo.cellDensity.x = config::cols / renderInfo.numVertices.x;
         renderInfo.cellDensity.y = config::rows / renderInfo.numVertices.y;
+
+        controls::maxScale =
+            std::max(renderInfo.cellDensity.x, renderInfo.cellDensity.y);
+        controls::translateFactor = 10.0f; // related to cell space
     }
 
     // define default gridEnd (which is defined at run-time)
     gridEnd.x = config::cols;
     gridEnd.y = config::rows;
-
-    // config controls mins and maxes
-    controls::minScale = 1;
-    controls::maxScale =
-        std::max(renderInfo.cellDensity.x, renderInfo.cellDensity.y);
 }
 
 void update() {
