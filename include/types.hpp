@@ -3,6 +3,22 @@
 
 typedef unsigned int uint;
 
+// A bidimensional unsigned int limit
+typedef struct sulim2 {
+    uint start, end;
+
+    sulim2(){}; // no initialization
+    sulim2(uint _s, uint _e) : start(_s), end(_e){};
+} ulim2;
+
+// A bidimensional int vector
+typedef struct svec2 {
+    int x, y;
+
+    svec2(){}; // no initialization
+    svec2(int _x, int _y) : x(_x), y(_y){};
+} vec2;
+
 // A bidimensional unsigned int vector
 typedef struct suvec2 {
     uint x, y;

@@ -1,13 +1,14 @@
 #ifndef CONTROLS_HPP_
 #define CONTROLS_HPP_
 
+#include "types.hpp"
+
 namespace controls {
 
 extern bool paused;
 extern bool singleStep;
-extern float rotate_x;
-extern float rotate_y;
-extern float position[]; // must be float or translation is too fast
+extern fvec2 rotation;
+extern fvec2 position;
 extern float scale;
 extern float minScale;
 extern float maxScale;

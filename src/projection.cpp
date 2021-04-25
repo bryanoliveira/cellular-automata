@@ -18,6 +18,12 @@ uvec2 gridStart(0, 0);
 // until the last grid cell (set in init)
 uvec2 gridEnd;
 
+// - private members
+
+// This modifies the param delta in order to limit it!
+ulim2 translateLimits(float *delta, uint reference1, uint reference2,
+                      int hardLimit = 0);
+
 void init() {
     controls::minScale = 1;
 
@@ -51,90 +57,53 @@ void init() {
 }
 
 void update() {
-    // TODO check unsigned/signed comparisons and value usage
-
     // if downsampling is disabled, there's nothing to do
     if (config::noDownsample)
         return;
 
     // section size will start with the whole grid (scale = 1)
-    int sectionSizeX = std::ceil(config::cols / float(controls::scale));
-    int sectionSizeY = std::ceil(config::rows / float(controls::scale));
+    uvec2 sectionSize((uint)std::ceil(config::cols / float(controls::scale)),
+                      (uint)std::ceil(config::rows / float(controls::scale)));
     // how many grid cells will be mapped to each vertice
-    cellDensity.x = std::floor(sectionSizeX / float(renderInfo.numVertices.x));
-    cellDensity.y = std::floor(sectionSizeY / float(renderInfo.numVertices.y));
+    cellDensity = {
+        (uint)std::floor(sectionSize.x / float(renderInfo.numVertices.x)),
+        (uint)std::floor(sectionSize.y / float(renderInfo.numVertices.y))};
     // the indices of the considered grid sections
-    int startX = (config::cols / 2.0) - sectionSizeX / 2;
-    int endX = (config::cols / 2.0) + sectionSizeX / 2;
-    int startY = (config::rows / 2.0) - sectionSizeY / 2;
-    int endY = (config::rows / 2.0) + sectionSizeY / 2;
+    const uvec2 refStart((config::cols / 2.0) - sectionSize.x / 2,
+                         (config::rows / 2.0) - sectionSize.y / 2);
+    const uvec2 refEnd((config::cols / 2.0) + sectionSize.x / 2,
+                       (config::rows / 2.0) + sectionSize.y / 2);
 
+    ulim2 gridLim;
     // calculate x translation
-    if (controls::position[0] < 0) {
-        // make the start of the grid visible by considering the beginning
-        // of the vector as indicated by the position - note: position is
-        // negative
-        gridStart.x = startX + controls::position[0];
-        if (gridStart.x < 0) {
-            gridStart.x = 0;
-            // limit the knob
-            controls::position[0] = (gridStart.x - startX);
-        }
-        // only modify the end limit by the amount modified on the beginning
-        // note: this will not be negative
-        gridEnd.x = endX - (gridStart.x - startX);
-    } else {
-        // if position is positive the grid will be at the left of the
-        // canvas so we extend the considered end of the vector
-        gridEnd.x = endX + controls::position[0];
-        if (gridEnd.x > (int)config::cols) {
-            gridEnd.x = config::cols;
-            // limit the knob
-            controls::position[0] = (gridEnd.x - endX);
-        }
-        // and crop the start position by the amount modified on the end
-        gridStart.x = startX + (gridEnd.x - endX);
-    }
-
+    if (controls::position.x < 0)
+        gridLim = translateLimits(&controls::position.x, refStart.x, refEnd.x);
+    else
+        gridLim = translateLimits(&controls::position.x, refEnd.x, refStart.x,
+                                  config::cols);
+    gridStart.x = gridLim.start;
+    gridEnd.x = gridLim.end;
     // calculate y translation
-    if (controls::position[1] < 0) {
-        // make the start of the grid visible by considering the beginning
-        // of the vector as indicated by the position - note: position is
-        // negative
-        gridStart.y = startY + controls::position[1];
-        if (gridStart.y < 0) {
-            gridStart.y = 0;
-            // limit the knob
-            controls::position[1] = gridStart.y - startY;
-        }
-        // only modify the end limit by the amount modified on the beginning
-        // note: this will not be negative
-        gridEnd.y = endY - (gridStart.y - startY);
-    } else {
-        // if position is positive the grid will be at the left of the
-        // canvas so we extend the considered end of the vector
-        gridEnd.y = endY + controls::position[1];
-        if (gridEnd.y > (int)config::rows) {
-            gridEnd.y = config::rows;
-            // limit the knob
-            controls::position[1] = gridEnd.y - endY;
-        }
-        // and crop the start position by the amount modified on the end
-        gridStart.y = startY + (gridEnd.y - endY);
-    }
+    if (controls::position.y < 0)
+        gridLim = translateLimits(&controls::position.y, refStart.y, refEnd.y);
+    else
+        gridLim = translateLimits(&controls::position.y, refEnd.y, refStart.y,
+                                  config::rows);
+    gridStart.y = gridLim.start;
+    gridEnd.y = gridLim.end;
 
     std::cout << std::endl
-              << "pos xy " << controls::position[0] << ","
-              << controls::position[1]                               //
-              << " / sec xy " << sectionSizeX << "," << sectionSizeY //
-              << " / grid x " << gridStart.x << "-" << gridEnd.x     //
+              << "pos xy " << controls::position.x << ","
+              << controls::position.y                                  //
+              << " / sec xy " << sectionSize.x << "," << sectionSize.y //
+              << " / grid x " << gridStart.x << "-" << gridEnd.x       //
               << " / grid y " << gridStart.y << "-"
               << gridEnd.y //
               // << " / vert x " << vStartX << "-" << vEndX //
               // << " / vert y " << vStartY << "-" << vEndY          //
               // << " / dens xy " << densityX << "," << densityY //
-              //   << " / map xy" << sectionSizeX / densityX << ", "
-              //   << sectionSizeY / densityY //
+              //   << " / map xy" << sectionSize.x / densityX << ", "
+              //   << sectionSize.y / densityY //
               << " / maxX "
               << (gridEnd.x - 1 - gridStart.x) / cellDensity.x + vStart.x
               // << " / cmaxV "
@@ -157,6 +126,31 @@ uint getVerticeIdx(uvec2 gridPos) {
         return vy * renderInfo.numVertices.x + vx;
     // otherwise return a default position
     return 0;
+}
+
+// This modifies the param delta in order to limit it!
+ulim2 translateLimits(float *delta, uint reference1, uint reference2,
+                      int hardLimit) {
+    // make the start of the grid visible by considering the beginning
+    // of the vector as indicated by the position - note: delta may be
+    // negative
+    // TODO avoid ifs using math
+    int translated = reference1 + *delta;
+    if (delta < 0) {
+        // if delta is negative we may have exploded down
+        if (translated < hardLimit)
+            translated = hardLimit;
+    } else {
+        // if delta is positive we may have exploded up
+        if (translated > hardLimit)
+            translated = hardLimit;
+    }
+    // limit the knob
+    *delta = (translated - reference1);
+    uint start = translated;
+    // only modify the end limit by the amount modified on the beginning
+    uint end = reference2 - (start - reference1);
+    return {start, end};
 }
 
 } // namespace proj

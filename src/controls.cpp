@@ -7,17 +7,15 @@ namespace controls {
 // public
 bool paused = true;
 bool singleStep = false;
-float rotate_x = 0.0;
-float rotate_y = 0.0;
-float position[] = {0, 0};
+fvec2 rotation(0, 0);
+fvec2 position(0, 0);
 float scale = 1.0;
 float minScale = 1.0;
 float maxScale = 10.0;
 float translateFactor = 10.0f;
 
 // private
-int mouseOldX;
-int mouseOldY;
+vec2 mouseOld;
 int mouseButtons = 0;
 const float scaleFactor = 0.99f;
 
@@ -31,7 +29,7 @@ void mouse(int button, int state, int x, int y) {
         // middle click (for some reason it doesn't work like the others)
         if (button == GLUT_MIDDLE_BUTTON) {
             // reset
-            position[0] = position[1] = rotate_x = rotate_y = 0;
+            position = rotation = {0, 0};
             scale = 1;
         }
     } else if (state == GLUT_UP) {
@@ -51,8 +49,7 @@ void mouse(int button, int state, int x, int y) {
     else if (scale > maxScale)
         scale = maxScale;
 
-    mouseOldX = x;
-    mouseOldY = y;
+    mouseOld = {x, y};
 }
 
 void keyboard(unsigned char key, int /*x*/, int /*y*/) {
@@ -70,23 +67,22 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/) {
 
 void motion(int x, int y) {
     float dx, dy;
-    dx = (float)(x - mouseOldX);
-    dy = (float)(y - mouseOldY);
+    dx = (float)(x - mouseOld.x);
+    dy = (float)(y - mouseOld.y);
 
     // left click
     if (mouseButtons & 1 << GLUT_LEFT_BUTTON) {
         // motion speed should be proportional to scale
-        position[0] -= dx * (translateFactor / scale);
-        position[1] -= dy * (translateFactor / scale);
+        position.x -= dx * (translateFactor / scale);
+        position.y -= dy * (translateFactor / scale);
     }
     // right click
     if (mouseButtons & 1 << GLUT_RIGHT_BUTTON) {
-        rotate_x += dy * 0.2f;
-        rotate_y += dx * 0.2f;
+        rotation.x += dx * 0.2f;
+        rotation.y += dy * 0.2f;
     }
 
-    mouseOldX = x;
-    mouseOldY = y;
+    mouseOld = {x, y};
 }
 
 } // namespace controls

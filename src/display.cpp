@@ -91,16 +91,16 @@ void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
     // only apply camera transforms if downsampling is not custom
     if (config::noDownsample) {
         // rotate
-        trans = glm::rotate(trans, controls::rotate_x / 50,
+        trans = glm::rotate(trans, controls::rotation.x / 50,
                             glm::vec3(1.0, 0.0, 0.0));
-        trans = glm::rotate(trans, controls::rotate_y / 50,
+        trans = glm::rotate(trans, controls::rotation.y / 50,
                             glm::vec3(0.0, 1.0, 0.0));
         // scale
         trans =
             glm::scale(trans, glm::vec3(controls::scale, controls::scale, 1));
         // translate
-        trans = glm::translate(trans, glm::vec3(-controls::position[0],
-                                                controls::position[1], 0.0f));
+        trans = glm::translate(trans, glm::vec3(-controls::position.x,
+                                                controls::position.y, 0.0f));
     }
     // apply transforms to the shaders
     unsigned int transformLoc =
@@ -171,8 +171,8 @@ void Display::update_title(unsigned long itsPerSecond) {
     std::ostringstream title;
     title << config::programName << " | " << config::patternFileName << " | "
           << config::rows << "x" << config::cols << " | pos " << std::fixed
-          << std::setprecision(2) << controls::position[0] << "x"
-          << controls::position[1] << " | " << controls::scale << "x | "
+          << std::setprecision(2) << controls::position.x << "x"
+          << controls::position.y << " | " << controls::scale << "x | "
           << itsPerSecond << " it/s";
     glutSetWindowTitle(title.str().c_str());
 }
