@@ -45,7 +45,8 @@ void load_cmd(int argc, char **argv) {
         ("no-downsample", "Disable automatic grid to vertice downsampling"
                           " when grid size is greater than window size.") //
         ("file,f", po::value<std::string>(), "Pattern file (.rle)")       //
-        ("start", "Unpause at start (default is paused)");                //
+        ("start", "Unpause at start (default is paused when rendering, "
+                  "unpaused when not rendering)"); //
 
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(description).run(),
@@ -78,7 +79,9 @@ void load_cmd(int argc, char **argv) {
         cpuOnly = true;
     if (vm.count("file"))
         patternFileName = vm["file"].as<std::string>();
-    if (vm.count("start"))
+    if (vm.count("start") || !render)
+        // by default, start the computation loop automatically if we're not
+        // rendering
         startPaused = false;
     if (vm.count("no-downsample") || (width == cols && height == rows))
         // by default, don't use downsample when scale is 1:1

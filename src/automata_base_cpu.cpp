@@ -45,7 +45,7 @@ void AutomataBase::compute_grid(bool logEnabled) {
                 (float(rand()) / RAND_MAX) < config::virtualFillProb ||
                 compute_cell(y, x);
 
-            if (nextGrid[y * config::cols + x])
+            if (logEnabled && nextGrid[y * config::cols + x])
                 mActiveCellCount++;
         }
     }
