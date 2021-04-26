@@ -4,7 +4,7 @@
 
 namespace proj {
 
-extern GridRenderInfo renderInfo;
+extern GridRenderInfo info;
 
 // The mapping from grid cells to rendering vertices
 extern uvec2 cellDensity;

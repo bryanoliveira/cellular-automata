@@ -6,7 +6,7 @@
 namespace proj {
 
 // - static values
-GridRenderInfo renderInfo;
+GridRenderInfo info;
 
 // - dynamic values
 // default density is 1:1
@@ -23,33 +23,31 @@ void init() {
 
     // define sizes & proportions
     if (config::noDownsample) {
-        renderInfo.numVertices = {config::cols, config::rows};
-        renderInfo.totalVertices = config::cols * config::rows;
-        renderInfo.cellDensity = {1, 1};
+        info.numVertices = {config::cols, config::rows};
+        info.totalVertices = config::cols * config::rows;
+        info.cellDensity = {1, 1};
 
         controls::maxScale = 100.0f;
         controls::scaleFactor = 0.99f; // related to render space
 
         controls::translateFactor = 0.002f; // related to render space
     } else {
-        renderInfo.numVertices.x =
+        info.numVertices.x =
             config::cols > config::width ? config::width : config::cols;
-        renderInfo.numVertices.y =
+        info.numVertices.y =
             config::rows > config::height ? config::height : config::rows;
-        renderInfo.totalVertices =
-            renderInfo.numVertices.x * renderInfo.numVertices.y;
+        info.totalVertices = info.numVertices.x * info.numVertices.y;
         // max density
-        renderInfo.cellDensity.x = config::cols / renderInfo.numVertices.x;
-        renderInfo.cellDensity.y = config::rows / renderInfo.numVertices.y;
+        info.cellDensity.x = config::cols / info.numVertices.x;
+        info.cellDensity.y = config::rows / info.numVertices.y;
 
         // max scale will give us 1:1 cell to vertice mapping
-        controls::maxScale =
-            std::max(renderInfo.cellDensity.x, renderInfo.cellDensity.y);
+        controls::maxScale = std::max(info.cellDensity.x, info.cellDensity.y);
         // scale factor should give us density steps of 1
-        controls::scaleFactor =
-            std::min(renderInfo.numVertices.x, renderInfo.numVertices.y);
+        controls::scaleFactor = 1;
 
-        controls::translateFactor = 10.0f; // related to cell space
+        controls::translateFactor =
+            config::cols / float(info.numVertices.x); // related to cell space
     }
 
     // define default gridEnd (which is defined at run-time)
@@ -62,13 +60,16 @@ void update() {
     if (config::noDownsample)
         return;
 
-    // section size will start with the whole grid (scale = 1)
-    uvec2 sectionSize((uint)std::ceil(config::cols / float(controls::scale)),
-                      (uint)std::ceil(config::rows / float(controls::scale)));
     // how many grid cells will be mapped to each vertice
     cellDensity = {
-        (uint)std::floor(sectionSize.x / float(renderInfo.numVertices.x)),
-        (uint)std::floor(sectionSize.y / float(renderInfo.numVertices.y))};
+        uint(std::max(config::cols / info.numVertices.x - controls::scale,
+                      1.0f)),
+        uint(std::max(config::rows / info.numVertices.y - controls::scale,
+                      1.0f))};
+
+    // section size will start with the whole grid (scale = 1)
+    uvec2 sectionSize(info.numVertices.x * cellDensity.x,
+                      info.numVertices.y * cellDensity.y);
     // the indices of the considered grid sections
     const ulim2 refX((config::cols / 2.0) - sectionSize.x / 2,
                      (config::cols / 2.0) + sectionSize.x / 2);
@@ -81,14 +82,14 @@ void update() {
     gridLimY = translateLimits(&controls::position.y, refY, sectionSize.y,
                                config::rows);
 
-    std::cout << std::endl
-              << "sec xy " << sectionSize.x << "," << sectionSize.y     //
-              << " / dens xy " << cellDensity.x << "," << cellDensity.y //
-              << " / grid x " << gridLimX.start << "-" << gridLimX.end  //
-              << " / grid y " << gridLimY.start << "-" << gridLimY.end  //
-              << " / maxX " << (gridLimX.range()) / cellDensity.x       //
-              << " / maxY " << (gridLimY.range()) / cellDensity.y       //
-              << std::endl;
+    // std::cout << std::endl
+    //           << "sec xy " << sectionSize.x << "," << sectionSize.y     //
+    //           << " / dens xy " << cellDensity.x << "," << cellDensity.y //
+    //           << " / grid x " << gridLimX.start << "-" << gridLimX.end  //
+    //           << " / grid y " << gridLimY.start << "-" << gridLimY.end  //
+    //           << " / maxX " << (gridLimX.range()) / cellDensity.x       //
+    //           << " / maxY " << (gridLimY.range()) / cellDensity.y       //
+    //           << std::endl;
 }
 
 uint getVerticeIdx(uvec2 gridPos) {
@@ -99,8 +100,8 @@ uint getVerticeIdx(uvec2 gridPos) {
     uint vx = (gridPos.x - gridLimX.start) / cellDensity.x;
     uint vy = (gridPos.y - gridLimY.start) / cellDensity.y;
     // return a position when the mapping is valid
-    if (vx < renderInfo.numVertices.x && vy < renderInfo.numVertices.y)
-        return vy * renderInfo.numVertices.x + vx;
+    if (vx < info.numVertices.x && vy < info.numVertices.y)
+        return vy * info.numVertices.x + vx;
     // std::cout << "out of bounds" << std::endl;
     // otherwise return a default position
     return 0;

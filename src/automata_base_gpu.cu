@@ -135,13 +135,12 @@ void AutomataBase::update_grid_buffers() {
     // reset buffers
     k_reset_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                            mBufferUpdateStream>>>(
-        gridVertices, proj::renderInfo.numVertices.x,
-        proj::renderInfo.numVertices.y);
+        gridVertices, proj::info.numVertices.x, proj::info.numVertices.y);
     CUDA_ASSERT(cudaGetLastError());
     // update buffers
     k_update_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                             mBufferUpdateStream>>>(
-        grid, gridVertices, config::cols, proj::renderInfo.numVertices.x,
+        grid, gridVertices, config::cols, proj::info.numVertices.x,
         proj::cellDensity, proj::gridLimX, proj::gridLimY);
     CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?

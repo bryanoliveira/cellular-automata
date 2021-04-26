@@ -88,13 +88,13 @@ void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
 
     // create default transform matrix
     glm::mat4 trans = glm::mat4(1.0f);
+    // rotate
+    trans =
+        glm::rotate(trans, controls::rotation.x / 50, glm::vec3(1.0, 0.0, 0.0));
+    trans =
+        glm::rotate(trans, controls::rotation.y / 50, glm::vec3(0.0, 1.0, 0.0));
     // only apply camera transforms if downsampling is not custom
     if (config::noDownsample) {
-        // rotate
-        trans = glm::rotate(trans, controls::rotation.x / 50,
-                            glm::vec3(1.0, 0.0, 0.0));
-        trans = glm::rotate(trans, controls::rotation.y / 50,
-                            glm::vec3(0.0, 1.0, 0.0));
         // scale
         trans =
             glm::scale(trans, glm::vec3(controls::scale, controls::scale, 1));
@@ -115,7 +115,7 @@ void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
     //      the OpenGL primitive we will draw
     //      the starting index of the vertex array
     //      how many vertices to draw (a square has 4 vertices)
-    glDrawArrays(GL_POINTS, 0, proj::renderInfo.totalVertices);
+    glDrawArrays(GL_POINTS, 0, proj::info.totalVertices);
     // unbind VAO
     glBindVertexArray(0);
 
@@ -139,7 +139,7 @@ void Display::update_grid_buffers_cpu() {
     proj::update();
 
     // reset vertices states
-    for (uint idx = 0; idx < proj::renderInfo.totalVertices; idx++) {
+    for (uint idx = 0; idx < proj::info.totalVertices; idx++) {
         mGridVertices[idx].state = 0;
     }
 
@@ -270,7 +270,7 @@ void Display::setup_shader_program() {
 void Display::setup_grid_buffers() {
     // we should probably free the vertices arrays at Display::stop, but we're
     // destroying the program after they are no longer needed
-    mGridVerticesSize = proj::renderInfo.totalVertices * sizeof(fvec2s);
+    mGridVerticesSize = proj::info.totalVertices * sizeof(fvec2s);
     mGridVertices = (fvec2s *)malloc(mGridVerticesSize);
 
     // configure vertices
@@ -321,14 +321,14 @@ void Display::setup_grid_buffers() {
 void Display::setup_grid_vertices(fvec2s *vertices) {
     // setup vertices
     // iterate over the number of cells
-    for (unsigned int y = 0, idx = 0; y < proj::renderInfo.numVertices.y; y++) {
-        for (unsigned int x = 0; x < proj::renderInfo.numVertices.x; ++x) {
+    for (unsigned int y = 0, idx = 0; y < proj::info.numVertices.y; y++) {
+        for (unsigned int x = 0; x < proj::info.numVertices.x; ++x) {
             // vertices live in an (-1, 1) tridimensional space
             // we need to calculate the position of each vertice inside a 2d
             // grid top left
             vertices[idx] =
-                fvec2s({-1.0f + x * (2.0f / proj::renderInfo.numVertices.x),
-                        1.0f - y * (2.0f / proj::renderInfo.numVertices.y)},
+                fvec2s({-1.0f + x * (2.0f / proj::info.numVertices.x),
+                        1.0f - y * (2.0f / proj::info.numVertices.y)},
                        false);
             idx++;
         }
