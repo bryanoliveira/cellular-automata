@@ -16,6 +16,14 @@
  * Sets up GLUT, GLEW, OpenGL methods and buffers.
  */
 Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
+    if (config::width % 2 == 1 || config::height % 2 == 1) {
+        fprintf(stderr, "Width and Height must be even integers!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    proj::init();
+
+    // will we be using only gpu?
     Display::mGpuOnly = !pCpuOnly;
 
     // init glut
@@ -32,8 +40,7 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     // default initialization
     glClear(GL_COLOR_BUFFER_BIT);
     glPointSize(5.0f);
-    // set the starting camera params
-    controls::scale = 5 * config::rows / (float)config::width;
+    reshape(config::width, config::height); // set viewport, etc
 
     GLenum gl_error = glGetError();
     if (glGetError() != GL_NO_ERROR) {
@@ -73,73 +80,28 @@ void Display::stop() {
 }
 
 /**
- * Draws on screen by iterating on the grid, the naive way.
- */
-void Display::draw_naive(bool logEnabled) {
-    // draw grid without proper OpenGL Buffers, the naive way
-    // glClear(GL_COLOR_BUFFER_BIT);
-
-    // set camera matrices
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    // rotate
-    glRotatef(controls::rotate_x, 1.0, 0.0, 0.0);
-    glRotatef(controls::rotate_y, 0.0, 1.0, 0.0);
-    // space is set to -0.5 to 0.5 in x, y
-    glScalef(controls::scale, controls::scale, 1.0); // scale at 0, 0
-    // set it to 0 to 1 in x, y
-    glTranslatef(-0.5, -0.5, 0);
-    // translate to user set center
-    glTranslatef(controls::center[0], controls::center[1], 0);
-
-    // draw objects
-    float xSize = 1.0f / ((float)config::cols);
-    float ySize = 1.0f / ((float)config::rows);
-    for (unsigned int y = 0; y < config::rows; y++) {
-        for (unsigned int x = 0; x < config::cols; x++) {
-            unsigned int gridIdx = y * config::cols + x;
-
-            float c = grid[gridIdx] ? 1 : 0;
-            glColor3f(c, c, c);
-            float cx = (x + 0.5f) * xSize;
-            float cy = (y + 0.5f) * ySize;
-
-            glBegin(GL_POLYGON);
-            glVertex2f(cx - xSize / 2, cy - ySize / 2); // top left
-            glVertex2f(cx + xSize / 2, cy - ySize / 2); // top right
-            glVertex2f(cx + xSize / 2, cy + ySize / 2); // bottom right
-            glVertex2f(cx - xSize / 2, cy + ySize / 2); // bottom left
-            glEnd();
-        }
-    }
-
-    // glFlush();
-    glutSwapBuffers();
-    glutPostRedisplay();
-    if (logEnabled)
-        calc_frameRate();
-}
-
-/**
  * Draws on screen using OpenGL buffers, which is much faster.
  * Requires that the buffers are updated before this function is called.
  */
-void Display::draw(bool logEnabled) {
+void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // create transform matrix
+    // create default transform matrix
     glm::mat4 trans = glm::mat4(1.0f);
     // rotate
     trans =
-        glm::rotate(trans, controls::rotate_x / 50, glm::vec3(1.0, 0.0, 0.0));
+        glm::rotate(trans, controls::rotation.x / 50, glm::vec3(1.0, 0.0, 0.0));
     trans =
-        glm::rotate(trans, controls::rotate_y / 50, glm::vec3(0.0, 1.0, 0.0));
-    // scale
-    trans = glm::scale(trans, glm::vec3(controls::scale, controls::scale, 1));
-    // translate
-    trans = glm::translate(
-        trans, glm::vec3(controls::center[0], -controls::center[1], 0.0f));
-
+        glm::rotate(trans, controls::rotation.y / 50, glm::vec3(0.0, 1.0, 0.0));
+    // only apply camera transforms if downsampling is not custom
+    if (config::noDownsample) {
+        // scale
+        trans =
+            glm::scale(trans, glm::vec3(controls::scale, controls::scale, 1));
+        // translate
+        trans = glm::translate(trans, glm::vec3(-controls::position.x,
+                                                controls::position.y, 0.0f));
+    }
     // apply transforms to the shaders
     unsigned int transformLoc =
         glGetUniformLocation(mShaderProgram, "transform");
@@ -153,7 +115,7 @@ void Display::draw(bool logEnabled) {
     //      the OpenGL primitive we will draw
     //      the starting index of the vertex array
     //      how many vertices to draw (a square has 4 vertices)
-    glDrawArrays(GL_POINTS, 0, mNumGridVertices);
+    glDrawArrays(GL_POINTS, 0, proj::info.totalVertices);
     // unbind VAO
     glBindVertexArray(0);
 
@@ -162,7 +124,7 @@ void Display::draw(bool logEnabled) {
     glutSwapBuffers();
     glutPostRedisplay();
     if (logEnabled)
-        calc_frameRate();
+        update_title(itsPerSecond);
 }
 
 // this method is implemented here so it can access the vertice array directly
@@ -173,11 +135,28 @@ void Display::update_grid_buffers_cpu() {
         exit(EXIT_FAILURE);
     }
 
+    // update projection limits
+    proj::update();
+
+    // reset vertices states
+    for (uint idx = 0; idx < proj::info.totalVertices; idx++) {
+        mGridVertices[idx].state = 0;
+    }
+
     // update vertice states
-    for (unsigned int idx = 0; idx < mNumGridVertices; idx++) {
-        // remember we have 4 contiguous vertices for each cell, so each vertice
-        // index/4 corresponds to the grid cell
-        mGridVertices[idx].state = (float)grid[idx]; // int(idx / 4)];
+    for (uint y = proj::gridLimY.start; y < proj::gridLimY.end; y++) {
+        for (uint x = proj::gridLimX.start; x < proj::gridLimX.end; x++) {
+            // the grid index
+            uint idx = y * config::cols + x;
+            // if grid state is on
+            if (grid[idx]) {
+                // map
+                uint vIdx = proj::getVerticeIdx({x, y});
+                // update vertice state
+                mGridVertices[vIdx].state =
+                    std::max(mGridVertices[vIdx].state, int(grid[idx]));
+            }
+        }
     }
 
     // bind VBO to be updated
@@ -189,16 +168,23 @@ void Display::update_grid_buffers_cpu() {
     glBindBuffer(GL_ARRAY_BUFFER, mGridVBO);
 }
 
-void Display::reshape(int pWidth, int pHeight) {
-    config::width = pWidth;
-    config::height = pHeight;
+void Display::update_title(unsigned long itsPerSecond) {
+    std::ostringstream title;
+    title << config::programName << " | " << config::patternFileName << " | "
+          << config::rows << "x" << config::cols << " | pos " << std::fixed
+          << std::setprecision(2) << controls::position.x << "x"
+          << controls::position.y << " | " << controls::scale << "x | "
+          << itsPerSecond << " it/s";
+    glutSetWindowTitle(title.str().c_str());
+}
 
-    glViewport(0, 0, config::width, config::height);
+void Display::reshape(int pWidth, int pHeight) {
+    glViewport(0, 0, pWidth, pHeight);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     // left, right, bottom, top
-    gluOrtho2D(-0.5, 0.5, 0.5, -0.5);
+    gluOrtho2D(-1, 1, 1, -1);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -206,36 +192,13 @@ void Display::reshape(int pWidth, int pHeight) {
     glutPostRedisplay();
 }
 
-void Display::calc_frameRate() {
-    static clock_t delta_ticks;
-    static clock_t current_ticks = 0;
-    static clock_t fps = 0;
-
-    // init clock if needed
-    if (current_ticks == 0)
-        current_ticks = clock();
-
-    // the time, in ms, that took to render the scene
-    delta_ticks = clock() - current_ticks;
-    if (delta_ticks > 0)
-        fps = CLOCKS_PER_SEC / delta_ticks;
-
-    std::ostringstream title;
-    title << config::programName << " | " << config::patternFileName << " | "
-          << config::rows << "x" << config::cols << " | " << std::fixed
-          << std::setprecision(2) << controls::scale << "x | " << fps << " fps";
-    glutSetWindowTitle(title.str().c_str());
-
-    // get clock for the next call
-    current_ticks = clock();
-}
-
 void Display::setup_shader_program() {
     // define shaders
     const char *vertexShaderSource =
         "#version 460 core\n"
         "layout (location = 0) in vec2 posA;\n"
-        "layout (location = 1) in float state;\n"
+        // implicit int->float conversion
+        "layout (location = 1) in int state;\n"
         "out float v_state;\n"
         "uniform mat4 transform;\n"
         "void main() {\n"
@@ -307,11 +270,11 @@ void Display::setup_shader_program() {
 void Display::setup_grid_buffers() {
     // we should probably free the vertices arrays at Display::stop, but we're
     // destroying the program after they are no longer needed
-    mGridVerticesSize = Display::mNumGridVertices * sizeof(vec2s);
-    mGridVertices = (vec2s *)malloc(mGridVerticesSize);
+    mGridVerticesSize = proj::info.totalVertices * sizeof(fvec2s);
+    mGridVertices = (fvec2s *)malloc(mGridVerticesSize);
 
     // configure vertices
-    Display::setup_grid_vertices(mGridVertices);
+    setup_grid_vertices(mGridVertices);
 
     // configure the Vertex Array Object so we configure our objects only once
     glGenVertexArrays(1, &mGridVAO);
@@ -333,15 +296,15 @@ void Display::setup_grid_buffers() {
 
     // tell OpenGL how to interpret the vertex buffer data
     // params:
-    //      *location* of the position vertex (as in the vertex shader)
-    //      size of the vertex attribute, which is a vec2s (size 2)
-    //      type of each attribute (vec2s is made of floats)
-    //      use_normalization?
-    //      stride of each position vertex in the array. It could be 0 as data
+    //      - *location* of the position vertex (as in the vertex shader)
+    //      - size of the vertex attribute, which is a vec2s (size 2)
+    //      - type of each attribute (vec2s is made of floats)
+    //      - use_normalization?
+    //      - stride of each position vertex in the array. It could be 0 as data
     //      is tightly packed. offset in bytes where the data start in the
     //      buffer
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vec2s), (void *)0);
-    glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, sizeof(vec2s),
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(fvec2s), (void *)0);
+    glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, sizeof(fvec2s),
                           (void *)(2 * sizeof(float)));
     // enable the vertex attributes ixn location 0 for the currently bound VBO
     glEnableVertexAttribArray(0);
@@ -351,20 +314,22 @@ void Display::setup_grid_buffers() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     // free RAM since vertices will be updated in GPU
-    if (Display::mGpuOnly)
+    if (mGpuOnly)
         free(mGridVertices);
 }
 
-void Display::setup_grid_vertices(vec2s *vertices) {
+void Display::setup_grid_vertices(fvec2s *vertices) {
     // setup vertices
     // iterate over the number of cells
-    for (unsigned int y = 0, idx = 0; y < config::rows; y++) {
-        for (unsigned int x = 0; x < config::cols; ++x) {
+    for (unsigned int y = 0, idx = 0; y < proj::info.numVertices.y; y++) {
+        for (unsigned int x = 0; x < proj::info.numVertices.x; ++x) {
             // vertices live in an (-1, 1) tridimensional space
             // we need to calculate the position of each vertice inside a 2d
             // grid top left
-            vertices[idx] = vec2s(-1.0f + x * (2.0f / config::cols),
-                                  -1.0f + y * (2.0f / config::rows), false);
+            vertices[idx] =
+                fvec2s({-1.0f + x * (2.0f / proj::info.numVertices.x),
+                        1.0f - y * (2.0f / proj::info.numVertices.y)},
+                       false);
             idx++;
         }
     }

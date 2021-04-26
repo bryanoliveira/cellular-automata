@@ -19,6 +19,7 @@ extern unsigned long maxIterations;
 extern bool cpuOnly;
 extern std::string patternFileName;
 extern bool startPaused;
+extern bool noDownsample;
 
 void load_file();
 void load_cmd(int argc, char **argv);

@@ -7,9 +7,10 @@
 
 #include "automata_interface.hpp"
 #include "config.hpp"
-#include "display.hpp" // for the vec2s type
 #include "grid.hpp"
 #include "kernels.cuh"
+#include "projection.hpp"
+#include "types.hpp"
 
 namespace gpu {
 
@@ -25,10 +26,11 @@ class AutomataBase : public AutomataInterface {
     dim3 mGpuBlocks;
     dim3 mGpuThreadsPerBlock;
     curandState *mGlobalRandState;
-    struct cudaGraphicsResource *mGridVBOResource = NULL;
     cudaStream_t mEvolveStream, mBufferUpdateStream;
     unsigned int *mActiveCellCount;
     std::ostringstream *mLiveLogBuffer;
+    // rendering stuff
+    struct cudaGraphicsResource *mGridVBOResource = NULL;
 
     virtual void run_evolution_kernel(bool countAliveCells = false);
 };

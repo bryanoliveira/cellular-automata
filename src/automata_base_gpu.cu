@@ -120,18 +120,28 @@ void AutomataBase::update_grid_buffers() {
         exit(EXIT_FAILURE);
     }
 
+    // update projection limits
+    proj::update();
+
     // map OpenGL buffer object for writing from CUDA
-    vec2s *gridVertices;
+    fvec2s *gridVertices;
     CUDA_ASSERT(cudaGraphicsMapResources(1, &mGridVBOResource, 0));
     size_t numBytes;
     CUDA_ASSERT(cudaGraphicsResourceGetMappedPointer(
         (void **)&gridVertices, &numBytes, mGridVBOResource));
     // printf("CUDA mapped VBO: May access %ld bytes\n", numBytes);
 
-    // launch kernel
+    // launch kernels
+    // reset buffers
+    k_reset_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
+                           mBufferUpdateStream>>>(
+        gridVertices, proj::info.numVertices.x, proj::info.numVertices.y);
+    CUDA_ASSERT(cudaGetLastError());
+    // update buffers
     k_update_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
-                            mBufferUpdateStream>>>(grid, gridVertices,
-                                                   config::rows, config::cols);
+                            mBufferUpdateStream>>>(
+        grid, gridVertices, config::cols, proj::info.numVertices.x,
+        proj::cellDensity, proj::gridLimX, proj::gridLimY);
     CUDA_ASSERT(cudaGetLastError());
     // should I call cudaDeviceSynchronize?
 

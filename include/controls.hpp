@@ -1,14 +1,19 @@
 #ifndef CONTROLS_HPP_
 #define CONTROLS_HPP_
 
+#include "types.hpp"
+
 namespace controls {
 
 extern bool paused;
 extern bool singleStep;
-extern float center[];
+extern fvec2 rotation;
+extern fvec2 position;
 extern float scale;
-extern float rotate_x;
-extern float rotate_y;
+extern float minScale;
+extern float maxScale;
+extern float translateFactor;
+extern float scaleFactor;
 
 void mouse(int button, int state, int x, int y);
 void keyboard(unsigned char key, int x, int y);

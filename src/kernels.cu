@@ -2,13 +2,11 @@
 
 ////// DEVICE FUNCTIONS
 
-__device__ inline unsigned short count_moore_neighbours(bool *grid,
-                                                        unsigned int rows,
-                                                        unsigned int cols,
-                                                        unsigned int idx) {
+__device__ inline unsigned short count_moore_neighbours(bool *grid, uint rows,
+                                                        uint cols, uint idx) {
     unsigned short livingNeighbours = 0;
     // we can calculate the neighbours directly since we're using safety borders
-    unsigned int neighbours[] = {
+    uint neighbours[] = {
         idx - cols - 1, // top left
         idx - cols,     // top center
         idx - cols + 1, // top right
@@ -41,67 +39,98 @@ __device__ inline bool game_of_life(bool isAlive,
 
 ////// CUDA KERNELS
 
-__global__ void k_setup_rng(unsigned int rows, unsigned int cols,
-                            curandState *globalRandState, unsigned long seed) {
+__global__ void k_setup_rng(uint rows, uint cols, curandState *globalRandState,
+                            unsigned long seed) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
-    for (int y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
+    for (uint y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
          y += stride.y) {
-        for (int x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
+        for (uint x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
              x += stride.x) {
-            int idx = y * cols + x;
+            uint idx = y * cols + x;
             curand_init(seed, idx, 0, &globalRandState[idx]);
         }
     }
 }
 
-__global__ void k_init_grid(bool *grid, unsigned int rows, unsigned int cols,
+__global__ void k_init_grid(bool *grid, uint rows, uint cols,
                             curandState *globalRandState,
                             float spawnProbability) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
-    for (int y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
+    for (uint y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
          y += stride.y) {
-        for (int x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
+        for (uint x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
              x += stride.x) {
-            int idx = y * cols + x;
+            uint idx = y * cols + x;
             grid[idx] =
                 curand_uniform(&globalRandState[idx]) < spawnProbability;
         }
     }
 }
 
-__global__ void k_update_grid_buffers(bool *grid, vec2s *gridVertices,
-                                      unsigned int rows, unsigned int cols) {
+__global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
+                                      uint cols, uint numVerticesX,
+                                      uvec2 cellDensity, ulim2 gridLimX,
+                                      ulim2 gridLimY) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
-    // note: we're using safety borders
-    for (int y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
+    // no need to use safety borders here
+    for (uint y = blockDim.y * blockIdx.y + threadIdx.y; y < gridLimY.end;
          y += stride.y) {
-        for (int x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
+        // check if out of bounds
+        if (y < gridLimY.start)
+            continue;
+        for (uint x = blockDim.x * blockIdx.x + threadIdx.x; x < gridLimX.end;
              x += stride.x) {
-            int idx = y * cols + x;
-            gridVertices[idx].state = (float)grid[idx];
+            // check if out of bounds
+            if (x < gridLimX.start)
+                continue;
+            uint idx = y * cols + x;
+            // try avoiding further operations when not needed
+            if (grid[idx]) {
+                // calculate mapping between grid and vertice
+                uint vx = (x - gridLimX.start) / cellDensity.x;
+                uint vy = (y - gridLimY.start) / cellDensity.y;
+                uint vidx = vy * numVerticesX + vx;
+                // no need to be atomic on a read
+                // we check before to avoid atomic writing bottleneck
+                if (gridVertices[vidx].state == 0)
+                    atomicMax(&gridVertices[vidx].state, (int)grid[idx]);
+            }
         }
     }
 }
 
-__global__ void k_compute_grid_count_rule(bool *grid, bool *nextGrid,
-                                          unsigned int rows, unsigned int cols,
+__global__ void k_reset_grid_buffers(fvec2s *gridVertices, uint numVerticesX,
+                                     uint numVerticesY) {
+    dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+
+    for (uint y = blockDim.y * blockIdx.y + threadIdx.y; y < numVerticesY;
+         y += stride.y) {
+        for (uint x = blockDim.x * blockIdx.x + threadIdx.x; x < numVerticesX;
+             x += stride.x) {
+            gridVertices[y * numVerticesX + x].state = 0;
+        }
+    }
+}
+
+__global__ void k_compute_grid_count_rule(bool *grid, bool *nextGrid, uint rows,
+                                          uint cols,
                                           curandState *globalRandState,
                                           float virtualSpawnProbability,
                                           bool countAliveCells,
-                                          unsigned int *activeCellCount) {
+                                          uint *activeCellCount) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
-    for (unsigned int y = blockDim.y * blockIdx.y + threadIdx.y + 1;
-         y < rows - 1; y += stride.y) {
-        for (unsigned int x = blockDim.x * blockIdx.x + threadIdx.x + 1;
-             x < cols - 1; x += stride.x) {
-            unsigned int idx = y * cols + x;
+    for (uint y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
+         y += stride.y) {
+        for (uint x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
+             x += stride.x) {
+            uint idx = y * cols + x;
             bool newState = false;
 
             // 0. Virtual particle spawn probability
