@@ -1,15 +1,12 @@
 # Cellular Automata
 
-<table><tr><td width="70%">
+<img src="docs/100x100.gif" align="right">
+
 A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, CUDA and OpenGL. It's built to run on a GPU but it also supports CPU-only execution (mainly for relative speedup comparisons). On the right there's an example execution of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 grid randomly initialized.
 
 The main objective of this project is to allow scaling up to a fairly large number of cells while maintaining the code legibility and allowing for further customizations. It supports command line arguments to set up quick configs (run `./automata -h` for details) like headless mode (which is significantly faster) and initial patterns (which can be loaded from the `patterns` folder). It doesn't yet support the definition of evolution rules at runtime, but I'm working on that.
 
 This program can currently evolve a dense & high entropy 182.25 million cell Conway's Game of Life grid (13500x13500) with rendering enabled with up to 320 iterations per second on a Ryzen 7 3700X / RTX 3080 using up to 200MB RAM and 8.5GB VRAM (which is the actual scaling limiter). With rendering disabled it can evolve a 190.44 million cell grid (13800x13800) with up to 9 million iterations per second (currently the bottleneck is the rendering overhead).
-
-</td><td width="30%">
-<img src="docs/100x100.gif" align="right">
-</td></tr></table>
 
 <br />
 
