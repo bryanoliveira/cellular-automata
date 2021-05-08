@@ -2,7 +2,7 @@
 
 <img src="docs/100x100.gif" align="right">
 
-A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, CUDA and OpenGL. It's built to run on a GPU but it also supports CPU-only execution (mainly for relative speedup comparisons). On the right there's an example execution of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 grid randomly initialized.
+A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, CUDA and OpenGL. It's built to run on a GPU but it also supports CPU-only execution (mainly for relative speedup comparisons). On the right there's an example execution of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 randomly initialized grid.
 
 The main objective of this project is to allow scaling up to a fairly large number of cells while maintaining the code legibility and allowing for further customizations. It supports command line arguments to set up quick configs (run `./automata -h` for details) like headless mode (which is significantly faster) and initial patterns (which can be loaded from the `patterns` folder). It doesn't yet support the definition of evolution rules at runtime, but I'm working on that.
 
@@ -53,13 +53,13 @@ It is possible to run this program in a CPU-only mode, so if you don't have a CU
 
 ## References
 
-- What are [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton);
-- What is [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life);
+- What are [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton)?
+- What is [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)?
 - [Golly](http://golly.sourceforge.net/): an open source cellular automata simulator that supports several Game of Life and other automata algorithms;
-- [Life](https://copy.sh/life/): an open source JavaScript implementation of Game of Life that runs in the browser.
+- [Life](https://copy.sh/life/): an open source JavaScript implementation of Game of Life that runs in the browser;
 - [Conway's Life: Work in Progress](http://b3s23life.blogspot.com/2006_09_01_archive.html): where I got the initial pattern for the Meta-Toad;
 - [The Recursive Universe](https://blog.amandaghassaei.com/2020/05/01/the-recursive-universe/): explores and explains how some of the meta-patterns work;
-- What are [OTCA Metapixels](https://www.conwaylife.com/wiki/OTCA_metapixel).
+- What are [OTCA Metapixels](https://www.conwaylife.com/wiki/OTCA_metapixel)?
 
 ## Bonus
 
