@@ -1,5 +1,6 @@
 #include <chrono>
 #include <sstream>
+#include <omp.h>
 
 #include "automata_base_cpu.hpp"
 
@@ -38,17 +39,23 @@ void AutomataBase::compute_grid(bool logEnabled) {
     mActiveCellCount = 0;
 
     // note: we're using safety borders
-    for (unsigned int y = 1; y < config::rows - 1; y++) {
+    unsigned int y = 1;
+
+#pragma omp parallel for // reduction(+ : mActiveCellCount)
+    for (y = 1; y < config::rows - 1; y++) {
+#pragma omp parallel for
         for (unsigned int x = 1; x < config::cols - 1; x++) {
             // add a "virtual particle" spawn probability
             nextGrid[y * config::cols + x] =
                 (float(rand()) / RAND_MAX) < config::virtualFillProb ||
                 compute_cell(y, x);
 
-            if (logEnabled && nextGrid[y * config::cols + x])
-                mActiveCellCount++;
+            // if (logEnabled && nextGrid[y * config::cols + x])
+            //     // #pragma omp critical
+            //     mActiveCellCount = mActiveCellCount + 1;
         }
     }
+
     bool *tmpGrid = grid;
     grid = nextGrid;
     nextGrid = tmpGrid;

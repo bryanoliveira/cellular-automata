@@ -9,8 +9,8 @@ SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
 CUSOURCES := $(shell find $(SRCDIR) -type f -name *.$(CUEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CUOBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(CUSOURCES:.$(CUEXT)=.o))
-CFLAGS := -Wall -std=c++17 # -g
-LIB := -lGL -lGLU -lglut -lGLEW -lboost_program_options -lcudart
+CFLAGS := -Wall -std=c++17 -fopenmp # -g
+LIB := -lGL -lGLU -lglut -lGLEW -lboost_program_options -lcudart -fopenmp
 INC := -I include -I/usr/local/cuda/include
 
 run: $(TARGET)
