@@ -6,13 +6,21 @@ A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program 
 
 The main objective of this project is to allow scaling up to a fairly large number of cells while maintaining the code legibility and allowing for further customizations. It supports command line arguments to set up quick configs (run `./automata -h` for details) like headless mode (which is significantly faster) and initial patterns (which can be loaded from the `patterns` folder). It doesn't yet support the definition of evolution rules at runtime, but I'm working on that.
 
-This program can currently evolve a dense & high entropy 182.25 million cell Conway's Game of Life grid (13500x13500) with rendering enabled with up to 320 iterations per second on a Ryzen 7 3700X / RTX 3080 using up to 200MB RAM and 8.5GB VRAM (which is the actual scaling limiter).
+This program can currently evolve a dense & high entropy 182.25 million cell Game of Life grid (13500x13500) with rendering enabled with up to 320 generations per second on a Ryzen 7 3700X / RTX 3080 using up to 200MB RAM and 8.5GB VRAM (which is the actual scaling limiter).
+
+The ability to evolve and render such large grids allows the program to run some really interesting patterns, like evolving the Game of Life _inside_ the Game of Life:
+
+<div align="center">
+<img src="docs/zoom.gif">
+</div>
+
+In the GIF above we're running a 12300x12300 grid using Game of Life rules to evolve a pattern known as [Meta-Toad](http://b3s23life.blogspot.com/2006_09_01_archive.html). It uses a grid of [OTCA Metapixels](https://www.conwaylife.com/wiki/OTCA_metapixel) and requires about 35 thousand generations of the underlying automaton to represent a single generation of the meta-grid. The pattern being evolved by the meta-grid is known as [Toad](https://www.conwaylife.com/wiki/Toad):
+
+<div align="center">
+<img src="docs/toad.gif" align="center" width="100">
+</div>
 
 <br />
-
-<img src="docs/12000x12000.png">
-
-> A 12000x12000 grid running Conway's Game of life.
 
 ## Requirements
 
@@ -43,11 +51,21 @@ It is possible to run this program in a CPU-only mode, so if you don't have a CU
 - Scroll to zoom in/out
 - Left click to pan, right click to rotate (not very useful yet, but it will be for the 3D version), middle click to reset the camera
 
+## References
+
+- What are [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton);
+- What is [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life);
+- [Golly](http://golly.sourceforge.net/): an open source cellular automata simulator that supports several Game of Life and other automata algorithms;
+- [Life](https://copy.sh/life/): an open source JavaScript implementation of Game of Life that runs in the browser.
+- [Conway's Life: Work in Progress](http://b3s23life.blogspot.com/2006_09_01_archive.html): where I got the initial pattern for the Meta-Toad;
+- [The Recursive Universe](https://blog.amandaghassaei.com/2020/05/01/the-recursive-universe/): explores and explains how some of the meta-patterns work;
+- What are [OTCA Metapixels](https://www.conwaylife.com/wiki/OTCA_metapixel).
+
 ## Bonus
 
 ![1000x1000 grid (click to open)](docs/1000x1000.gif)
 
-> A 1000x1000 grid running Conway's Game of life.
+> A 1000x1000 randomly initialized grid running Game of life.
 
 ---
 
