@@ -39,20 +39,25 @@ void AutomataBase::compute_grid(bool logEnabled) {
     mActiveCellCount = 0;
 
     // note: we're using safety borders
-    unsigned int y = 1;
+#pragma omp parallel
+    {
+        unsigned int myseed = omp_get_thread_num();
+#pragma omp for // private(y) shared(grid, nextGrid, y, config::cols
+        for (unsigned int y = 1; y < config::rows - 1; y++) {
+            // reduction(+ : mActiveCellCount)
+            // #pragma omp for // private(x) shared(grid, nextGrid, y,
+            // config::cols)
+            for (unsigned int x = 1; x < config::cols - 1; x++) {
+                // add a "virtual particle" spawn probability
+                nextGrid[y * config::cols + x] =
+                    (float(rand_r(&myseed)) / RAND_MAX) <
+                        config::virtualFillProb ||
+                    compute_cell(y, x);
 
-#pragma omp parallel for // reduction(+ : mActiveCellCount)
-    for (y = 1; y < config::rows - 1; y++) {
-#pragma omp parallel for
-        for (unsigned int x = 1; x < config::cols - 1; x++) {
-            // add a "virtual particle" spawn probability
-            nextGrid[y * config::cols + x] =
-                (float(rand()) / RAND_MAX) < config::virtualFillProb ||
-                compute_cell(y, x);
-
-            // if (logEnabled && nextGrid[y * config::cols + x])
-            //     // #pragma omp critical
-            //     mActiveCellCount = mActiveCellCount + 1;
+                // if (logEnabled && nextGrid[y * config::cols + x])
+                //     // #pragma omp critical
+                //     mActiveCellCount = mActiveCellCount + 1;
+            }
         }
     }
 
@@ -67,9 +72,9 @@ void AutomataBase::compute_grid(bool logEnabled) {
                                std::chrono::steady_clock::now() - timeStart)
                                .count()
                         << " ns | Active cells: " << mActiveCellCount << " |";
-}
+} // namespace cpu
 
-bool AutomataBase::compute_cell(unsigned int y, unsigned int x) {
+inline bool AutomataBase::compute_cell(unsigned int y, unsigned int x) {
     unsigned short livingNeighbours = 0;
 
     unsigned int idx = y * config::cols + x;
