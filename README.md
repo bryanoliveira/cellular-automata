@@ -8,7 +8,7 @@ The main objective of this project is to allow scaling up to a fairly large numb
 
 This program can currently evolve a dense & high entropy 182.25 million cell Game of Life grid (13500x13500) with rendering enabled with up to 320 generations per second on a Ryzen 7 3700X / RTX 3080 using up to 200MB RAM and 8.5GB VRAM (which is the actual scaling limiter).
 
-The ability to evolve and render such large grids allows the program to run some really interesting patterns, like evolving the Game of Life _inside_ the Game of Life:
+The ability to evolve and render such large grids allows the program to run some really interesting patterns, like evolving the Game of Life _within_ the Game of Life:
 
 <div align="center">
 <img src="docs/zoom.gif">
