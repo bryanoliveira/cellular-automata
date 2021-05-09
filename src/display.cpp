@@ -93,15 +93,14 @@ void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
         glm::rotate(trans, controls::rotation.x / 50, glm::vec3(1.0, 0.0, 0.0));
     trans =
         glm::rotate(trans, controls::rotation.y / 50, glm::vec3(0.0, 1.0, 0.0));
-    // only apply camera transforms if downsampling is not custom
-    if (config::noDownsample) {
-        // scale
-        trans =
-            glm::scale(trans, glm::vec3(controls::scale, controls::scale, 1));
-        // translate
-        trans = glm::translate(trans, glm::vec3(-controls::position.x,
-                                                controls::position.y, 0.0f));
-    }
+    // scale
+    trans = glm::scale(trans, glm::vec3(controls::secondaryScale,
+                                        controls::secondaryScale, 1));
+    // translate
+    trans =
+        glm::translate(trans, glm::vec3(-controls::secondaryPosition.x,
+                                        controls::secondaryPosition.y, 0.0f));
+
     // apply transforms to the shaders
     unsigned int transformLoc =
         glGetUniformLocation(mShaderProgram, "transform");
@@ -171,10 +170,12 @@ void Display::update_grid_buffers_cpu() {
 void Display::update_title(unsigned long itsPerSecond) {
     std::ostringstream title;
     title << config::programName << " | " << config::patternFileName << " | "
-          << config::rows << "x" << config::cols << " | pos " << std::fixed
+          << config::rows << "x" << config::cols << " | gpos " << std::fixed
           << std::setprecision(2) << controls::position.x << "x"
-          << controls::position.y << " | " << controls::scale << "x | "
-          << itsPerSecond << " it/s";
+          << controls::position.y << " | ppos " << controls::secondaryPosition.x
+          << "x" << controls::secondaryPosition.y << " | gs " << controls::scale
+          << "x | ps " << controls::secondaryScale << "x | " << itsPerSecond
+          << " it/s";
     glutSetWindowTitle(title.str().c_str());
 }
 
