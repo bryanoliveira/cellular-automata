@@ -24,32 +24,53 @@ In the GIF above we're running a 12300x12300 grid using Game of Life rules to ev
 
 ## Requirements
 
+To run the program you'll need:
+
 - Debian-like linux distro (I only tested this on Ubuntu 20)
-- make
-- g++ (C++ 17)
 - OpenGL (GLEW and GLUT)
+    - e.g. `sudo apt-get install libglew2.1 freeglut3-dev`
+- [CUDA](https://developer.nvidia.com/cuda-downloads) (nvcc) and CUDA runtime libraries
+ 
+To build it from source you'll also need:
+
+- g++ (C++ 17) and *make*
+    - e.g. `sudo apt install build-essential`
 - Boost C++ Library (program_options module)
-- CUDA (nvcc) and CUDA runtime libraries
 
 It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that to work you will need to run the program with `./automata --cpu` and disable `*.cu` file compilation on `Makefile`.
 
 ## Usage
 
+### Executing a pre-built binary (Linux x64 + CUDA only)
+
+- Download `cellular-automata-linux64.zip` from the [latest release](https://github.com/bryanoliveira/cellular-automata/releases)
+- Extract the executable (`automata`) and the `patterns` folder
+- Install OpenGL and CUDA from the requirements above
+- Run `./automata -h` to see all the available options
+- Run the program: `./automata --render`
+
+
+### Building From Source
+
 - Install the requirements
 - Clone this repository
 - Building and executing:
   - Run `make` to build and run
-  - Run `make build` to only build
-  - Run `make run` to only run
-  - Run `make clean` to remove generated build files
+  - Run `make build` to build
+  - Run `make run` to run with default parameters
+  - Run `make clean` to remove generated files
   - Run `make profile` to run [NVIDIA's nsys](https://developer.nvidia.com/nsight-systems) profiling.
 
-### Runtime Commands
+### Runtime Controls
 
-- Press `space` to start/pause the simulation
-- Press `enter/return` to run a single step of the simulation
-- Scroll to zoom in/out
-- Left click to pan, right click to rotate (not very useful yet, but it will be for the 3D version), middle click to reset the camera
+- Basic controls:
+    - **space** pauses/resumes the simulation;
+    - **enter/return** runs a single generation;
+    - **left mouse click** translates the grid relative to the max resolution
+    - **ctrl + left mouse click** translates the camera relative to the world
+    - **mouse scroll** zooms the grid in and out, relative to the max resolution
+    - **ctrl + mouse scroll** zooms the camera, relative to the world
+    - **middle mouse click** resets scale and translation
 
 ## References
 
