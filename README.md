@@ -37,7 +37,7 @@ To build it from source you'll also need:
     - e.g. `sudo apt install build-essential`
 - Boost C++ Library (program_options module)
 
-It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that to work you will need to run the program with `./automata --cpu` and disable `*.cu` file compilation on `Makefile`.
+It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that to work you will need to run the program with `./automata --cpu` and disable `*.cu` file compilation in the `Makefile`.
 
 ## Usage
 
