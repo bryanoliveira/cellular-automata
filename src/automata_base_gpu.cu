@@ -98,11 +98,11 @@ void AutomataBase::compute_grid(bool logEnabled) {
 
     // calculate timings and update live buffer
     if (logEnabled)
-        *mLiveLogBuffer << "| Evolve Kernel: "
+        *mLiveLogBuffer << " | Evolve Kernel: "
                         << std::chrono::duration_cast<std::chrono::nanoseconds>(
                                std::chrono::steady_clock::now() - timeStart)
                                .count()
-                        << " ns | Active cells: " << *mActiveCellCount << " |";
+                        << " ns | Active cells: " << *mActiveCellCount;
 }
 
 void AutomataBase::run_evolution_kernel(bool countAliveCells) {

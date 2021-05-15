@@ -10,6 +10,7 @@ CUSOURCES := $(shell find $(SRCDIR) -type f -name *.$(CUEXT))
 OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
 CUOBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(CUSOURCES:.$(CUEXT)=.o))
 CFLAGS := -Wall -std=c++17 # -g
+CUFLAGS := -m64 -gencode arch=compute_52,code=sm_52 -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_70,code=sm_70 -gencode arch=compute_75,code=sm_75 -gencode arch=compute_80,code=sm_80 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_86,code=compute_86
 LIB := -lGL -lGLU -lglut -lGLEW -lboost_program_options -lcudart
 INC := -I include -I/usr/local/cuda/include
 
@@ -33,7 +34,7 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(CUEXT)
 	@echo "\033[1;37mBuilding" $@ "\033[0m"
 	@mkdir -p $(BUILDDIR)
-	nvcc -ccbin $(CC) $(INC) --machine=64 -gencode arch=compute_86,code=sm_86 -gencode arch=compute_86,code=compute_86 -c -o $@ $<
+	nvcc -ccbin $(CC) $(INC) $(CUFLAGS) -c -o $@ $<
 
 clean:
 	@echo "\033[1;37mCleaning...\033[0m"; 

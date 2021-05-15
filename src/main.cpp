@@ -80,7 +80,8 @@ int main(int argc, char **argv) {
     else
         gAutomata = new gpu::AutomataBase(randSeed, &gLiveLogBuffer);
 
-    load_pattern(config::patternFileName);
+    if (config::patternFileName != "random")
+        load_pattern(config::patternFileName);
 
     if (config::render)
         gDisplay->start();
@@ -115,7 +116,7 @@ void loop() {
     bool logEnabled = should_log();
     if (logEnabled)
         // carriage return
-        gLiveLogBuffer << "\rIt: " << gIterations << " ";
+        gLiveLogBuffer << "\r\e[KIt: " << gIterations;
 
     // update buffers & render
     if (config::render) {
@@ -127,8 +128,10 @@ void loop() {
     }
 
     // compute next grid
-    if (!controls::paused || controls::singleStep)
+    if (!controls::paused || controls::singleStep) {
         gAutomata->compute_grid(logEnabled); // count alive cells if will log
+        gIterations++;
+    }
     controls::singleStep = false;
 
     // calculate loop time and iterations per second
@@ -139,7 +142,6 @@ void loop() {
         live_log();
 
     // check if number of iterations reached max
-    gIterations++;
     if (!gLooping ||
         (config::maxIterations > 0 && gIterations >= config::maxIterations)) {
         if (config::render)
@@ -163,10 +165,10 @@ bool should_log() {
 
 void live_log() {
     // add main loop info to the buffer
-    gLiveLogBuffer << "| It/s: " << gIterationsPerSecond
+    gLiveLogBuffer << " | It/s: " << gIterationsPerSecond
                    << " | Main Loop: "
                    // average time per iteration
-                   << gNsBetweenSeconds / gIterationsPerSecond << " ns |";
+                   << gNsBetweenSeconds / gIterationsPerSecond << " ns";
     // print the buffer
     std::cout << gLiveLogBuffer.str() << std::flush;
     // reset the buffer

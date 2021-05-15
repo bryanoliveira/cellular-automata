@@ -11,15 +11,15 @@ std::string programName = "Automata";
 unsigned int width = 600;
 unsigned int height = 600;
 // 12000 x 12000 uses up to 2GB RAM and 8.5GB VRAM
-unsigned int rows = 100;
-unsigned int cols = 100;
+unsigned int rows = 1200;
+unsigned int cols = 1200;
 bool render = false;
-unsigned int renderDelayMs = 200;
-float fillProb = 0.08;
-float virtualFillProb = 0.0001;
+unsigned int renderDelayMs = 0;
+float fillProb = 0.2;
+float virtualFillProb = 0;
 unsigned long maxIterations = 0;
 bool cpuOnly = false;
-std::string patternFileName("patterns/empty.rle");
+std::string patternFileName("random");
 bool startPaused = true;
 bool noDownsample = false;
 
