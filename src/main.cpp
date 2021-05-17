@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
         gDisplay = new Display(&argc, argv, loop, config::cpuOnly);
 
     // configure automata object
+    std::cout << "Initializing automata engine..." << std::endl;
     if (config::cpuOnly)
         // the CPU implementation uses the buffer update function provided by
         // the display class and we configure it here to reduce complexity by
@@ -79,6 +80,7 @@ int main(int argc, char **argv) {
                                           &(gDisplay->grid_vbo()));
     else
         gAutomata = new gpu::AutomataBase(randSeed, &gLiveLogBuffer);
+    std::cout << "Automata engine is ready." << std::endl;
 
     if (config::patternFileName != "random")
         load_pattern(config::patternFileName);
@@ -131,6 +133,8 @@ void loop() {
     if (!controls::paused || controls::singleStep) {
         gAutomata->compute_grid(logEnabled); // count alive cells if will log
         gIterations++;
+    } else {
+        std::cout << "\r\e[KPaused. Press space to resume." << std::flush;
     }
     controls::singleStep = false;
 

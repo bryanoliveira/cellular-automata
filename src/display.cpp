@@ -16,6 +16,8 @@
  * Sets up GLUT, GLEW, OpenGL methods and buffers.
  */
 Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
+    std::cout << "Initializing display..." << std::endl;
+
     if (config::width % 2 == 1 || config::height % 2 == 1) {
         fprintf(stderr, "Width and Height must be even integers!\n");
         exit(EXIT_FAILURE);
@@ -61,6 +63,8 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     Display::setup_shader_program();
     // setup grid & OpenGL buffers
     Display::setup_grid_buffers();
+
+    std::cout << "Display is ready." << std::endl;
 }
 
 Display::~Display() {

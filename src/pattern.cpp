@@ -13,6 +13,8 @@
 #define STATE_END 6
 
 void load_pattern(std::string filename) {
+    std::cout << "Loading initial pattern..." << std::endl << std::flush;
+
     // pattern size
     unsigned int sizeCols, sizeRows;
     // pattern start position
@@ -126,6 +128,8 @@ void load_pattern(std::string filename) {
             break;
         }
     }
+
+    std::cout << "Loading done." << std::endl;
 }
 
 void fill_grid(unsigned int row, unsigned int col, unsigned int length) {
