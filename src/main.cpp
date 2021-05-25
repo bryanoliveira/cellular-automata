@@ -48,14 +48,14 @@ void live_log();
 void sigint_handler(int s);
 
 int main(int argc, char **argv) {
-    unsigned long randSeed = time(NULL);
+    unsigned long randSeed = time(nullptr);
     struct sigaction sigIntHandler;
 
     // configure interrupt signal handler
     sigIntHandler.sa_handler = sigint_handler;
     sigemptyset(&sigIntHandler.sa_mask);
     sigIntHandler.sa_flags = 0;
-    sigaction(SIGINT, &sigIntHandler, NULL);
+    sigaction(SIGINT, &sigIntHandler, nullptr);
 
     // load command line arguments
     config::load_cmd(argc, argv);

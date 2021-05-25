@@ -20,26 +20,27 @@ inline void cuda_assert(cudaError_t code, const char *file, int line,
     }
 }
 
-__global__ void k_setup_rng(uint rows, uint cols, curandState *globalRandState,
+__global__ void k_setup_rng(uint rows, uint cols,
+                            curandState *__restrict__ globalRandState,
                             unsigned long seed);
 
 __global__ void k_init_grid(bool *grid, uint rows, uint cols,
-                            curandState *globalRandState,
+                            curandState *__restrict__ globalRandState,
                             float spawnProbability);
 
-__global__ void k_compute_grid_count_rule(bool *grid, bool *nextGrid, uint rows,
-                                          uint cols,
-                                          curandState *globalRandState,
-                                          float virtualSpawnProbability,
-                                          bool countAliveCells,
-                                          uint *activeCellCount);
+__global__ void
+k_compute_grid_count_rule(bool *grid, bool *nextGrid, uint rows, uint cols,
+                          curandState *__restrict__ globalRandState,
+                          float virtualSpawnProbability, bool countAliveCells,
+                          uint *activeCellCount);
 
-__global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
+__global__ void k_update_grid_buffers(bool *grid,
+                                      fvec2s *__restrict__ gridVertices,
                                       uint cols, uint numVerticesX,
                                       uvec2 cellDensity, ulim2 gridLimX,
                                       ulim2 gridLimY);
 
-__global__ void k_reset_grid_buffers(fvec2s *gridVertices, uint numVerticesX,
-                                     uint numVerticesY);
+__global__ void k_reset_grid_buffers(fvec2s *__restrict__ gridVertices,
+                                     uint numVerticesX, uint numVerticesY);
 
 #endif

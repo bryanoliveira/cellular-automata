@@ -39,7 +39,8 @@ __device__ inline bool game_of_life(bool isAlive,
 
 ////// CUDA KERNELS
 
-__global__ void k_setup_rng(uint rows, uint cols, curandState *globalRandState,
+__global__ void k_setup_rng(uint rows, uint cols,
+                            curandState *__restrict__ globalRandState,
                             unsigned long seed) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
@@ -55,7 +56,7 @@ __global__ void k_setup_rng(uint rows, uint cols, curandState *globalRandState,
 }
 
 __global__ void k_init_grid(bool *grid, uint rows, uint cols,
-                            curandState *globalRandState,
+                            curandState *__restrict__ globalRandState,
                             float spawnProbability) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
@@ -71,7 +72,8 @@ __global__ void k_init_grid(bool *grid, uint rows, uint cols,
     }
 }
 
-__global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
+__global__ void k_update_grid_buffers(bool *grid,
+                                      fvec2s *__restrict__ gridVertices,
                                       uint cols, uint numVerticesX,
                                       uvec2 cellDensity, ulim2 gridLimX,
                                       ulim2 gridLimY) {
@@ -104,8 +106,8 @@ __global__ void k_update_grid_buffers(bool *grid, fvec2s *gridVertices,
     }
 }
 
-__global__ void k_reset_grid_buffers(fvec2s *gridVertices, uint numVerticesX,
-                                     uint numVerticesY) {
+__global__ void k_reset_grid_buffers(fvec2s *__restrict__ gridVertices,
+                                     uint numVerticesX, uint numVerticesY) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     for (uint y = blockDim.y * blockIdx.y + threadIdx.y; y < numVerticesY;
@@ -117,12 +119,11 @@ __global__ void k_reset_grid_buffers(fvec2s *gridVertices, uint numVerticesX,
     }
 }
 
-__global__ void k_compute_grid_count_rule(bool *grid, bool *nextGrid, uint rows,
-                                          uint cols,
-                                          curandState *globalRandState,
-                                          float virtualSpawnProbability,
-                                          bool countAliveCells,
-                                          uint *activeCellCount) {
+__global__ void
+k_compute_grid_count_rule(bool *grid, bool *nextGrid, uint rows, uint cols,
+                          curandState *__restrict__ globalRandState,
+                          float virtualSpawnProbability, bool countAliveCells,
+                          uint *activeCellCount) {
     dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders

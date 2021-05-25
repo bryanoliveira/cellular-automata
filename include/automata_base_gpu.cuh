@@ -17,7 +17,7 @@ namespace gpu {
 class AutomataBase : public AutomataInterface {
   public:
     AutomataBase(unsigned long seed, std::ostringstream *const pLiveLogBuffer,
-                 const unsigned int *gridVBO = NULL);
+                 const unsigned int *gridVBO = nullptr);
     virtual ~AutomataBase();
     virtual void compute_grid(bool logEnabled = false);
     virtual void update_grid_buffers();
@@ -30,7 +30,7 @@ class AutomataBase : public AutomataInterface {
     unsigned int *mActiveCellCount;
     std::ostringstream *mLiveLogBuffer;
     // rendering stuff
-    struct cudaGraphicsResource *mGridVBOResource = NULL;
+    struct cudaGraphicsResource *mGridVBOResource = nullptr;
 
     virtual void run_evolution_kernel(bool countAliveCells = false);
 };
