@@ -16,10 +16,11 @@ namespace gpu {
 
 class AutomataBase : public AutomataInterface {
   public:
-    AutomataBase(unsigned long seed, std::ostringstream *const pLiveLogBuffer,
-                 const unsigned int *gridVBO = nullptr);
+    AutomataBase(const unsigned long seed,
+                 std::ostringstream *const pLiveLogBuffer,
+                 const uint *const gridVBO = nullptr);
     virtual ~AutomataBase();
-    virtual void compute_grid(bool logEnabled = false);
+    virtual void compute_grid(const bool logEnabled = false);
     virtual void update_grid_buffers();
 
   protected:
@@ -32,7 +33,7 @@ class AutomataBase : public AutomataInterface {
     // rendering stuff
     struct cudaGraphicsResource *mGridVBOResource = nullptr;
 
-    virtual void run_evolution_kernel(bool countAliveCells = false);
+    virtual void run_evolution_kernel(const bool countAliveCells = false);
 };
 
 } // namespace gpu

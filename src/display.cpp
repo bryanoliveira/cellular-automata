@@ -15,7 +15,8 @@
 /**
  * Sets up GLUT, GLEW, OpenGL methods and buffers.
  */
-Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
+Display::Display(int *const argc, char **const argv, void (*loopFunc)(),
+                 const bool pCpuOnly) {
     std::cout << "Initializing display..." << std::endl;
 
     if (config::width % 2 == 1 || config::height % 2 == 1) {
@@ -29,12 +30,12 @@ Display::Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly) {
     Display::mGpuOnly = !pCpuOnly;
 
     // init glut
-    glutInit(pArgc, pArgv);
+    glutInit(argc, argv);
     glutInitWindowSize(config::width, config::height);
     glutCreateWindow(config::programName.c_str());
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
     // callbacks
-    glutDisplayFunc(pLoopFunc);
+    glutDisplayFunc(loopFunc);
     glutMouseFunc(controls::mouse);
     glutKeyboardFunc(controls::keyboard);
     glutMotionFunc(controls::motion);
@@ -87,7 +88,7 @@ void Display::stop() {
  * Draws on screen using OpenGL buffers, which is much faster.
  * Requires that the buffers are updated before this function is called.
  */
-void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
+void Display::draw(const bool logEnabled, const unsigned long itsPerSecond) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     // create default transform matrix
@@ -106,8 +107,7 @@ void Display::draw(bool logEnabled, unsigned long itsPerSecond) {
                                         controls::secondaryPosition.y, 0.0f));
 
     // apply transforms to the shaders
-    unsigned int transformLoc =
-        glGetUniformLocation(mShaderProgram, "transform");
+    uint transformLoc = glGetUniformLocation(mShaderProgram, "transform");
     glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
     // use configured shaders
@@ -156,8 +156,8 @@ void Display::update_grid_buffers_cpu() {
                 // map
                 uint vIdx = proj::getVerticeIdx({x, y});
                 // update vertice state
-                mGridVertices[vIdx].state =
-                    std::max(mGridVertices[vIdx].state, int(grid[idx]));
+                mGridVertices[vIdx].state = std::max(
+                    mGridVertices[vIdx].state, static_cast<int>(grid[idx]));
             }
         }
     }
@@ -171,7 +171,7 @@ void Display::update_grid_buffers_cpu() {
     glBindBuffer(GL_ARRAY_BUFFER, mGridVBO);
 }
 
-void Display::update_title(unsigned long itsPerSecond) {
+void Display::update_title(const unsigned long itsPerSecond) {
     std::ostringstream title;
     title << config::programName << " | " << config::patternFileName << " | "
           << config::rows << "x" << config::cols << " | gpos " << std::fixed
@@ -183,8 +183,8 @@ void Display::update_title(unsigned long itsPerSecond) {
     glutSetWindowTitle(title.str().c_str());
 }
 
-void Display::reshape(int pWidth, int pHeight) {
-    glViewport(0, 0, pWidth, pHeight);
+void Display::reshape(const int width, const int height) {
+    glViewport(0, 0, width, height);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -224,7 +224,7 @@ void Display::setup_shader_program() {
     char infoLog[512];
 
     // create our vertex shader
-    unsigned int vertexShader;
+    uint vertexShader;
     vertexShader = glCreateShader(GL_VERTEX_SHADER);
     // compile the shader code
     glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -239,7 +239,7 @@ void Display::setup_shader_program() {
     }
 
     // create our fragment shader
-    unsigned int fragmentShader;
+    uint fragmentShader;
     fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     // compile the shader code
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
@@ -276,10 +276,10 @@ void Display::setup_grid_buffers() {
     // we should probably free the vertices arrays at Display::stop, but we're
     // destroying the program after they are no longer needed
     mGridVerticesSize = proj::info.totalVertices * sizeof(fvec2s);
-    mGridVertices = (fvec2s *)malloc(mGridVerticesSize);
+    mGridVertices = static_cast<fvec2s *>(malloc(mGridVerticesSize));
 
     // configure vertices
-    setup_grid_vertices(mGridVertices);
+    setup_grid_vertices();
 
     // configure the Vertex Array Object so we configure our objects only once
     glGenVertexArrays(1, &mGridVAO);
@@ -308,9 +308,10 @@ void Display::setup_grid_buffers() {
     //      - stride of each position vertex in the array. It could be 0 as data
     //      is tightly packed. offset in bytes where the data start in the
     //      buffer
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(fvec2s), (void *)0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(fvec2s),
+                          reinterpret_cast<void *>(0));
     glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, sizeof(fvec2s),
-                          (void *)(2 * sizeof(float)));
+                          reinterpret_cast<void *>(2 * sizeof(float)));
     // enable the vertex attributes ixn location 0 for the currently bound VBO
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
@@ -323,15 +324,15 @@ void Display::setup_grid_buffers() {
         free(mGridVertices);
 }
 
-void Display::setup_grid_vertices(fvec2s *vertices) {
+void Display::setup_grid_vertices() {
     // setup vertices
     // iterate over the number of cells
-    for (unsigned int y = 0, idx = 0; y < proj::info.numVertices.y; y++) {
-        for (unsigned int x = 0; x < proj::info.numVertices.x; ++x) {
+    for (uint y = 0, idx = 0; y < proj::info.numVertices.y; y++) {
+        for (uint x = 0; x < proj::info.numVertices.x; ++x) {
             // vertices live in an (-1, 1) tridimensional space
             // we need to calculate the position of each vertice inside a 2d
             // grid top left
-            vertices[idx] =
+            mGridVertices[idx] =
                 fvec2s({-1.0f + x * (2.0f / proj::info.numVertices.x),
                         1.0f - y * (2.0f / proj::info.numVertices.y)},
                        false);

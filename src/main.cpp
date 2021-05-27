@@ -48,7 +48,7 @@ void live_log();
 void sigint_handler(int s);
 
 int main(int argc, char **argv) {
-    unsigned long randSeed = time(nullptr);
+    const unsigned long randSeed = time(nullptr);
     struct sigaction sigIntHandler;
 
     // configure interrupt signal handler
@@ -111,11 +111,11 @@ void loop() {
             std::chrono::milliseconds(config::renderDelayMs));
 
     // loop timer
-    std::chrono::steady_clock::time_point timeStart =
+    const std::chrono::steady_clock::time_point timeStart =
         std::chrono::steady_clock::now();
 
     // prepare logging
-    bool logEnabled = should_log();
+    const bool logEnabled = should_log();
     if (logEnabled)
         // carriage return
         gLiveLogBuffer << "\r\e[KIt: " << gIterations;

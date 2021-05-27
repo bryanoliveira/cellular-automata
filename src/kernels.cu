@@ -2,11 +2,13 @@
 
 ////// DEVICE FUNCTIONS
 
-__device__ inline unsigned short count_moore_neighbours(bool *grid, uint rows,
-                                                        uint cols, uint idx) {
+__device__ inline unsigned short count_moore_neighbours(const bool *const grid,
+                                                        const uint rows,
+                                                        const uint cols,
+                                                        const uint idx) {
     unsigned short livingNeighbours = 0;
     // we can calculate the neighbours directly since we're using safety borders
-    uint neighbours[] = {
+    const uint neighbours[] = {
         idx - cols - 1, // top left
         idx - cols,     // top center
         idx - cols + 1, // top right
@@ -23,8 +25,8 @@ __device__ inline unsigned short count_moore_neighbours(bool *grid, uint rows,
     return livingNeighbours;
 }
 
-__device__ inline bool game_of_life(bool isAlive,
-                                    unsigned short livingNeighbours) {
+__device__ inline bool game_of_life(const bool isAlive,
+                                    const unsigned short livingNeighbours) {
     // 1. Any live cell with two or three live neighbours survives.
     if (isAlive)
         return livingNeighbours == 2 || livingNeighbours == 3;
@@ -39,10 +41,10 @@ __device__ inline bool game_of_life(bool isAlive,
 
 ////// CUDA KERNELS
 
-__global__ void k_setup_rng(uint rows, uint cols,
-                            curandState *__restrict__ globalRandState,
-                            unsigned long seed) {
-    dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+__global__ void k_setup_rng(const uint rows, const uint cols,
+                            curandState *const __restrict__ globalRandState,
+                            const unsigned long seed) {
+    const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
     for (uint y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
@@ -55,10 +57,10 @@ __global__ void k_setup_rng(uint rows, uint cols,
     }
 }
 
-__global__ void k_init_grid(bool *grid, uint rows, uint cols,
-                            curandState *__restrict__ globalRandState,
-                            float spawnProbability) {
-    dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+__global__ void k_init_grid(bool *const grid, const uint rows, const uint cols,
+                            curandState *const __restrict__ globalRandState,
+                            const float spawnProbability) {
+    const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
     for (uint y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
@@ -72,12 +74,13 @@ __global__ void k_init_grid(bool *grid, uint rows, uint cols,
     }
 }
 
-__global__ void k_update_grid_buffers(bool *grid,
-                                      fvec2s *__restrict__ gridVertices,
-                                      uint cols, uint numVerticesX,
-                                      uvec2 cellDensity, ulim2 gridLimX,
-                                      ulim2 gridLimY) {
-    dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+__global__ void k_update_grid_buffers(const bool *const grid,
+                                      fvec2s *const __restrict__ gridVertices,
+                                      const uint cols, const uint numVerticesX,
+                                      const uvec2 cellDensity,
+                                      const ulim2 gridLimX,
+                                      const ulim2 gridLimY) {
+    const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // no need to use safety borders here
     for (uint y = blockDim.y * blockIdx.y + threadIdx.y; y < gridLimY.end;
@@ -100,15 +103,17 @@ __global__ void k_update_grid_buffers(bool *grid,
                 // no need to be atomic on a read
                 // we check before to avoid atomic writing bottleneck
                 if (gridVertices[vidx].state == 0)
-                    atomicMax(&gridVertices[vidx].state, (int)grid[idx]);
+                    atomicMax(&gridVertices[vidx].state,
+                              static_cast<int>(grid[idx]));
             }
         }
     }
 }
 
-__global__ void k_reset_grid_buffers(fvec2s *__restrict__ gridVertices,
-                                     uint numVerticesX, uint numVerticesY) {
-    dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+__global__ void k_reset_grid_buffers(fvec2s *const __restrict__ gridVertices,
+                                     const uint numVerticesX,
+                                     const uint numVerticesY) {
+    const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     for (uint y = blockDim.y * blockIdx.y + threadIdx.y; y < numVerticesY;
          y += stride.y) {
@@ -119,12 +124,12 @@ __global__ void k_reset_grid_buffers(fvec2s *__restrict__ gridVertices,
     }
 }
 
-__global__ void
-k_compute_grid_count_rule(bool *grid, bool *nextGrid, uint rows, uint cols,
-                          curandState *__restrict__ globalRandState,
-                          float virtualSpawnProbability, bool countAliveCells,
-                          uint *activeCellCount) {
-    dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+__global__ void k_compute_grid_count_rule(
+    const bool *const grid, bool *const nextGrid, const uint rows,
+    const uint cols, curandState *const __restrict__ globalRandState,
+    const float virtualSpawnProbability, const bool countAliveCells,
+    uint *const activeCellCount) {
+    const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
 
     // note: we're using safety borders
     for (uint y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;

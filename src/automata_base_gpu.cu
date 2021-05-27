@@ -7,9 +7,9 @@
 
 namespace gpu {
 
-AutomataBase::AutomataBase(unsigned long randSeed,
+AutomataBase::AutomataBase(const unsigned long randSeed,
                            std::ostringstream *const pLiveLogBuffer,
-                           const unsigned int *gridVBO) {
+                           const uint *const gridVBO) {
     int gpuDeviceId;
     cudaDeviceProp gpuProps;
     size_t gridSize = config::rows * config::cols;
@@ -35,7 +35,7 @@ AutomataBase::AutomataBase(unsigned long randSeed,
                    gridSize * sizeof(curandState))); // gpu only, not managed
     CUDA_ASSERT(cudaMallocManaged(&grid, gridBytes));
     CUDA_ASSERT(cudaMallocManaged(&nextGrid, gridBytes));
-    CUDA_ASSERT(cudaMallocManaged(&mActiveCellCount, sizeof(unsigned int)));
+    CUDA_ASSERT(cudaMallocManaged(&mActiveCellCount, sizeof(uint)));
     // prefetch grid to GPU
     CUDA_ASSERT(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
     CUDA_ASSERT(cudaMemPrefetchAsync(nextGrid, gridBytes, gpuDeviceId));
@@ -81,7 +81,7 @@ AutomataBase::~AutomataBase() {
     CUDA_ASSERT(cudaFree(mGlobalRandState));
 }
 
-void AutomataBase::compute_grid(bool logEnabled) {
+void AutomataBase::compute_grid(const bool logEnabled) {
     std::chrono::steady_clock::time_point timeStart;
     if (logEnabled)
         timeStart = std::chrono::steady_clock::now();
@@ -105,7 +105,7 @@ void AutomataBase::compute_grid(bool logEnabled) {
                         << " ns | Active cells: " << *mActiveCellCount;
 }
 
-void AutomataBase::run_evolution_kernel(bool countAliveCells) {
+void AutomataBase::run_evolution_kernel(const bool countAliveCells) {
     k_compute_grid_count_rule<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
                                 mEvolveStream>>>(
         grid, nextGrid, config::rows, config::cols, mGlobalRandState,
@@ -128,7 +128,7 @@ void AutomataBase::update_grid_buffers() {
     CUDA_ASSERT(cudaGraphicsMapResources(1, &mGridVBOResource, 0));
     size_t numBytes;
     CUDA_ASSERT(cudaGraphicsResourceGetMappedPointer(
-        (void **)&gridVertices, &numBytes, mGridVBOResource));
+        reinterpret_cast<void **>(&gridVertices), &numBytes, mGridVBOResource));
     // printf("CUDA mapped VBO: May access %ld bytes\n", numBytes);
 
     // launch kernels

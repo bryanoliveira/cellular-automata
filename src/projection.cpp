@@ -16,7 +16,8 @@ ulim2 gridLimX, gridLimY;
 // - private members
 
 // This modifies the param delta in order to limit it!
-ulim2 translateLimits(float *delta, ulim2 ref, int sectionSize, int hardLimit);
+ulim2 translateLimits(float *const delta, const ulim2 ref,
+                      const int sectionSize, const int hardLimit);
 
 void init() {
     controls::minScale = 1;
@@ -46,8 +47,9 @@ void init() {
         // scale factor should give us density steps of 1
         controls::scaleFactor = 1;
 
+        // related to cell space
         controls::translateFactor =
-            config::cols / float(info.numVertices.x); // related to cell space
+            static_cast<float>(config::cols) / info.numVertices.x;
     }
 
     // define default gridEnd (which is defined at run-time)
@@ -68,8 +70,8 @@ void update() {
                       1.0f))};
 
     // section size will start with the whole grid (scale = 1)
-    uvec2 sectionSize(info.numVertices.x * cellDensity.x,
-                      info.numVertices.y * cellDensity.y);
+    const uvec2 sectionSize(info.numVertices.x * cellDensity.x,
+                            info.numVertices.y * cellDensity.y);
     // the indices of the considered grid sections
     const ulim2 refX((config::cols / 2.0) - sectionSize.x / 2,
                      (config::cols / 2.0) + sectionSize.x / 2);
@@ -92,13 +94,13 @@ void update() {
     //           << std::endl;
 }
 
-uint getVerticeIdx(uvec2 gridPos) {
+uint getVerticeIdx(const uvec2 gridPos) {
     if (config::noDownsample)
         // no conversion needed, grid index = vertice index
         return gridPos.y * config::cols + gridPos.x;
 
-    uint vx = (gridPos.x - gridLimX.start) / cellDensity.x;
-    uint vy = (gridPos.y - gridLimY.start) / cellDensity.y;
+    const uint vx = (gridPos.x - gridLimX.start) / cellDensity.x;
+    const uint vy = (gridPos.y - gridLimY.start) / cellDensity.y;
     // return a position when the mapping is valid
     if (vx < info.numVertices.x && vy < info.numVertices.y)
         return vy * info.numVertices.x + vx;
@@ -108,16 +110,20 @@ uint getVerticeIdx(uvec2 gridPos) {
 }
 
 // This modifies the param delta in order to limit it!
-ulim2 translateLimits(float *delta, ulim2 ref, int sectionSize, int hardLimit) {
-    ulim2 translated = {
-        uint(std::min(std::max(int(ref.start + *delta), 0), hardLimit)),
-        uint(std::max(std::min(int(ref.end + *delta), hardLimit), sectionSize)),
+ulim2 translateLimits(float *const delta, const ulim2 ref,
+                      const int sectionSize, const int hardLimit) {
+    const ulim2 translated = {
+        uint(std::min(std::max(static_cast<int>(ref.start + *delta), 0),
+                      hardLimit)),
+        uint(std::max(std::min(static_cast<int>(ref.end + *delta), hardLimit),
+                      sectionSize)),
     };
 
     // crop delta by the amount used
     if (*delta < 0)
         // this may be negative - convert it before the operation
-        *delta = int(translated.start) - int(ref.start);
+        *delta =
+            static_cast<int>(translated.start) - static_cast<int>(ref.start);
     else if (*delta > 0)
         // this will be always positive
         *delta = translated.end - ref.end;

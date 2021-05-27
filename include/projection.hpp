@@ -16,6 +16,6 @@ void init();
 // Update projection limits given control updates
 void update();
 // Transform a X,Y Grid position into a 1D vertice index
-uint getVerticeIdx(uvec2 gridPos);
+uint getVerticeIdx(const uvec2 gridPos);
 
 }; // namespace proj

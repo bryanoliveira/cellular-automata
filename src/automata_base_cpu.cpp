@@ -5,20 +5,22 @@
 
 namespace cpu {
 
-AutomataBase::AutomataBase(unsigned long pRandSeed,
+AutomataBase::AutomataBase(const unsigned long pRandSeed,
                            std::ostringstream *const pLiveLogBuffer,
                            void (*pUpdateBuffersFunc)()) {
     srand(pRandSeed);
 
-    grid = (bool *)calloc(config::rows * config::cols, sizeof(bool));
-    nextGrid = (bool *)calloc(config::rows * config::cols, sizeof(bool));
+    grid =
+        static_cast<bool *>(calloc(config::rows * config::cols, sizeof(bool)));
+    nextGrid =
+        static_cast<bool *>(calloc(config::rows * config::cols, sizeof(bool)));
 
     if (config::fillProb > 0)
         // note: we're using safety borders
-        for (unsigned int y = 1; y < config::rows - 1; y++) {
-            for (unsigned int x = 1; x < config::cols - 1; x++)
+        for (uint y = 1; y < config::rows - 1; y++) {
+            for (uint x = 1; x < config::cols - 1; x++)
                 grid[y * config::cols + x] =
-                    (float(rand()) / RAND_MAX) < config::fillProb;
+                    (static_cast<float>(rand()) / RAND_MAX) < config::fillProb;
         }
 
     mLiveLogBuffer = pLiveLogBuffer;
@@ -30,7 +32,7 @@ AutomataBase::~AutomataBase() {
     free(nextGrid);
 }
 
-void AutomataBase::compute_grid(bool logEnabled) {
+void AutomataBase::compute_grid(const bool logEnabled) {
     std::chrono::steady_clock::time_point timeStart;
     if (logEnabled)
         timeStart = std::chrono::steady_clock::now();
@@ -38,11 +40,12 @@ void AutomataBase::compute_grid(bool logEnabled) {
     mActiveCellCount = 0;
 
     // note: we're using safety borders
-    for (unsigned int y = 1; y < config::rows - 1; y++) {
-        for (unsigned int x = 1; x < config::cols - 1; x++) {
+    for (uint y = 1; y < config::rows - 1; y++) {
+        for (uint x = 1; x < config::cols - 1; x++) {
             // add a "virtual particle" spawn probability
             nextGrid[y * config::cols + x] =
-                (float(rand()) / RAND_MAX) < config::virtualFillProb ||
+                (static_cast<float>(rand()) / RAND_MAX) <
+                    config::virtualFillProb ||
                 compute_cell(y, x);
 
             if (logEnabled && nextGrid[y * config::cols + x])
@@ -62,12 +65,12 @@ void AutomataBase::compute_grid(bool logEnabled) {
                         << " ns | Active cells: " << mActiveCellCount;
 }
 
-bool AutomataBase::compute_cell(unsigned int y, unsigned int x) {
+bool AutomataBase::compute_cell(const uint y, const uint x) {
     unsigned short livingNeighbours = 0;
 
-    unsigned int idx = y * config::cols + x;
+    const uint idx = y * config::cols + x;
     // we can calculate the neighbours directly since we're using safety borders
-    unsigned int neighbours[] = {
+    const uint neighbours[] = {
         idx - config::cols - 1, // top left
         idx - config::cols,     // top center
         idx - config::cols + 1, // top right

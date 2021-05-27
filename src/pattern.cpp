@@ -12,7 +12,7 @@
 #define STATE_PATTERN 5
 #define STATE_END 6
 
-void load_pattern(std::string filename) {
+void load_pattern(const std::string filename) {
     std::cout << "Loading initial pattern..." << std::endl << std::flush;
 
     // pattern size
@@ -132,10 +132,10 @@ void load_pattern(std::string filename) {
     std::cout << "Loading done." << std::endl;
 }
 
-void fill_grid(unsigned int row, unsigned int col, unsigned int length) {
+void fill_grid(const uint row, const uint col, const uint length) {
     // std::cout << "Inserting " << length << " cells from " << row << "x" <<
     // col << std::endl;
-    for (unsigned int i = col; i < col + length; i++) {
+    for (uint i = col; i < col + length; i++) {
         grid[row * config::cols + i] = true;
     }
 }
