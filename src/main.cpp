@@ -71,15 +71,17 @@ int main(int argc, char **argv) {
         // the CPU implementation uses the buffer update function provided by
         // the display class and we configure it here to reduce complexity by
         // maintaining the AutomataInterface predictable
-        gAutomata = new cpu::AutomataBase(randSeed, &gLiveLogBuffer, []() {
-            gDisplay->update_grid_buffers_cpu();
-        });
+        gAutomata = static_cast<AutomataInterface *>(
+            new cpu::AutomataBase(randSeed, &gLiveLogBuffer, []() {
+                gDisplay->update_grid_buffers_cpu();
+            }));
     else if (config::render)
         // the GPU implementation updates the VBO using the CUDA<>GL interop
-        gAutomata = new gpu::AutomataBase(randSeed, &gLiveLogBuffer,
-                                          &(gDisplay->grid_vbo()));
+        gAutomata = static_cast<AutomataInterface *>(new gpu::AutomataBase(
+            randSeed, &gLiveLogBuffer, &(gDisplay->grid_vbo())));
     else
-        gAutomata = new gpu::AutomataBase(randSeed, &gLiveLogBuffer);
+        gAutomata = static_cast<AutomataInterface *>(
+            new gpu::AutomataBase(randSeed, &gLiveLogBuffer));
     std::cout << "Automata engine is ready." << std::endl;
 
     if (config::patternFileName != "random")

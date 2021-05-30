@@ -15,7 +15,7 @@
 /**
  * Sets up GLUT, GLEW, OpenGL methods and buffers.
  */
-Display::Display(int *const argc, char **const argv, void (*loopFunc)(),
+Display::Display(int *const argc, char **const argv, void (&loopFunc)(),
                  const bool pCpuOnly) {
     std::cout << "Initializing display..." << std::endl;
 

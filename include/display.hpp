@@ -9,7 +9,7 @@
 
 class Display {
   public:
-    Display(int *const argc, char **const argv, void (*loopFunc)(),
+    Display(int *const argc, char **const argv, void (&loopFunc)(),
             const bool pCpuOnly);
     ~Display();
     void start();
