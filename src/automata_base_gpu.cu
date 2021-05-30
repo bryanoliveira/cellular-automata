@@ -2,6 +2,7 @@
 #include <chrono>
 #include <cuda_gl_interop.h>
 #include <sstream>
+#include <spdlog/spdlog.h>
 
 #include "automata_base_gpu.cuh"
 
@@ -10,6 +11,8 @@ namespace gpu {
 AutomataBase::AutomataBase(const unsigned long randSeed,
                            std::ostringstream *const pLiveLogBuffer,
                            const uint *const gridVBO) {
+    spdlog::info("Initializing automata GPU engine...");
+
     int gpuDeviceId;
     cudaDeviceProp gpuProps;
     size_t gridSize = config::rows * config::cols;
@@ -65,6 +68,8 @@ AutomataBase::AutomataBase(const unsigned long randSeed,
 
     // define the live log buffer
     mLiveLogBuffer = pLiveLogBuffer;
+
+    spdlog::info("Automata GPU engine is ready.");
 }
 
 AutomataBase::~AutomataBase() {
@@ -78,6 +83,7 @@ AutomataBase::~AutomataBase() {
     // free the grid
     CUDA_ASSERT(cudaFree(grid));
     CUDA_ASSERT(cudaFree(nextGrid));
+    CUDA_ASSERT(cudaFree(mActiveCellCount));
     CUDA_ASSERT(cudaFree(mGlobalRandState));
 }
 

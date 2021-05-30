@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <spdlog/spdlog.h>
 
 #include "pattern.hpp"
 
@@ -13,7 +14,7 @@
 #define STATE_END 6
 
 void load_pattern(const std::string filename) {
-    std::cout << "Loading initial pattern..." << std::endl << std::flush;
+    spdlog::info("Loading initial pattern...");
 
     // pattern size
     unsigned int sizeCols, sizeRows;
@@ -24,7 +25,7 @@ void load_pattern(const std::string filename) {
 
     std::ifstream infile(filename);
     if (!infile.is_open()) {
-        fprintf(stderr, "Rule load error: %s\n", filename.c_str());
+        spdlog::critical("Rule load error: " + filename);
         exit(EXIT_FAILURE);
     }
     std::stringstream buffer;
@@ -33,7 +34,6 @@ void load_pattern(const std::string filename) {
     unsigned short state = STATE_INIT;
 
     while (infile.get(ch)) {
-        // std::cout << "char: " << ch << " | state: " << state << std::endl;
         // an automata to initialize an automata
         switch (state) {
         case STATE_INIT:
@@ -76,10 +76,8 @@ void load_pattern(const std::string filename) {
                 buffer.clear();
                 // calculate the row start position (integer)
                 row = config::rows / 2 - sizeRows / 2;
-                std::cout << "Pattern size: " << sizeRows << "x" << sizeCols
-                          << std::endl;
-                std::cout << "Start position: " << row << "x" << startCol
-                          << std::endl;
+                spdlog::info("Pattern size: {}x{}", sizeRows, sizeCols);
+                spdlog::info("Start position: {}x{}", row, startCol);
                 // the next thing is the rule
                 state = STATE_RULE;
             }
@@ -129,12 +127,11 @@ void load_pattern(const std::string filename) {
         }
     }
 
-    std::cout << "Loading done." << std::endl;
+    spdlog::info("Pattern loading done.");
 }
 
 void fill_grid(const uint row, const uint col, const uint length) {
-    // std::cout << "Inserting " << length << " cells from " << row << "x" <<
-    // col << std::endl;
+    // enables a contiguous segment of the grid
     for (uint i = col; i < col + length; i++) {
         grid[row * config::cols + i] = true;
     }

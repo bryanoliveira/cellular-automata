@@ -1,5 +1,6 @@
 #include <chrono>
 #include <sstream>
+#include <spdlog/spdlog.h>
 
 #include "automata_base_cpu.hpp"
 
@@ -8,6 +9,7 @@ namespace cpu {
 AutomataBase::AutomataBase(const unsigned long pRandSeed,
                            std::ostringstream *const pLiveLogBuffer,
                            void (*pUpdateBuffersFunc)()) {
+    spdlog::info("Initializing automata CPU engine...");
     srand(pRandSeed);
 
     grid =
@@ -25,6 +27,8 @@ AutomataBase::AutomataBase(const unsigned long pRandSeed,
 
     mLiveLogBuffer = pLiveLogBuffer;
     mUpdateBuffersFunc = pUpdateBuffersFunc;
+
+    spdlog::info("Automata CPU engine is ready.");
 }
 
 AutomataBase::~AutomataBase() {

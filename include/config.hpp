@@ -16,6 +16,7 @@ extern bool render;
 extern uint renderDelayMs;
 extern float fillProb;
 extern float virtualFillProb;
+extern bool benchmarkMode;
 extern unsigned long maxIterations;
 extern bool cpuOnly;
 extern std::string patternFileName;

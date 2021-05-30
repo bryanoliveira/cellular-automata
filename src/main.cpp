@@ -22,6 +22,8 @@
 #include <thread>
 #include <signal.h>
 #include <sstream>
+#include <spdlog/spdlog.h>
+#include <spdlog/cfg/env.h>
 
 #include "automata_interface.hpp"
 #include "automata_base_cpu.hpp"
@@ -48,6 +50,8 @@ void live_log();
 void sigint_handler(int s);
 
 int main(int argc, char **argv) {
+    spdlog::cfg::load_env_levels();
+
     const unsigned long randSeed = time(nullptr);
     struct sigaction sigIntHandler;
 
@@ -66,7 +70,6 @@ int main(int argc, char **argv) {
         gDisplay = new Display(&argc, argv, loop, config::cpuOnly);
 
     // configure automata object
-    std::cout << "Initializing automata engine..." << std::endl;
     if (config::cpuOnly)
         // the CPU implementation uses the buffer update function provided by
         // the display class and we configure it here to reduce complexity by
@@ -82,7 +85,6 @@ int main(int argc, char **argv) {
     else
         gAutomata = static_cast<AutomataInterface *>(
             new gpu::AutomataBase(randSeed, &gLiveLogBuffer));
-    std::cout << "Automata engine is ready." << std::endl;
 
     if (config::patternFileName != "random")
         load_pattern(config::patternFileName);
@@ -94,8 +96,9 @@ int main(int argc, char **argv) {
             loop();
     }
 
-    std::cout << std::endl
-              << "Exiting after " << gIterations << " iterations." << std::endl;
+    if (!config::benchmarkMode)
+        std::cout << std::endl;
+    spdlog::info("Exiting after {} iterations.", gIterations);
 
     // clean up
     delete gAutomata;
@@ -117,7 +120,7 @@ void loop() {
         std::chrono::steady_clock::now();
 
     // prepare logging
-    const bool logEnabled = should_log();
+    const bool logEnabled = !config::benchmarkMode && should_log();
     if (logEnabled)
         // carriage return
         gLiveLogBuffer << "\r\e[KIt: " << gIterations;
@@ -135,7 +138,7 @@ void loop() {
     if (!controls::paused || controls::singleStep) {
         gAutomata->compute_grid(logEnabled); // count alive cells if will log
         gIterations++;
-    } else {
+    } else if (!config::benchmarkMode) {
         std::cout << "\r\e[KPaused. Press space to resume." << std::flush;
     }
     controls::singleStep = false;

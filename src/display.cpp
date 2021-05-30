@@ -9,6 +9,7 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <spdlog/spdlog.h>
 
 #include "display.hpp"
 
@@ -17,7 +18,7 @@
  */
 Display::Display(int *const argc, char **const argv, void (&loopFunc)(),
                  const bool pCpuOnly) {
-    std::cout << "Initializing display..." << std::endl;
+    spdlog::info("Initializing display...");
 
     if (config::width % 2 == 1 || config::height % 2 == 1) {
         fprintf(stderr, "Width and Height must be even integers!\n");
@@ -65,7 +66,7 @@ Display::Display(int *const argc, char **const argv, void (&loopFunc)(),
     // setup grid & OpenGL buffers
     Display::setup_grid_buffers();
 
-    std::cout << "Display is ready." << std::endl;
+    spdlog::info("Display is ready.");
 }
 
 Display::~Display() {

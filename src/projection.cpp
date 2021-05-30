@@ -83,15 +83,6 @@ void update() {
                                config::cols);
     gridLimY = translateLimits(&controls::position.y, refY, sectionSize.y,
                                config::rows);
-
-    // std::cout << std::endl
-    //           << "sec xy " << sectionSize.x << "," << sectionSize.y     //
-    //           << " / dens xy " << cellDensity.x << "," << cellDensity.y //
-    //           << " / grid x " << gridLimX.start << "-" << gridLimX.end  //
-    //           << " / grid y " << gridLimY.start << "-" << gridLimY.end  //
-    //           << " / maxX " << (gridLimX.range()) / cellDensity.x       //
-    //           << " / maxY " << (gridLimY.range()) / cellDensity.y       //
-    //           << std::endl;
 }
 
 uint getVerticeIdx(const uvec2 gridPos) {
@@ -104,7 +95,6 @@ uint getVerticeIdx(const uvec2 gridPos) {
     // return a position when the mapping is valid
     if (vx < info.numVertices.x && vy < info.numVertices.y)
         return vy * info.numVertices.x + vx;
-    // std::cout << "out of bounds" << std::endl;
     // otherwise return a default position
     return 0;
 }

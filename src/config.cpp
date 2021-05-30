@@ -17,6 +17,7 @@ bool render = false;
 uint renderDelayMs = 0;
 float fillProb = 0.2;
 float virtualFillProb = 0;
+bool benchmarkMode = false;
 unsigned long maxIterations = 0;
 bool cpuOnly = false;
 std::string patternFileName("random");
@@ -46,7 +47,10 @@ void load_cmd(const int argc, char **const argv) {
                           " when grid size is greater than window size.") //
         ("file,f", po::value<std::string>(), "Pattern file (.rle)")       //
         ("start", "Unpause at start (default is paused when rendering, "
-                  "unpaused when not rendering)"); //
+                  "unpaused when not rendering)") //
+        ("benchmark,b",
+         "Benchmark mode - overrides 'max' to 100 if it is 0, 'start' to true, "
+         "'render-delay' to 0");
 
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(description).run(),
@@ -86,6 +90,13 @@ void load_cmd(const int argc, char **const argv) {
     if (vm.count("no-downsample") || (width == cols && height == rows))
         // by default, don't use downsample when scale is 1:1
         noDownsample = true;
+    if (vm.count("benchmark")) {
+        benchmarkMode = true;
+        startPaused = false;
+        renderDelayMs = 0;
+        if (maxIterations == 0)
+            maxIterations = 100;
+    }
 }
 
 } // namespace config
