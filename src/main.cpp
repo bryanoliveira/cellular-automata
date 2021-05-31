@@ -31,12 +31,12 @@
 #include "config.hpp"
 #include "display.hpp"
 #include "pattern.hpp"
+#include "stats.hpp"
 
 Display *gDisplay;
 AutomataInterface *gAutomata;
 
 bool gLooping = true;
-unsigned long gIterations = 0;
 unsigned long gLastIterationCount = 0;
 unsigned long gIterationsPerSecond = 0;
 unsigned long gNsBetweenSeconds = 0;
@@ -96,9 +96,12 @@ int main(int argc, char **argv) {
             loop();
     }
 
-    if (!config::benchmarkMode)
+    if (config::benchmarkMode) {
+        stats::print_timings();
+    } else {
         std::cout << std::endl;
-    spdlog::info("Exiting after {} iterations.", gIterations);
+        spdlog::info("Exiting after {} iterations.", stats::iterations);
+    }
 
     // clean up
     delete gAutomata;
@@ -123,7 +126,7 @@ void loop() {
     const bool logEnabled = !config::benchmarkMode && should_log();
     if (logEnabled)
         // carriage return
-        gLiveLogBuffer << "\r\e[KIt: " << gIterations;
+        gLiveLogBuffer << "\r\e[KIt: " << stats::iterations;
 
     // update buffers & render
     if (config::render) {
@@ -137,7 +140,7 @@ void loop() {
     // compute next grid
     if (!controls::paused || controls::singleStep) {
         gAutomata->compute_grid(logEnabled); // count alive cells if will log
-        gIterations++;
+        stats::iterations++;
     } else if (!config::benchmarkMode) {
         std::cout << "\r\e[KPaused. Press space to resume." << std::flush;
     }
@@ -151,8 +154,8 @@ void loop() {
         live_log();
 
     // check if number of iterations reached max
-    if (!gLooping ||
-        (config::maxIterations > 0 && gIterations >= config::maxIterations)) {
+    if (!gLooping || (config::maxIterations > 0 &&
+                      stats::iterations >= config::maxIterations)) {
         if (config::render)
             gDisplay->stop();
         else
@@ -162,7 +165,7 @@ void loop() {
 
 bool should_log() {
     // calculate loop time and iterations per second
-    gIterationsPerSecond = gIterations - gLastIterationCount;
+    gIterationsPerSecond = stats::iterations - gLastIterationCount;
     // return if it's not time to update the log
     if (gIterationsPerSecond <= 0 ||
         std::chrono::duration_cast<std::chrono::seconds>(
@@ -185,7 +188,7 @@ void live_log() {
     gLiveLogBuffer.clear();
     // update global counters
     gNsBetweenSeconds = 0;
-    gLastIterationCount = gIterations;
+    gLastIterationCount = stats::iterations;
     gLastPrintClock = std::chrono::steady_clock::now();
 }
 

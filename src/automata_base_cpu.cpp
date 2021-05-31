@@ -3,6 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include "automata_base_cpu.hpp"
+#include "stats.hpp"
 
 namespace cpu {
 
@@ -37,9 +38,8 @@ AutomataBase::~AutomataBase() {
 }
 
 void AutomataBase::compute_grid(const bool logEnabled) {
-    std::chrono::steady_clock::time_point timeStart;
-    if (logEnabled)
-        timeStart = std::chrono::steady_clock::now();
+    const std::chrono::steady_clock::time_point timeStart =
+        std::chrono::steady_clock::now();
 
     mActiveCellCount = 0;
 
@@ -60,12 +60,15 @@ void AutomataBase::compute_grid(const bool logEnabled) {
     grid = nextGrid;
     nextGrid = tmpGrid;
 
+    // calculate timing
+    const unsigned long duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now() - timeStart)
+            .count();
+    stats::totalEvolveTime += duration;
+    // update live buffer
     if (logEnabled)
-        // calculate timings and update live buffer
-        *mLiveLogBuffer << " | Evolve Function: "
-                        << std::chrono::duration_cast<std::chrono::nanoseconds>(
-                               std::chrono::steady_clock::now() - timeStart)
-                               .count()
+        *mLiveLogBuffer << " | Evolve Function: " << duration
                         << " ns | Active cells: " << mActiveCellCount;
 }
 

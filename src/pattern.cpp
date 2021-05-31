@@ -1,9 +1,10 @@
-#include <iostream>
+#include <chrono>
 #include <fstream>
 #include <sstream>
 #include <spdlog/spdlog.h>
 
 #include "pattern.hpp"
+#include "stats.hpp"
 
 #define STATE_INIT 0
 #define STATE_COMMENT 1
@@ -15,6 +16,8 @@
 
 void load_pattern(const std::string filename) {
     spdlog::info("Loading initial pattern...");
+    const std::chrono::steady_clock::time_point timeStart =
+        std::chrono::steady_clock::now();
 
     // pattern size
     unsigned int sizeCols, sizeRows;
@@ -127,6 +130,9 @@ void load_pattern(const std::string filename) {
         }
     }
 
+    stats::loadTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                          std::chrono::steady_clock::now() - timeStart)
+                          .count();
     spdlog::info("Pattern loading done.");
 }
 

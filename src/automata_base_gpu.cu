@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 
 #include "automata_base_gpu.cuh"
+#include "stats.hpp"
 
 namespace gpu {
 
@@ -73,24 +74,21 @@ AutomataBase::AutomataBase(const unsigned long randSeed,
 }
 
 AutomataBase::~AutomataBase() {
-    // wait for pending operations to complete
-    CUDA_ASSERT(cudaDeviceSynchronize());
-    // destroy secondary streams
-    cudaStreamDestroy(mEvolveStream);
-    cudaStreamDestroy(mBufferUpdateStream);
-    // unregister mapped resource (needs the GL context to still be set)
-    // CUDA_ASSERT(cudaGraphicsUnregisterResource(mGridVBOResource));
+    // I believe member streams are destroyed automatically (since I get
+    // segfault if do it here).
+    // Also, graphics resources are automatically unbound.
+
     // free the grid
     CUDA_ASSERT(cudaFree(grid));
     CUDA_ASSERT(cudaFree(nextGrid));
     CUDA_ASSERT(cudaFree(mActiveCellCount));
     CUDA_ASSERT(cudaFree(mGlobalRandState));
+    cudaDeviceReset();
 }
 
 void AutomataBase::compute_grid(const bool logEnabled) {
-    std::chrono::steady_clock::time_point timeStart;
-    if (logEnabled)
-        timeStart = std::chrono::steady_clock::now();
+    const std::chrono::steady_clock::time_point timeStart =
+        std::chrono::steady_clock::now();
 
     *mActiveCellCount = 0; // this will be moved CPU<->GPU automatically
     run_evolution_kernel(logEnabled); // count alive cells if log is enabled
@@ -102,12 +100,15 @@ void AutomataBase::compute_grid(const bool logEnabled) {
     grid = nextGrid;
     nextGrid = tmpGrid;
 
-    // calculate timings and update live buffer
+    // calculate timing
+    const unsigned long duration =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now() - timeStart)
+            .count();
+    stats::totalEvolveTime += duration;
+    // update live buffer
     if (logEnabled)
-        *mLiveLogBuffer << " | Evolve Kernel: "
-                        << std::chrono::duration_cast<std::chrono::nanoseconds>(
-                               std::chrono::steady_clock::now() - timeStart)
-                               .count()
+        *mLiveLogBuffer << " | Evolve Kernel: " << duration
                         << " ns | Active cells: " << *mActiveCellCount;
 }
 
@@ -125,6 +126,9 @@ void AutomataBase::update_grid_buffers() {
                         "disabled.\n");
         exit(EXIT_FAILURE);
     }
+
+    const std::chrono::steady_clock::time_point timeStart =
+        std::chrono::steady_clock::now();
 
     // update projection limits
     proj::update();
@@ -153,6 +157,12 @@ void AutomataBase::update_grid_buffers() {
 
     // unmap buffer object
     CUDA_ASSERT(cudaGraphicsUnmapResources(1, &mGridVBOResource, 0));
+
+    // calculate timing
+    stats::totalBufferTime +=
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now() - timeStart)
+            .count();
 }
 
 } // namespace gpu

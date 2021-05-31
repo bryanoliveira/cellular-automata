@@ -6,12 +6,12 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <ctime>
-#include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <spdlog/spdlog.h>
 
 #include "display.hpp"
+#include "stats.hpp"
 
 /**
  * Sets up GLUT, GLEW, OpenGL methods and buffers.

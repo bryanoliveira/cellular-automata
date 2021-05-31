@@ -48,9 +48,8 @@ void load_cmd(const int argc, char **const argv) {
         ("file,f", po::value<std::string>(), "Pattern file (.rle)")       //
         ("start", "Unpause at start (default is paused when rendering, "
                   "unpaused when not rendering)") //
-        ("benchmark,b",
-         "Benchmark mode - overrides 'max' to 100 if it is 0, 'start' to true, "
-         "'render-delay' to 0");
+        ("benchmark,b", "Benchmark mode - overrides 'max' to 1000 if it is 0, "
+                        "'start' to true, 'render-delay' to 0");
 
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(description).run(),
@@ -95,7 +94,7 @@ void load_cmd(const int argc, char **const argv) {
         startPaused = false;
         renderDelayMs = 0;
         if (maxIterations == 0)
-            maxIterations = 100;
+            maxIterations = 1000;
     }
 }
 

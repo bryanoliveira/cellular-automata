@@ -1,5 +1,4 @@
 #include <GL/freeglut.h>
-#include <iostream>
 #include "controls.hpp"
 
 namespace controls {
