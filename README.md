@@ -36,9 +36,10 @@ This program also supports a benchmark mode (`-b` option), which outputs the tot
 To run the program you'll need:
 
 - Debian-like linux distro (I only tested this on Ubuntu 20)
-- OpenGL (GLEW and GLUT)
-  - e.g. `sudo apt-get install libglew2.1 freeglut3-dev`
+- OpenGL (GLEW, GLUT and GLM)
+  - e.g. `sudo apt-get install libglew2.1 freeglut3-dev libglm-dev`
 - [CUDA](https://developer.nvidia.com/cuda-downloads) (nvcc) and CUDA runtime libraries
+- LibGLM
 
 To build it from source you'll also need:
 
