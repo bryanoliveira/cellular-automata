@@ -39,7 +39,6 @@ To run the program you'll need:
 - OpenGL (GLEW, GLUT and GLM)
   - e.g. `sudo apt-get install libglew-dev freeglut3-dev libglm-dev`
 - [CUDA](https://developer.nvidia.com/cuda-downloads) (nvcc) and CUDA runtime libraries
-- LibGLM
 
 To build it from source you'll also need:
 
