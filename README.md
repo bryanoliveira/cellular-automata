@@ -37,7 +37,7 @@ To run the program you'll need:
 
 - Debian-like linux distro (I only tested this on Ubuntu 20)
 - OpenGL (GLEW, GLUT and GLM)
-  - e.g. `sudo apt-get install libglew2.1 freeglut3-dev libglm-dev`
+  - e.g. `sudo apt-get install libglew-dev freeglut3-dev libglm-dev`
 - [CUDA](https://developer.nvidia.com/cuda-downloads) (nvcc) and CUDA runtime libraries
 - LibGLM
 
