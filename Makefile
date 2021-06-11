@@ -53,6 +53,7 @@ profile: $(TARGET)
 $(TARGET): $(OBJECTS) $(CUOBJECTS)
 	@echo "\033[1;37mLinking" $(TARGET) "\033[0m"
 	$(CC) $^ -o $(TARGET) $(LIB)
+	@echo "\033[1;37mCompiled successfully\033[0m"
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@echo "\033[1;37mBuilding" $@ "\033[0m"

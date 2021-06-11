@@ -96,8 +96,8 @@ int main(int argc, char **argv) {
         // the GPU implementation updates the VBO using the CUDA<>GL interop
         gAutomata = static_cast<AutomataInterface *>(new gpu::AutomataBase(
             randSeed, &gLiveLogBuffer, &(gDisplay->grid_vbo())));
-    else
 #endif // HEADLESS_ONLY
+    else
         gAutomata = static_cast<AutomataInterface *>(
             new gpu::AutomataBase(randSeed, &gLiveLogBuffer));
 #endif // CPU_ONLY
@@ -113,12 +113,12 @@ int main(int argc, char **argv) {
         while (gLooping)
             loop();
 
-    if (config::benchmarkMode) {
+    if (config::benchmarkMode)
         stats::print_timings();
-    } else {
+    else
         std::cout << std::endl;
-        spdlog::info("Exiting after {} iterations.", stats::iterations);
-    }
+
+    spdlog::info("Exiting after {} iterations.", stats::iterations);
 
     // clean up
     delete gAutomata;
@@ -157,8 +157,9 @@ void loop() {
         gDisplay->draw(logEnabled, gIterationsPerSecond);
     }
 
+    // there are controls only when rendering is enabled
     if (controls::paused && !controls::singleStep) {
-        if (!config::benchmarkMode)
+        if (config::render)
             std::cout << "\r\e[KPaused. Press space to resume." << std::flush;
     } else {
         controls::singleStep = false;
