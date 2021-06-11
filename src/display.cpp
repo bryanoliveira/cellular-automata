@@ -1,4 +1,6 @@
-// isolate opengl specific imports
+#ifndef HEADLESS_ONLY
+
+// opengl specific imports
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <glm/glm.hpp>
@@ -11,6 +13,10 @@
 #include <spdlog/spdlog.h>
 
 #include "display.hpp"
+#include "config.hpp"
+#include "controls.hpp"
+#include "grid.hpp"
+#include "projection.hpp"
 #include "stats.hpp"
 
 /**
@@ -341,3 +347,5 @@ void Display::setup_grid_vertices() {
         }
     }
 }
+
+#endif // HEADLESS_ONLY

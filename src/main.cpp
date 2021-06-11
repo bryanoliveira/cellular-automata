@@ -27,13 +27,20 @@
 
 #include "automata_interface.hpp"
 #include "automata_base_cpu.hpp"
-#include "automata_base_gpu.cuh"
 #include "config.hpp"
-#include "display.hpp"
 #include "pattern.hpp"
 #include "stats.hpp"
+#ifndef CPU_ONLY
+#include "automata_base_gpu.cuh"
+#endif // CPU_ONLY
+#ifndef HEADLESS_ONLY
+#include "controls.hpp"
+#include "display.hpp"
+#endif // HEADLESS_ONLY
 
+#ifndef HEADLESS_ONLY
 Display *gDisplay;
+#endif // HEADLESS_ONLY
 AutomataInterface *gAutomata;
 
 bool gLooping = true;
@@ -63,11 +70,14 @@ int main(int argc, char **argv) {
 
     // load command line arguments
     config::load_cmd(argc, argv);
+
+#ifndef HEADLESS_ONLY
     controls::paused = config::startPaused;
 
     // configure display
     if (config::render)
         gDisplay = new Display(&argc, argv, loop, config::cpuOnly);
+#endif // HEADLESS_ONLY
 
     // configure automata object
     if (config::cpuOnly)
@@ -76,25 +86,32 @@ int main(int argc, char **argv) {
         // maintaining the AutomataInterface predictable
         gAutomata = static_cast<AutomataInterface *>(
             new cpu::AutomataBase(randSeed, &gLiveLogBuffer, []() {
+#ifndef HEADLESS_ONLY
                 gDisplay->update_grid_buffers_cpu();
+#endif // HEADLESS_ONLY
             }));
+#ifndef CPU_ONLY
+#ifndef HEADLESS_ONLY
     else if (config::render)
         // the GPU implementation updates the VBO using the CUDA<>GL interop
         gAutomata = static_cast<AutomataInterface *>(new gpu::AutomataBase(
             randSeed, &gLiveLogBuffer, &(gDisplay->grid_vbo())));
     else
+#endif // HEADLESS_ONLY
         gAutomata = static_cast<AutomataInterface *>(
             new gpu::AutomataBase(randSeed, &gLiveLogBuffer));
+#endif // CPU_ONLY
 
     if (config::patternFileName != "random")
         load_pattern(config::patternFileName);
 
+#ifndef HEADLESS_ONLY
     if (config::render)
         gDisplay->start();
-    else {
+    else
+#endif // HEADLESS_ONLY
         while (gLooping)
             loop();
-    }
 
     if (config::benchmarkMode) {
         stats::print_timings();
@@ -106,8 +123,10 @@ int main(int argc, char **argv) {
     // clean up
     delete gAutomata;
 
+#ifndef HEADLESS_ONLY
     if (config::render)
         delete gDisplay;
+#endif // HEADLESS_ONLY
 
     return 0;
 }
@@ -128,6 +147,7 @@ void loop() {
         // carriage return
         gLiveLogBuffer << "\r\e[KIt: " << stats::iterations;
 
+#ifndef HEADLESS_ONLY
     // update buffers & render
     if (config::render) {
         // update display buffers
@@ -137,14 +157,21 @@ void loop() {
         gDisplay->draw(logEnabled, gIterationsPerSecond);
     }
 
-    // compute next grid
-    if (!controls::paused || controls::singleStep) {
+    if (controls::paused && !controls::singleStep) {
+        if (!config::benchmarkMode)
+            std::cout << "\r\e[KPaused. Press space to resume." << std::flush;
+    } else {
+        controls::singleStep = false;
+
+#endif // HEADLESS_ONLY
+
+        // compute next grid
         gAutomata->compute_grid(logEnabled); // count alive cells if will log
         stats::iterations++;
-    } else if (!config::benchmarkMode) {
-        std::cout << "\r\e[KPaused. Press space to resume." << std::flush;
+
+#ifndef HEADLESS_ONLY
     }
-    controls::singleStep = false;
+#endif // HEADLESS_ONLY
 
     // calculate loop time and iterations per second
     gNsBetweenSeconds += std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -156,9 +183,11 @@ void loop() {
     // check if number of iterations reached max
     if (!gLooping || (config::maxIterations > 0 &&
                       stats::iterations >= config::maxIterations)) {
+#ifndef HEADLESS_ONLY
         if (config::render)
             gDisplay->stop();
         else
+#endif // HEADLESS_ONLY
             gLooping = false;
     }
 }

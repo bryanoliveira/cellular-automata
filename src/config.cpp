@@ -1,5 +1,6 @@
 #include <boost/program_options.hpp>
 #include <iostream>
+#include <spdlog/spdlog.h>
 
 #include "config.hpp"
 
@@ -68,8 +69,15 @@ void load_cmd(const int argc, char **const argv) {
         rows = vm["rows"].as<uint>();
     if (vm.count("cols"))
         cols = vm["cols"].as<uint>();
-    if (vm.count("render"))
+    if (vm.count("render")) {
+#ifdef HEADLESS_ONLY
+        spdlog::critical(
+            "ERROR! Rendering (-r) is disabled in HEADLESS_ONLY mode!");
+        exit(0);
+#else
         render = true;
+#endif
+    }
     if (vm.count("render-delay"))
         renderDelayMs = vm["render-delay"].as<uint>();
     if (vm.count("fill-probability"))
@@ -80,6 +88,10 @@ void load_cmd(const int argc, char **const argv) {
         maxIterations = vm["max"].as<unsigned long>();
     if (vm.count("cpu"))
         cpuOnly = true;
+#ifdef CPU_ONLY
+    spdlog::warn("cpuOnly flag overriden due to CPU_ONLY compilation.");
+    cpuOnly = true;
+#endif
     if (vm.count("file"))
         patternFileName = vm["file"].as<std::string>();
     if (vm.count("start") || !render)

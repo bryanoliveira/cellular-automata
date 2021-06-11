@@ -1,3 +1,5 @@
+#ifndef HEADLESS_ONLY
+
 #include <GL/freeglut.h>
 #include "controls.hpp"
 
@@ -108,3 +110,5 @@ void motion(const int x, const int y) {
 }
 
 } // namespace controls
+
+#endif // HEADLESS_ONLY

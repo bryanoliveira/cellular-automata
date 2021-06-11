@@ -33,6 +33,9 @@ AutomataBase::AutomataBase(const unsigned long randSeed,
         gpuProps.warpSize / 2,
         gpuProps.warpSize / 2); // 256 on a 3080 - 8 threads per SP (I think)
 
+    // TODO replace with shared memory use
+    CUDA_ASSERT(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1))
+
     // allocate memory
     CUDA_ASSERT(
         cudaMalloc(&mGlobalRandState,
@@ -121,6 +124,8 @@ void AutomataBase::run_evolution_kernel(const bool countAliveCells) {
 }
 
 void AutomataBase::update_grid_buffers() {
+#ifndef HEADLESS_ONLY
+
     if (!mGridVBOResource) {
         fprintf(stderr, "ERROR: Cannot call update_grid_buffers with rendering "
                         "disabled.\n");
@@ -163,6 +168,8 @@ void AutomataBase::update_grid_buffers() {
         std::chrono::duration_cast<std::chrono::nanoseconds>(
             std::chrono::steady_clock::now() - timeStart)
             .count();
+
+#endif // HEADLESS_ONLY
 }
 
 } // namespace gpu

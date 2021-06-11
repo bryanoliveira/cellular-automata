@@ -1,10 +1,6 @@
 #ifndef DISPLAY_HPP_
 #define DISPLAY_HPP_
 
-#include "config.hpp"
-#include "controls.hpp"
-#include "grid.hpp"
-#include "projection.hpp"
 #include "types.hpp"
 
 class Display {

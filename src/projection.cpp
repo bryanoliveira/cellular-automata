@@ -1,3 +1,5 @@
+#ifndef HEADLESS_ONLY
+
 #include <cmath>
 
 #include "projection.hpp"
@@ -121,3 +123,5 @@ ulim2 translateLimits(float *const delta, const ulim2 ref,
 }
 
 } // namespace proj
+
+#endif // HEADLESS_ONLY
