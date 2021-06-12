@@ -49,8 +49,8 @@ void AutomataBase::compute_grid(const bool logEnabled) {
             // add a "virtual particle" spawn probability
             nextGrid[y * config::cols + x] =
                 (config::virtualFillProb &&
-                 static_cast<float>(rand()) / RAND_MAX) <
-                    config::virtualFillProb ||
+                 (static_cast<float>(rand()) / RAND_MAX) <
+                     config::virtualFillProb) ||
                 compute_cell(y, x);
 
             if (logEnabled && nextGrid[y * config::cols + x])
