@@ -19,7 +19,7 @@ function run {
 RUN="$(ls res | tail -1 | cut -d "." -f1)"
 RUN=$(($RUN + 1))
 
-echo "Benchmark #$RUN\n"
+echo "Benchmark #$RUN"
 
 for threads in {1,2,4,8,12,16}; do
     export OMP_NUM_THREADS=$threads
