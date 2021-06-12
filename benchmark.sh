@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# exit on error
+set -e
+
 # disable info logging
 export SPDLOG_LEVEL=error
 
@@ -19,7 +22,13 @@ function run {
 RUN="$(ls res | tail -1 | cut -d "." -f1)"
 RUN=$(($RUN + 1))
 
-echo "Benchmarking CPU"
-run "--cpu" "res/$RUN.benchmark_results_cpu.csv"
+echo "Benchmark #$RUN"
+
+for threads in {1,2,4,8,12,16}; do
+    export OMP_NUM_THREADS=$threads
+    echo "Benchmarking CPU with $OMP_NUM_THREADS threads"
+    run "--cpu" "res/$RUN.benchmark_results_cpu_th_$OMP_NUM_THREADS.csv"
+done
+
 echo "Benchmarking GPU"
 run "" "res/$RUN.benchmark_results_gpu.csv"

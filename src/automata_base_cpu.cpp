@@ -1,4 +1,5 @@
 #include <chrono>
+#include <omp.h>
 #include <sstream>
 #include <spdlog/spdlog.h>
 
@@ -43,20 +44,27 @@ void AutomataBase::compute_grid(const bool logEnabled) {
 
     mActiveCellCount = 0;
 
-    // note: we're using safety borders
-    for (uint y = 1; y < config::rows - 1; ++y) {
-        for (uint x = 1; x < config::cols - 1; ++x) {
-            // add a "virtual particle" spawn probability
-            nextGrid[y * config::cols + x] =
-                (config::virtualFillProb &&
-                 (static_cast<float>(rand()) / RAND_MAX) <
-                     config::virtualFillProb) ||
-                compute_cell(y, x);
+#pragma omp parallel
+    {
+        uint myseed = omp_get_thread_num();
+#pragma omp for collapse(2) private(myseed) reduction(+ : mActiveCellCount)
+        // note: we're using safety borders
+        for (uint y = 1; y < config::rows - 1; ++y) {
+            for (uint x = 1; x < config::cols - 1; ++x) {
+                // add a "virtual particle" spawn probability
+                nextGrid[y * config::cols + x] =
+                    (config::virtualFillProb &&
+                     (static_cast<float>(rand_r(&myseed)) / RAND_MAX) <
+                         config::virtualFillProb) ||
+                    compute_cell(y, x);
 
-            if (logEnabled && nextGrid[y * config::cols + x])
-                ++mActiveCellCount;
+                if (logEnabled && nextGrid[y * config::cols + x])
+                    // #pragma omp critical
+                    ++mActiveCellCount;
+            }
         }
     }
+
     bool *tmpGrid = grid;
     grid = nextGrid;
     nextGrid = tmpGrid;
@@ -73,11 +81,11 @@ void AutomataBase::compute_grid(const bool logEnabled) {
                         << " ns | Active cells: " << mActiveCellCount;
 }
 
-bool AutomataBase::compute_cell(const uint y, const uint x) {
+inline bool AutomataBase::compute_cell(const uint y, const uint x) {
     unsigned short livingNeighbours = 0;
-
     const uint idx = y * config::cols + x;
-    // we can calculate the neighbours directly since we're using safety borders
+    // we can calculate the neighbours directly since we're using safety
+    // borders
     const uint neighbours[] = {
         idx - config::cols - 1, // top left
         idx - config::cols,     // top center

@@ -11,7 +11,7 @@ ifdef HEADLESS_ONLY
 EXTRA_FLAGS := $(EXTRA_FLAGS) -DHEADLESS_ONLY
 endif
 
-CFLAGS := -Wall -std=c++17 $(EXTRA_FLAGS) # -g
+CFLAGS := -Wall -std=c++17 -fopenmp $(EXTRA_FLAGS) # -g
 ifdef OLDER_CUDA
 CUFLAGS := $(EXTRA_FLAGS) -m64 -gencode arch=compute_52,code=sm_52 -gencode arch=compute_60,code=sm_60 -gencode arch=compute_61,code=sm_61 -gencode arch=compute_70,code=sm_70 -gencode arch=compute_75,code=sm_75 -gencode arch=compute_80,code=sm_80
 else
@@ -29,7 +29,7 @@ CUSOURCES := $(shell find $(SRCDIR) -type f -name *.cu)
 CUOBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(CUSOURCES:.cu=.o))
 endif
 
-LIB := -lboost_program_options
+LIB := -lboost_program_options -fopenmp
 ifndef HEADLESS_ONLY
 LIB := $(LIB) -lGL -lGLU -lglut -lGLEW
 endif
