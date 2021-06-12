@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# exit on error
+set -e
+
 # disable info logging
 export SPDLOG_LEVEL=error
 
