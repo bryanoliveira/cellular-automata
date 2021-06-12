@@ -18,9 +18,11 @@ __device__ inline unsigned short count_moore_neighbours(const bool *const grid,
         idx + cols,     // bottom center
         idx + cols + 1, // bottom right
     };
+
+#pragma unroll
     for (unsigned short nidx = 0; nidx < 8; nidx++)
-        if (grid[neighbours[nidx]])
-            livingNeighbours++;
+        // grid is currently bool, so summing true values is ok
+        livingNeighbours += static_cast<unsigned short>(grid[neighbours[nidx]]);
 
     return livingNeighbours;
 }
@@ -28,15 +30,10 @@ __device__ inline unsigned short count_moore_neighbours(const bool *const grid,
 __device__ inline bool game_of_life(const bool isAlive,
                                     const unsigned short livingNeighbours) {
     // 1. Any live cell with two or three live neighbours survives.
-    if (isAlive)
-        return livingNeighbours == 2 || livingNeighbours == 3;
     // 2. Any dead cell with three live neighbours becomes a live cell.
-    else if (livingNeighbours == 3)
-        return true;
     // 3. All other live cells die in the next generation. Similarly,
     // all other dead cells stay dead.
-    else
-        return false;
+    return (isAlive && livingNeighbours == 2) || livingNeighbours == 3;
 }
 
 ////// CUDA KERNELS
@@ -95,6 +92,7 @@ __global__ void k_update_grid_buffers(const bool *const grid,
                 continue;
             uint idx = y * cols + x;
             // try avoiding further operations when not needed
+            // atomicMax is pretty expensive
             if (grid[idx]) {
                 // calculate mapping between grid and vertice
                 uint vx = (x - gridLimX.start) / cellDensity.x;

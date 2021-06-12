@@ -16,7 +16,10 @@ function run {
 }
 
 
+RUN="$(ls res | tail -1 | cut -d "." -f1)"
+RUN=$(($RUN + 1))
+
 echo "Benchmarking CPU"
-run "--cpu" "benchmark_results_cpu.csv"
+run "--cpu" "res/$RUN.benchmark_results_cpu.csv"
 echo "Benchmarking GPU"
-run "" "benchmark_results_gpu.csv"
+run "" "res/$RUN.benchmark_results_gpu.csv"
