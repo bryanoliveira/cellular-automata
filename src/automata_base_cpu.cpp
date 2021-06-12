@@ -20,8 +20,8 @@ AutomataBase::AutomataBase(const unsigned long pRandSeed,
 
     if (config::fillProb > 0)
         // note: we're using safety borders
-        for (uint y = 1; y < config::rows - 1; y++) {
-            for (uint x = 1; x < config::cols - 1; x++)
+        for (uint y = 1; y < config::rows - 1; ++y) {
+            for (uint x = 1; x < config::cols - 1; ++x)
                 grid[y * config::cols + x] =
                     (static_cast<float>(rand()) / RAND_MAX) < config::fillProb;
         }
@@ -44,16 +44,17 @@ void AutomataBase::compute_grid(const bool logEnabled) {
     mActiveCellCount = 0;
 
     // note: we're using safety borders
-    for (uint y = 1; y < config::rows - 1; y++) {
-        for (uint x = 1; x < config::cols - 1; x++) {
+    for (uint y = 1; y < config::rows - 1; ++y) {
+        for (uint x = 1; x < config::cols - 1; ++x) {
             // add a "virtual particle" spawn probability
             nextGrid[y * config::cols + x] =
-                (static_cast<float>(rand()) / RAND_MAX) <
+                (config::virtualFillProb &&
+                 static_cast<float>(rand()) / RAND_MAX) <
                     config::virtualFillProb ||
                 compute_cell(y, x);
 
             if (logEnabled && nextGrid[y * config::cols + x])
-                mActiveCellCount++;
+                ++mActiveCellCount;
         }
     }
     bool *tmpGrid = grid;
@@ -87,20 +88,16 @@ bool AutomataBase::compute_cell(const uint y, const uint x) {
         idx + config::cols,     // bottom center
         idx + config::cols + 1, // bottom right
     };
-    for (unsigned short nidx = 0; nidx < 8; nidx++)
-        if (grid[neighbours[nidx]])
-            livingNeighbours++;
+
+#pragma GCC unroll 8
+    for (unsigned short nidx = 0; nidx < 8; ++nidx)
+        livingNeighbours += static_cast<unsigned short>(grid[neighbours[nidx]]);
 
     // 1. Any live cell with two or three live neighbours survives.
-    if (grid[idx])
-        return livingNeighbours == 2 || livingNeighbours == 3;
     // 2. Any dead cell with three live neighbours becomes a live cell.
-    else if (livingNeighbours == 3)
-        return true;
     // 3. All other live cells die in the next generation. Similarly,
     // all other dead cells stay dead.
-    else
-        return false;
+    return (grid[idx] && livingNeighbours == 2) || livingNeighbours == 3;
 }
 
 } // namespace cpu

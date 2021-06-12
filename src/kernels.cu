@@ -20,7 +20,7 @@ __device__ inline unsigned short count_moore_neighbours(const bool *const grid,
     };
 
 #pragma unroll
-    for (unsigned short nidx = 0; nidx < 8; nidx++)
+    for (unsigned short nidx = 0; nidx < 8; ++nidx)
         // grid is currently bool, so summing true values is ok
         livingNeighbours += static_cast<unsigned short>(grid[neighbours[nidx]]);
 

@@ -168,7 +168,7 @@ void loop() {
 
         // compute next grid
         gAutomata->compute_grid(logEnabled); // count alive cells if will log
-        stats::iterations++;
+        ++stats::iterations;
 
 #ifndef HEADLESS_ONLY
     }

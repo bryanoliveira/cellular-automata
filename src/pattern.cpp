@@ -138,7 +138,6 @@ void load_pattern(const std::string filename) {
 
 void fill_grid(const uint row, const uint col, const uint length) {
     // enables a contiguous segment of the grid
-    for (uint i = col; i < col + length; i++) {
+    for (uint i = col; i < col + length; ++i)
         grid[row * config::cols + i] = true;
-    }
 }

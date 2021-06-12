@@ -334,7 +334,7 @@ void Display::setup_grid_buffers() {
 void Display::setup_grid_vertices() {
     // setup vertices
     // iterate over the number of cells
-    for (uint y = 0, idx = 0; y < proj::info.numVertices.y; y++) {
+    for (uint y = 0, idx = 0; y < proj::info.numVertices.y; ++y) {
         for (uint x = 0; x < proj::info.numVertices.x; ++x) {
             // vertices live in an (-1, 1) tridimensional space
             // we need to calculate the position of each vertice inside a 2d
@@ -343,7 +343,7 @@ void Display::setup_grid_vertices() {
                 fvec2s({-1.0f + x * (2.0f / proj::info.numVertices.x),
                         1.0f - y * (2.0f / proj::info.numVertices.y)},
                        false);
-            idx++;
+            ++idx;
         }
     }
 }
