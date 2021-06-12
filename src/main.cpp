@@ -31,11 +31,11 @@
 #include "pattern.hpp"
 #include "stats.hpp"
 #ifndef CPU_ONLY
-#include "automata_base_gpu.cuh"
+    #include "automata_base_gpu.cuh"
 #endif // CPU_ONLY
 #ifndef HEADLESS_ONLY
-#include "controls.hpp"
-#include "display.hpp"
+    #include "controls.hpp"
+    #include "display.hpp"
 #endif // HEADLESS_ONLY
 
 #ifndef HEADLESS_ONLY
@@ -91,12 +91,12 @@ int main(int argc, char **argv) {
 #endif // HEADLESS_ONLY
             }));
 #ifndef CPU_ONLY
-#ifndef HEADLESS_ONLY
+    #ifndef HEADLESS_ONLY
     else if (config::render)
         // the GPU implementation updates the VBO using the CUDA<>GL interop
         gAutomata = static_cast<AutomataInterface *>(new gpu::AutomataBase(
             randSeed, &gLiveLogBuffer, &(gDisplay->grid_vbo())));
-#endif // HEADLESS_ONLY
+    #endif // HEADLESS_ONLY
     else
         gAutomata = static_cast<AutomataInterface *>(
             new gpu::AutomataBase(randSeed, &gLiveLogBuffer));

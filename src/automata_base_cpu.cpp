@@ -44,15 +44,12 @@ void AutomataBase::compute_grid(const bool logEnabled) {
 
     mActiveCellCount = 0;
 
-    // note: we're using safety borders
 #pragma omp parallel
     {
         uint myseed = omp_get_thread_num();
-#pragma omp for // private(y) shared(grid, nextGrid, y, config::cols
+#pragma omp for collapse(2) private(myseed) reduction(+ : mActiveCellCount)
+        // note: we're using safety borders
         for (uint y = 1; y < config::rows - 1; ++y) {
-            // reduction(+ : mActiveCellCount)
-            // #pragma omp for // private(x) shared(grid, nextGrid, y,
-            // config::cols)
             for (uint x = 1; x < config::cols - 1; ++x) {
                 // add a "virtual particle" spawn probability
                 nextGrid[y * config::cols + x] =
@@ -61,9 +58,9 @@ void AutomataBase::compute_grid(const bool logEnabled) {
                          config::virtualFillProb) ||
                     compute_cell(y, x);
 
-                // if (logEnabled && nextGrid[y * config::cols + x])
-                //     // #pragma omp critical
-                //     ++mActiveCellCount;
+                if (logEnabled && nextGrid[y * config::cols + x])
+                    // #pragma omp critical
+                    ++mActiveCellCount;
             }
         }
     }
