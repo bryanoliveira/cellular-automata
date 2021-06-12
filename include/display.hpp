@@ -1,36 +1,34 @@
 #ifndef DISPLAY_HPP_
 #define DISPLAY_HPP_
 
-#include "config.hpp"
-#include "controls.hpp"
-#include "grid.hpp"
-#include "projection.hpp"
 #include "types.hpp"
 
 class Display {
   public:
-    Display(int *pArgc, char **pArgv, void (*pLoopFunc)(), bool pCpuOnly);
+    Display(int *const argc, char **const argv, void (&loopFunc)(),
+            const bool pCpuOnly);
     ~Display();
     void start();
     void stop();
-    void draw(bool logEnabled = false, unsigned long itsPerSecond = 0);
+    void draw(const bool logEnabled = false,
+              const unsigned long itsPerSecond = 0);
     void update_grid_buffers_cpu();
     // cuda code may need to register this buffer
-    unsigned int const &grid_vbo() const { return mGridVBO; }
+    uint const &grid_vbo() const { return mGridVBO; }
 
   private:
-    unsigned int mShaderProgram;
-    unsigned int mGridVAO;
-    unsigned int mGridVBO;
+    uint mShaderProgram;
+    uint mGridVAO;
+    uint mGridVBO;
     fvec2s *mGridVertices;
     size_t mGridVerticesSize;
     bool mGpuOnly;
 
-    static void reshape(int pWidth, int pHeight);
-    void update_title(unsigned long itsPerSecond);
+    static void reshape(const int width, int height);
+    void update_title(const unsigned long itsPerSecond);
     void setup_shader_program();
     void setup_grid_buffers();
-    void setup_grid_vertices(fvec2s *vertices);
+    void setup_grid_vertices();
 
 }; // namespace display
 

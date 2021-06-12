@@ -3,8 +3,9 @@
 
 #include "config.hpp"
 #include "grid.hpp"
+#include "types.hpp"
 
-void load_pattern(std::string filename);
-void fill_grid(unsigned int row, unsigned int col, unsigned int length);
+void load_pattern(const std::string filename);
+void fill_grid(const uint row, const uint col, const uint length);
 
 #endif

@@ -4,23 +4,24 @@
 #include "automata_interface.hpp"
 #include "config.hpp"
 #include "grid.hpp"
+#include "types.hpp"
 
 namespace cpu {
 
 class AutomataBase : public AutomataInterface {
   public:
-    AutomataBase(unsigned long pRandSeed,
+    AutomataBase(const unsigned long pRandSeed,
                  std::ostringstream *const pLiveLogBuffer,
                  void (*pUpdateBuffersFunc)());
     virtual ~AutomataBase();
-    virtual void compute_grid(bool logEnabled = false);
-    virtual void update_grid_buffers() { mUpdateBuffersFunc(); }
+    virtual void compute_grid(const bool logEnabled = false) override;
+    virtual void update_grid_buffers() override { mUpdateBuffersFunc(); }
 
   protected:
-    unsigned int mActiveCellCount;
+    uint mActiveCellCount;
     std::ostringstream *mLiveLogBuffer;
 
-    bool compute_cell(unsigned int i, unsigned int j);
+    bool compute_cell(uint i, uint j);
 
   private:
     void (*mUpdateBuffersFunc)();

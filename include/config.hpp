@@ -2,19 +2,21 @@
 #define CONFIG_HPP_
 
 #include <string>
+#include "types.hpp"
 
 namespace config {
 
 // global configs
-extern std::string programName;
-extern unsigned int width;
-extern unsigned int height;
-extern unsigned int rows;
-extern unsigned int cols;
+extern const std::string programName;
+extern uint width;
+extern uint height;
+extern uint rows;
+extern uint cols;
 extern bool render;
-extern unsigned int renderDelayMs;
+extern uint renderDelayMs;
 extern float fillProb;
 extern float virtualFillProb;
+extern bool benchmarkMode;
 extern unsigned long maxIterations;
 extern bool cpuOnly;
 extern std::string patternFileName;
@@ -22,7 +24,7 @@ extern bool startPaused;
 extern bool noDownsample;
 
 void load_file();
-void load_cmd(int argc, char **argv);
+void load_cmd(const int argc, char **const argv);
 
 } // namespace config
 

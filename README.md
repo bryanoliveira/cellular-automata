@@ -4,7 +4,7 @@
 
 A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, CUDA and OpenGL. It's built to run on a GPU but it also supports CPU-only execution (mainly for relative speedup comparisons). On the right there's an example execution of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 randomly initialized grid.
 
-The main objective of this project is to allow scaling up to a fairly large number of cells while maintaining the code legibility and allowing for further customizations. It supports command line arguments to set up quick configs (run `./automata -h` for details) like headless mode (which is significantly faster) and initial patterns (which can be loaded from the `patterns` folder). It doesn't yet support the definition of evolution rules at runtime, but I'm working on that.
+The main objective of this project is to allow scaling up to a reasonably large number of cells while maintaining the code legibility and allowing for further customizations. It supports command line arguments to set up quick configs (run `./automata -h` for details) like headless mode (which is significantly faster) and initial patterns (which can be loaded from the `patterns` folder). It doesn't yet support the definition of evolution rules at runtime or lattice size inference, but I'm working on that.
 
 This program can currently evolve a dense & high entropy 182.25 million cell Game of Life grid (13500x13500) with rendering enabled with up to 320 generations per second on a Ryzen 7 3700X / RTX 3080 using up to 200MB RAM and 8.5GB VRAM (which is the actual scaling limiter).
 
@@ -19,37 +19,81 @@ In the GIF above we're running a 12300x12300 grid using Game of Life rules to ev
 <div align="center">
 <img src="docs/toad.gif" align="center" width="100">
 </div>
+<br/>
+This program also supports a benchmark mode (`-b` option), which outputs the total and average evolution and rendering timings to stdout. Combined with `benchmark.sh` and `benchmark_visualize.ipynb`, it is possible to plot speedups and evolution times for different lattice sizes. Currently, the GPU implementation achieves a relative speedup of more than 3000x over the single-core CPU implementation.
 
-<br />
+<div align="center">
+<br/>
+<img src="docs/speedup.png" align="center" width="300">
+<img src="docs/avg_time.png" align="center" width="338">
+</div>
+<br/>
+
+> Speedup over serial (left) and average grid evolution time (right) for lattice sizes 32x32, 64x64, ..., 8192x8192 and 1000 generations. For these tests, initial spawn probability was set to 0.5 and rendering was disabled.
 
 ## Requirements
 
-- Debian-like linux distro (I only tested this on Ubuntu 20)
-- make
-- g++ (C++ 17)
-- OpenGL (GLEW and GLUT)
-- Boost C++ Library (program_options module)
-- CUDA (nvcc) and CUDA runtime libraries
+To run the program you'll need:
 
-It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that to work you will need to run the program with `./automata --cpu` and disable `*.cu` file compilation on `Makefile`.
+- Debian-like linux distro (I only tested this on Ubuntu 20)
+- OpenGL (GLEW, GLUT and GLM)
+  - e.g. `sudo apt-get install libglew-dev freeglut3-dev libglm-dev`
+- [CUDA](https://developer.nvidia.com/cuda-downloads) (nvcc) and CUDA runtime libraries
+
+To build it from source you'll also need:
+
+- g++ (C++ 17) and _make_
+  - e.g. `sudo apt install build-essential`
+- Boost C++ Library (program_options module)
+- [spdlog](https://github.com/gabime/spdlog)
+
+It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that to work you will need to run the program with `./automata --cpu` and disable `*.cu` file compilation in the `Makefile`.
 
 ## Usage
+
+### Executing a pre-built binary (Linux x64 + CUDA only)
+
+- Download `cellular-automata-linux64.zip` from the [latest release](https://github.com/bryanoliveira/cellular-automata/releases)
+- Extract the executable (`automata`) and the `patterns` folder
+- Install OpenGL and CUDA from the requirements above
+- Run `./automata -h` to see all the available options
+- Run the program with `./automata --render`.
+
+If your GPU has enough VRAM (>= 8 GB), you may be able to reproduce the Meta-Toad simulation above. Run `./automata -r -x 12300 -y 12300 -p 0 -f patterns/meta-toad.rle` to try it out!
+
+### Building From Source
 
 - Install the requirements
 - Clone this repository
 - Building and executing:
   - Run `make` to build and run
-  - Run `make build` to only build
-  - Run `make run` to only run
-  - Run `make clean` to remove generated build files
+  - Run `make build` to build
+  - Run `make run` to run with default parameters
+  - Run `make clean` to remove generated files
   - Run `make profile` to run [NVIDIA's nsys](https://developer.nvidia.com/nsight-systems) profiling.
 
-### Runtime Commands
+### Runtime Controls
 
-- Press `space` to start/pause the simulation
-- Press `enter/return` to run a single step of the simulation
-- Scroll to zoom in/out
-- Left click to pan, right click to rotate (not very useful yet, but it will be for the 3D version), middle click to reset the camera
+- Basic controls:
+  - **space** pauses/resumes the simulation;
+  - **enter/return** runs a single generation;
+  - **left mouse click** translates the grid relative to the max resolution
+  - **ctrl + left mouse click** translates the camera relative to the world
+  - **mouse scroll** zooms the grid in and out, relative to the max resolution
+  - **ctrl + mouse scroll** zooms the camera, relative to the world
+  - **middle mouse click** resets scale and translation
+
+## Next steps
+
+There is still much room for improvement. This includes better memory management, use of CPU parallelism and automated tests. My next steps include (but are not limited to):
+
+- Addition of unit tests (in progress)
+- Parallel CPU implementation (in progress)
+- Usage of templates to abstract grid data types (e.g. cells should be represented with 1 bit instead of 8)
+- Usage of SM shared memory to explore data locality
+- Support for flexible rule definition
+- Support for infinite grids (e.g. storing only active cells)
+- Support for 3-D and N-D grids
 
 ## References
 
@@ -63,7 +107,9 @@ It is possible to run this program in a CPU-only mode, so if you don't have a CU
 
 ## Bonus
 
-![1000x1000 grid (click to open)](docs/1000x1000.gif)
+<div align="center">
+<img src="https://github.com/bryanoliveira/cellular-automata/raw/master/docs/1000x1000.gif"/>
+</div>
 
 > A 1000x1000 randomly initialized grid running Game of life.
 

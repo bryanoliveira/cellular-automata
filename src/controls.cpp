@@ -1,5 +1,6 @@
+#ifndef HEADLESS_ONLY
+
 #include <GL/freeglut.h>
-#include <iostream>
 #include "controls.hpp"
 
 namespace controls {
@@ -27,7 +28,7 @@ int secondaryMouseButtons = 0;
 ////////////////////////////////////////////////////////////////////////////////
 //! Mouse event handlers
 ////////////////////////////////////////////////////////////////////////////////
-void mouse(int button, int state, int x, int y) {
+void mouse(const int button, const int state, const int x, const int y) {
     if (state == GLUT_DOWN) {
         // secondary mouse events when pressing CTRL
         if (glutGetModifiers() & GLUT_ACTIVE_CTRL)
@@ -72,7 +73,7 @@ void mouse(int button, int state, int x, int y) {
     mouseOld = {x, y};
 }
 
-void keyboard(unsigned char key, int /*x*/, int /*y*/) {
+void keyboard(const unsigned char key, int /*x*/, int /*y*/) {
     switch (key) {
     case 32:
         paused = !paused;
@@ -84,10 +85,9 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/) {
     }
 }
 
-void motion(int x, int y) {
-    float dx, dy;
-    dx = (float)(x - mouseOld.x);
-    dy = (float)(y - mouseOld.y);
+void motion(const int x, const int y) {
+    const float dx = static_cast<float>(x - mouseOld.x);
+    const float dy = static_cast<float>(y - mouseOld.y);
 
     // left click
     if (mouseButtons & 1 << GLUT_LEFT_BUTTON) {
@@ -110,3 +110,5 @@ void motion(int x, int y) {
 }
 
 } // namespace controls
+
+#endif // HEADLESS_ONLY
