@@ -2,9 +2,9 @@
 
 <img src="docs/100x100.gif" align="right">
 
-A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, CUDA and OpenGL. It's built to run on a GPU but it also supports CPU-only execution (mainly for relative speedup comparisons). On the right there's an example execution of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 randomly initialized grid.
+A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, OpenGL, CUDA and OpenMP. It's built to run on a GPU but it also supports multithreaded CPU-only execution. On the right there's an example execution of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 randomly initialised lattice.
 
-The main objective of this project is to allow scaling up to a reasonably large number of cells while maintaining the code legibility and allowing for further customizations. It supports command line arguments to set up quick configs (run `./automata -h` for details) like headless mode (which is significantly faster) and initial patterns (which can be loaded from the `patterns` folder). It doesn't yet support the definition of evolution rules at runtime or lattice size inference, but I'm working on that.
+The main objective of this project is to allow scaling up to a reasonably large number of cells while maintaining the code legibility and allowing for further customisations. It supports command-line arguments to set up quick configs (run `./automata -h` for details) like headless mode (which is significantly faster) and initial patterns (which can be loaded from the `patterns` folder). It doesn't yet support the definition of evolution rules at runtime or lattice size inference, but I'm working on that.
 
 This program can currently evolve a dense & high entropy 182.25 million cell Game of Life grid (13500x13500) with rendering enabled with up to 320 generations per second on a Ryzen 7 3700X / RTX 3080 using up to 200MB RAM and 8.5GB VRAM (which is the actual scaling limiter).
 
@@ -24,21 +24,21 @@ This program also supports a benchmark mode (`-b` option), which outputs the tot
 
 <div align="center">
 <br/>
-<img src="docs/speedup.png" align="center" width="300">
-<img src="docs/avg_time.png" align="center" width="338">
+<img src="docs/speedup.png" align="center" width="330">
+<img src="docs/avg_time.png" align="center" width="330">
 </div>
 <br/>
 
-> Speedup over serial (left) and average grid evolution time (right) for lattice sizes 32x32, 64x64, ..., 8192x8192 and 1000 generations. For these tests, initial spawn probability was set to 0.5 and rendering was disabled.
+> Speedup over serial (left) and average grid evolution time in milliseconds (right) for lattice sizes 32x32, 64x64, ..., 8192x8192 and 1000 generations, using logarithmic Y axis. "# Threads" refers to the number of threads available for OpenMP CPU (Ryzen 7 3700X) runs while "GPU" refers to CUDA (RTX 3080) runs. For these tests, initial spawn probability was set to 0.5 and rendering was disabled.
 
 ## Requirements
 
 To run the program you'll need:
 
 - Debian-like linux distro (I only tested this on Ubuntu 20)
-- OpenGL (GLEW, GLUT and GLM)
+- OpenGL\* (GLEW, GLUT and GLM)
   - e.g. `sudo apt-get install libglew-dev freeglut3-dev libglm-dev`
-- [CUDA](https://developer.nvidia.com/cuda-downloads) (nvcc) and CUDA runtime libraries
+- [CUDA](https://developer.nvidia.com/cuda-downloads)\*\* (nvcc) and CUDA runtime libraries
 
 To build it from source you'll also need:
 
@@ -47,9 +47,22 @@ To build it from source you'll also need:
 - Boost C++ Library (program_options module)
 - [spdlog](https://github.com/gabime/spdlog)
 
-It is possible to run this program in a CPU-only mode, so if you don't have a CUDA-capable video card you may skip the last step. For that to work you will need to run the program with `./automata --cpu` and disable `*.cu` file compilation in the `Makefile`.
+\*It is possible to run this program in headless-only mode, so if your machine doesn't support rendering (e.g. Colab runtimes) you may skip the OpenGL installation step. For that to work you must compile the program with the `HEADLESS_ONLY` flag set (e.g. `make automata HEADLESS_ONLY=1`).
+
+\*\*It is also possible to run this program in CPU-only mode, so if you don't have a CUDA-capable video card you may skip the CUDA installation step. For that to work you will need to compile the program with the `CPU_ONLY` flag set (e.g. `make automata CPU_ONLY=1`).
 
 ## Usage
+
+### Building From Source
+
+- Install the requirements
+- Clone this repository
+- Building and executing (refer to Requirements for useful flags):
+  - Run `make` to build and run
+  - Run `make build` to build
+  - Run `make run` to run with default parameters
+  - Run `make clean` to remove generated files
+  - Run `make profile` to run [NVIDIA's nsys](https://developer.nvidia.com/nsight-systems) profiling.
 
 ### Executing a pre-built binary (Linux x64 + CUDA only)
 
@@ -59,18 +72,9 @@ It is possible to run this program in a CPU-only mode, so if you don't have a CU
 - Run `./automata -h` to see all the available options
 - Run the program with `./automata --render`.
 
+You may want to set the number of available threads when running in CPU. For that, set the environment variable `OMP_NUM_THREADS` (e.g. `env OMP_NUM_THREADS=8 ./automata -r`).
+
 If your GPU has enough VRAM (>= 8 GB), you may be able to reproduce the Meta-Toad simulation above. Run `./automata -r -x 12300 -y 12300 -p 0 -f patterns/meta-toad.rle` to try it out!
-
-### Building From Source
-
-- Install the requirements
-- Clone this repository
-- Building and executing:
-  - Run `make` to build and run
-  - Run `make build` to build
-  - Run `make run` to run with default parameters
-  - Run `make clean` to remove generated files
-  - Run `make profile` to run [NVIDIA's nsys](https://developer.nvidia.com/nsight-systems) profiling.
 
 ### Runtime Controls
 
@@ -88,7 +92,6 @@ If your GPU has enough VRAM (>= 8 GB), you may be able to reproduce the Meta-Toa
 There is still much room for improvement. This includes better memory management, use of CPU parallelism and automated tests. My next steps include (but are not limited to):
 
 - Addition of unit tests (in progress)
-- Parallel CPU implementation (in progress)
 - Usage of templates to abstract grid data types (e.g. cells should be represented with 1 bit instead of 8)
 - Usage of SM shared memory to explore data locality
 - Support for flexible rule definition
