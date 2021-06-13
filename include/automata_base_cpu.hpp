@@ -14,7 +14,7 @@ class AutomataBase : public AutomataInterface {
                  std::ostringstream *const pLiveLogBuffer,
                  void (*pUpdateBuffersFunc)());
     virtual ~AutomataBase();
-    virtual void compute_grid(const bool logEnabled = false) override;
+    virtual void evolve(const bool logEnabled = false) override;
     virtual void update_grid_buffers() override { mUpdateBuffersFunc(); }
 
   protected:

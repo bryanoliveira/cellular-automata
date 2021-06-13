@@ -39,10 +39,11 @@ __global__ void k_reset_grid_buffers(fvec2s *const __restrict__ gridVertices,
                                      const uint numVerticesX,
                                      const uint numVerticesY);
 
-__global__ void k_compute_grid_count_rule(
-    const bool *const grid, bool *const nextGrid, const uint rows,
-    const uint cols, curandState *const __restrict__ globalRandState,
-    const float virtualSpawnProbability, const bool countAliveCells,
-    uint *const activeCellCount);
+__global__ void
+k_evolve_count_rule(const bool *const grid, bool *const nextGrid,
+                    const uint rows, const uint cols,
+                    curandState *const __restrict__ globalRandState,
+                    const float virtualSpawnProbability,
+                    const bool countAliveCells, uint *const activeCellCount);
 
 #endif

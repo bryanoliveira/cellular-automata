@@ -89,7 +89,7 @@ AutomataBase::~AutomataBase() {
     cudaDeviceReset();
 }
 
-void AutomataBase::compute_grid(const bool logEnabled) {
+void AutomataBase::evolve(const bool logEnabled) {
     const std::chrono::steady_clock::time_point timeStart =
         std::chrono::steady_clock::now();
 
@@ -116,8 +116,7 @@ void AutomataBase::compute_grid(const bool logEnabled) {
 }
 
 void AutomataBase::run_evolution_kernel(const bool countAliveCells) {
-    k_compute_grid_count_rule<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
-                                mEvolveStream>>>(
+    k_evolve_count_rule<<<mGpuBlocks, mGpuThreadsPerBlock, 0, mEvolveStream>>>(
         grid, nextGrid, config::rows, config::cols, mGlobalRandState,
         config::virtualFillProb, countAliveCells, mActiveCellCount);
     CUDA_ASSERT(cudaGetLastError());

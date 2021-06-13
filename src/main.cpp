@@ -14,7 +14,7 @@
  *       - the 'config' namespace doesn't follow this as the 'config::' prefix
  *         is always made explicit
  *  - methods are snake_cased
- *  - CUDA kernels are prefixed with k (e.g. k_compute_grid())
+ *  - CUDA kernels are prefixed with k (e.g. k_evolve())
  *  - Macros are UPPER_CASED (e.g. CUDA_ASSERT())
  */
 #include <chrono>
@@ -167,7 +167,7 @@ void loop() {
 #endif // HEADLESS_ONLY
 
         // compute next grid
-        gAutomata->compute_grid(logEnabled); // count alive cells if will log
+        gAutomata->evolve(logEnabled); // count alive cells if will log
         ++stats::iterations;
 
 #ifndef HEADLESS_ONLY
