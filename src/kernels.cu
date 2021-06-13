@@ -3,9 +3,9 @@
 ////// DEVICE FUNCTIONS
 
 __device__ inline unsigned short count_moore_neighbours(const bool *const grid,
-                                                        const uint rows,
                                                         const uint cols,
                                                         const uint idx) {
+    /** Counts immediate active Moore neighbours **/
     unsigned short livingNeighbours = 0;
     // we can calculate the neighbours directly since we're using safety borders
     const uint neighbours[] = {
@@ -27,6 +27,37 @@ __device__ inline unsigned short count_moore_neighbours(const bool *const grid,
     return livingNeighbours;
 }
 
+__device__ inline unsigned short
+count_radius_neighbours(const bool *const grid, const uint rows,
+                        const uint cols, const uint x, const uint y,
+                        const int radius = 1) {
+    /** Counts active neighbours given radius **/
+    unsigned short livingNeighbours = 0;
+
+#pragma unroll
+    for (int ny = -radius; ny <= radius; ++ny) {
+#pragma unroll
+        for (int nx = -radius; nx <= radius; ++nx) {
+            // calculate neighbour position
+            const int px = static_cast<int>(x) + nx;
+            const int py = static_cast<int>(y) + ny;
+
+            livingNeighbours +=
+                static_cast<unsigned short>((
+                                                // if pos is not current cell
+                                                (ny != 0 || nx != 0) &&
+                                                // and is valid in x
+                                                0 < px && px < cols - 1 &&
+                                                // and is valid in y
+                                                0 < py && py < rows - 1) &&
+                                            // sum its activity
+                                            grid[py * cols + px]);
+        }
+    }
+
+    return livingNeighbours;
+}
+
 __device__ inline bool game_of_life(const bool isAlive,
                                     const unsigned short livingNeighbours) {
     // 1. Any live cell with two or three live neighbours survives.
@@ -34,6 +65,38 @@ __device__ inline bool game_of_life(const bool isAlive,
     // 3. All other live cells die in the next generation. Similarly,
     // all other dead cells stay dead.
     return (isAlive && livingNeighbours == 2) || livingNeighbours == 3;
+}
+
+__device__ inline unsigned char msgol(const unsigned char state,
+                                      const unsigned short livingNeighbours,
+                                      const unsigned char nStates) {
+    if (livingNeighbours == 3 && state < nStates - 1)
+        // cell would be born
+        return state + 1;
+    else if (livingNeighbours != 2 && state != 0)
+        // cell would die
+        return state - 1;
+    // cell would continue living
+    return state;
+}
+
+__device__ inline unsigned char msgol4(const unsigned char state,
+                                       const unsigned short livingNeighbours,
+                                       const unsigned char nStates) {
+    if (livingNeighbours == 3) {
+        // cell would be born
+        if (state < nStates - 1)
+            return state + 1;
+        // increasing energy of maxed cell kills it (except GoL)
+        else if (state != 1)
+            return 0;
+    } else if (livingNeighbours < 2) {
+        if (state > 0)
+            return state - 1;
+    } else if (livingNeighbours > 3)
+        return 0;
+
+    return state;
 }
 
 ////// CUDA KERNELS
@@ -144,7 +207,10 @@ k_evolve_count_rule(const bool *const grid, bool *const nextGrid,
                 newState = true;
             else
                 newState = game_of_life(
-                    grid[idx], count_moore_neighbours(grid, rows, cols, idx));
+                    grid[idx], count_moore_neighbours(grid, cols, idx));
+            // newState = game_of_life(
+            //     grid[idx],
+            //     count_radius_neighbours(grid, rows, cols, x, y, 3));
 
             // avoid atomicAdd when not necessary
             if (countAliveCells && newState)

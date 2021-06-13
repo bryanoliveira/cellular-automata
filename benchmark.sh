@@ -19,7 +19,7 @@ function run {
 }
 
 
-RUN="$(ls res | tail -1 | cut -d "." -f1)"
+RUN="$(ls -1v res | tail -1 | cut -d "." -f1)"
 RUN=$(($RUN + 1))
 
 echo "Benchmark #$RUN"
