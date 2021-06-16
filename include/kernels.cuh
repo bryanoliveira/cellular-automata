@@ -6,7 +6,8 @@
 #include <curand_kernel.h> // for the curandState type
 #include <stdio.h>
 
-#include "types.hpp"
+#include "grid.hpp"  // GridType
+#include "types.hpp" // uint, ulim, etc
 
 #define CUDA_ASSERT(ans)                                                       \
     { cuda_assert((ans), __FILE__, __LINE__); }
@@ -24,11 +25,12 @@ __global__ void k_setup_rng(const uint rows, const uint cols,
                             curandState *const __restrict__ globalRandState,
                             const unsigned long seed);
 
-__global__ void k_init_grid(bool *const grid, const uint rows, const uint cols,
+__global__ void k_init_grid(GridType *const grid, const uint rows,
+                            const uint cols,
                             curandState *const __restrict__ globalRandState,
                             const float spawnProbability);
 
-__global__ void k_update_grid_buffers(const bool *const grid,
+__global__ void k_update_grid_buffers(const GridType *const grid,
                                       fvec2s *const __restrict__ gridVertices,
                                       const uint cols, const uint numVerticesX,
                                       const uvec2 cellDensity,
@@ -40,7 +42,7 @@ __global__ void k_reset_grid_buffers(fvec2s *const __restrict__ gridVertices,
                                      const uint numVerticesY);
 
 __global__ void
-k_evolve_count_rule(const bool *const grid, bool *const nextGrid,
+k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
                     const uint rows, const uint cols,
                     curandState *const __restrict__ globalRandState,
                     const float virtualSpawnProbability,

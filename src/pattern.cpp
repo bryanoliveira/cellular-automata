@@ -6,13 +6,13 @@
 #include "pattern.hpp"
 #include "stats.hpp"
 
-#define STATE_INIT 0
-#define STATE_COMMENT 1
+#define STATE_INIT     0
+#define STATE_COMMENT  1
 #define STATE_HEADER_X 2
 #define STATE_HEADER_Y 3
-#define STATE_RULE 4
-#define STATE_PATTERN 5
-#define STATE_END 6
+#define STATE_RULE     4
+#define STATE_PATTERN  5
+#define STATE_END      6
 
 void load_pattern(const std::string filename) {
     spdlog::info("Loading initial pattern...");
@@ -139,5 +139,5 @@ void load_pattern(const std::string filename) {
 void fill_grid(const uint row, const uint col, const uint length) {
     // enables a contiguous segment of the grid
     for (uint i = col; i < col + length; ++i)
-        grid[row * config::cols + i] = true;
+        grid[row * config::cols + i] = 1;
 }

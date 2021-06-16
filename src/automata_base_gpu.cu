@@ -99,7 +99,7 @@ void AutomataBase::evolve(const bool logEnabled) {
     CUDA_ASSERT(cudaDeviceSynchronize());
 
     // simply swap buffers to avoid reallocation
-    bool *tmpGrid = grid;
+    GridType *tmpGrid = grid;
     grid = nextGrid;
     nextGrid = tmpGrid;
 

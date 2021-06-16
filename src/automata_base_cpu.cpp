@@ -14,10 +14,10 @@ AutomataBase::AutomataBase(const unsigned long pRandSeed,
     spdlog::info("Initializing automata CPU engine...");
     srand(pRandSeed);
 
-    grid =
-        static_cast<bool *>(calloc(config::rows * config::cols, sizeof(bool)));
-    nextGrid =
-        static_cast<bool *>(calloc(config::rows * config::cols, sizeof(bool)));
+    grid = static_cast<GridType *>(
+        calloc(config::rows * config::cols, sizeof(GridType)));
+    nextGrid = static_cast<GridType *>(
+        calloc(config::rows * config::cols, sizeof(GridType)));
 
     if (config::fillProb > 0)
         // note: we're using safety borders
@@ -65,7 +65,7 @@ void AutomataBase::evolve(const bool logEnabled) {
         }
     }
 
-    bool *tmpGrid = grid;
+    GridType *tmpGrid = grid;
     grid = nextGrid;
     nextGrid = tmpGrid;
 

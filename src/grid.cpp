@@ -1,19 +1,19 @@
 #include "grid.hpp"
 
 // global grid
-bool *grid;
-bool *nextGrid;
+GridType *grid;
+GridType *nextGrid;
 
 void insert_glider(const int row, const int col) {
-    grid[(row - 1) * config::cols + col + 0] = true;
-    grid[(row + 0) * config::cols + col + 1] = true;
-    grid[(row + 1) * config::cols + col - 1] = true;
-    grid[(row + 1) * config::cols + col + 0] = true;
-    grid[(row + 1) * config::cols + col + 1] = true;
+    grid[(row - 1) * config::cols + col + 0] = 1;
+    grid[(row + 0) * config::cols + col + 1] = 1;
+    grid[(row + 1) * config::cols + col - 1] = 1;
+    grid[(row + 1) * config::cols + col + 0] = 1;
+    grid[(row + 1) * config::cols + col + 1] = 1;
 }
 
 void insert_blinker(const int row, const int col) {
-    grid[(row - 1) * config::cols + col] = true;
-    grid[(row + 0) * config::cols + col] = true;
-    grid[(row + 1) * config::cols + col] = true;
+    grid[(row - 1) * config::cols + col] = 1;
+    grid[(row + 0) * config::cols + col] = 1;
+    grid[(row + 1) * config::cols + col] = 1;
 }

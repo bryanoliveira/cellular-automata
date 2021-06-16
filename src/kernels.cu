@@ -2,9 +2,9 @@
 
 ////// DEVICE FUNCTIONS
 
-__device__ inline unsigned short count_moore_neighbours(const bool *const grid,
-                                                        const uint cols,
-                                                        const uint idx) {
+__device__ inline unsigned short
+count_moore_neighbours(const GridType *const grid, const uint cols,
+                       const uint idx) {
     /** Counts immediate active Moore neighbours **/
     unsigned short livingNeighbours = 0;
     // we can calculate the neighbours directly since we're using safety borders
@@ -28,7 +28,7 @@ __device__ inline unsigned short count_moore_neighbours(const bool *const grid,
 }
 
 __device__ inline unsigned short
-count_radius_neighbours(const bool *const grid, const uint rows,
+count_radius_neighbours(const GridType *const grid, const uint rows,
                         const uint cols, const uint x, const uint y,
                         const int radius = 1) {
     /** Counts active neighbours given radius **/
@@ -117,7 +117,8 @@ __global__ void k_setup_rng(const uint rows, const uint cols,
     }
 }
 
-__global__ void k_init_grid(bool *const grid, const uint rows, const uint cols,
+__global__ void k_init_grid(GridType *const grid, const uint rows,
+                            const uint cols,
                             curandState *const __restrict__ globalRandState,
                             const float spawnProbability) {
     const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
@@ -134,7 +135,7 @@ __global__ void k_init_grid(bool *const grid, const uint rows, const uint cols,
     }
 }
 
-__global__ void k_update_grid_buffers(const bool *const grid,
+__global__ void k_update_grid_buffers(const GridType *const grid,
                                       fvec2s *const __restrict__ gridVertices,
                                       const uint cols, const uint numVerticesX,
                                       const uvec2 cellDensity,
@@ -186,7 +187,7 @@ __global__ void k_reset_grid_buffers(fvec2s *const __restrict__ gridVertices,
 }
 
 __global__ void
-k_evolve_count_rule(const bool *const grid, bool *const nextGrid,
+k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
                     const uint rows, const uint cols,
                     curandState *const __restrict__ globalRandState,
                     const float virtualSpawnProbability,

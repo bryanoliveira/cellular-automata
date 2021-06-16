@@ -3,8 +3,10 @@
 
 #include "config.hpp"
 
-extern bool *grid;
-extern bool *nextGrid;
+typedef bool GridType;
+
+extern GridType *grid;
+extern GridType *nextGrid;
 
 void insert_glider(const int row, const int col);
 void insert_blinker(const int row, const int col);
