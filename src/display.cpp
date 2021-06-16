@@ -149,13 +149,14 @@ void Display::update_grid_buffers_cpu() {
     proj::update();
 
     // reset vertices states
-    for (uint idx = 0; idx < proj::info.totalVertices; idx++) {
+    for (uint idx = 0; idx < proj::info.totalVertices; ++idx) {
         mGridVertices[idx].state = 0;
     }
 
     // update vertice states
-    for (uint y = proj::gridLimY.start; y < proj::gridLimY.end; y++) {
-        for (uint x = proj::gridLimX.start; x < proj::gridLimX.end; x++) {
+    // TODO parallelize with OpenMP
+    for (uint y = proj::gridLimY.start; y < proj::gridLimY.end; ++y) {
+        for (uint x = proj::gridLimX.start; x < proj::gridLimX.end; ++x) {
             // the grid index
             uint idx = y * config::cols + x;
             // if grid state is on

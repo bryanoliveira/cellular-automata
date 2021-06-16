@@ -3,7 +3,7 @@
 
 // this is needed to declare CUDA-specific variable types
 #include <cuda_runtime.h>
-#include <curand_kernel.h> // for the curandStatate type
+#include <curand_kernel.h> // for the curandState type
 #include <stdio.h>
 
 #include "types.hpp"

@@ -101,7 +101,7 @@ inline bool AutomataBase::compute_cell(const uint y, const uint x) {
     for (unsigned short nidx = 0; nidx < 8; ++nidx)
         livingNeighbours += static_cast<unsigned short>(grid[neighbours[nidx]]);
 
-    // 1. Any live cell with two or three live neighbours survives.
+    // 1. Any living cell with two or three live neighbours survives.
     // 2. Any dead cell with three live neighbours becomes a live cell.
     // 3. All other live cells die in the next generation. Similarly,
     // all other dead cells stay dead.
