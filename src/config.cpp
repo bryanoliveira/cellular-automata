@@ -24,6 +24,7 @@ bool cpuOnly = false;
 std::string patternFileName("random");
 bool startPaused = true;
 bool noDownsample = false;
+bool printOutput = false;
 
 void load_file() {}
 void load_cmd(const int argc, char **const argv) {
@@ -48,7 +49,8 @@ void load_cmd(const int argc, char **const argv) {
                           " when grid size is greater than window size.") //
         ("file,f", po::value<std::string>(), "Pattern file (.rle)")       //
         ("start", "Unpause at start (default is paused when rendering, "
-                  "unpaused when not rendering)") //
+                  "unpaused when not rendering)")   //
+        ("output,o", "Output last state to stdout") //
         ("benchmark,b", "Benchmark mode - overrides 'max' to 1000 if it is 0, "
                         "'start' to true, 'render-delay' to 0");
 
@@ -108,6 +110,8 @@ void load_cmd(const int argc, char **const argv) {
         if (maxIterations == 0)
             maxIterations = 1000;
     }
+    if (vm.count("output"))
+        printOutput = true;
 }
 
 } // namespace config

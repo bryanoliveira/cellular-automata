@@ -31,11 +31,11 @@
 #include "pattern.hpp"
 #include "stats.hpp"
 #ifndef CPU_ONLY
-    #include "automata_base_gpu.cuh"
+#include "automata_base_gpu.cuh"
 #endif // CPU_ONLY
 #ifndef HEADLESS_ONLY
-    #include "controls.hpp"
-    #include "display.hpp"
+#include "controls.hpp"
+#include "display.hpp"
 #endif // HEADLESS_ONLY
 
 #ifndef HEADLESS_ONLY
@@ -55,6 +55,7 @@ void loop();
 bool should_log();
 void live_log();
 void sigint_handler(int s);
+void print_output();
 
 int main(int argc, char **argv) {
     spdlog::cfg::load_env_levels();
@@ -91,12 +92,12 @@ int main(int argc, char **argv) {
 #endif // HEADLESS_ONLY
             }));
 #ifndef CPU_ONLY
-    #ifndef HEADLESS_ONLY
+#ifndef HEADLESS_ONLY
     else if (config::render)
         // the GPU implementation updates the VBO using the CUDA<>GL interop
         gAutomata = static_cast<AutomataInterface *>(new gpu::AutomataBase(
             randSeed, &gLiveLogBuffer, &(gDisplay->grid_vbo())));
-    #endif // HEADLESS_ONLY
+#endif // HEADLESS_ONLY
     else
         gAutomata = static_cast<AutomataInterface *>(
             new gpu::AutomataBase(randSeed, &gLiveLogBuffer));
@@ -104,6 +105,8 @@ int main(int argc, char **argv) {
 
     if (config::patternFileName != "random")
         load_pattern(config::patternFileName);
+
+    spdlog::info("Starting evolution loop...", stats::iterations);
 
 #ifndef HEADLESS_ONLY
     if (config::render)
@@ -115,6 +118,8 @@ int main(int argc, char **argv) {
 
     if (config::benchmarkMode)
         stats::print_timings();
+    else if (config::printOutput)
+        print_output();
     else
         std::cout << std::endl;
 
@@ -225,4 +230,21 @@ void live_log() {
 void sigint_handler(int s) {
     gLooping = false;
     std::cout << std::endl;
+}
+
+void print_output() {
+    for (uint i = 0; i < config::rows; ++i) {
+        for (uint j = 0; j < config::cols; ++j) {
+            if (grid[i * config::cols + j])
+                // black foreground with white background
+                std::cout << "\e[0;30;47m";
+            else
+                // gray foreground with black background
+                std::cout << "\e[0;90;40m";
+
+            std::cout << " " << grid[i * config::cols + j] << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "\e[0m"; // reset output formatting
 }

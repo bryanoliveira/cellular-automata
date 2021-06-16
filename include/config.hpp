@@ -22,6 +22,7 @@ extern bool cpuOnly;
 extern std::string patternFileName;
 extern bool startPaused;
 extern bool noDownsample;
+extern bool printOutput;
 
 void load_file();
 void load_cmd(const int argc, char **const argv);
