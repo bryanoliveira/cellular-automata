@@ -240,7 +240,7 @@ void print_output() {
                 std::cout << "\e[0;30;47m";
             else
                 // gray foreground with black background
-                std::cout << "\e[0;90;40m";
+                std::cout << "\e[0;37;40m";
 
             std::cout << " " << grid[i * config::cols + j] << " ";
         }
