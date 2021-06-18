@@ -2,9 +2,12 @@
 #include <omp.h>
 #include <sstream>
 #include <spdlog/spdlog.h>
+#include <iostream>
 
 #include "automata_base_cpu.hpp"
 #include "stats.hpp"
+
+#define NH_RADIUS 1
 
 namespace cpu {
 
@@ -44,24 +47,30 @@ void AutomataBase::evolve(const bool logEnabled) {
 
     mActiveCellCount = 0;
 
+    const uint idxStart = config::cols + 1,
+               idxEnd = (config::rows - 1) * config::cols,
+               jMax = config::cols - NH_RADIUS;
+
 #pragma omp parallel
     {
         uint myseed = omp_get_thread_num();
-#pragma omp for collapse(2) private(myseed) reduction(+ : mActiveCellCount)
+#pragma omp for private(myseed) reduction(+ : mActiveCellCount)
         // note: we're using safety borders
-        for (uint y = 1; y < config::rows - 1; ++y) {
-            for (uint x = 1; x < config::cols - 1; ++x) {
-                // add a "virtual particle" spawn probability
-                nextGrid[y * config::cols + x] =
-                    (config::virtualFillProb &&
-                     (static_cast<float>(rand_r(&myseed)) / RAND_MAX) <
-                         config::virtualFillProb) ||
-                    compute_cell(y, x);
+        for (uint idx = idxStart; idx < idxEnd; ++idx) {
+            // check j index to skip borders
+            const uint j = idx % config::cols;
+            // check safety borders & cell state
+            nextGrid[idx] = (j > NH_RADIUS || j < jMax) &&
+                            // add a "virtual particle" spawn probability
+                            ((config::virtualFillProb &&
+                              (static_cast<float>(rand_r(&myseed)) / RAND_MAX) <
+                                  config::virtualFillProb) ||
+                             // compute cell rule
+                             compute_cell(idx));
 
-                if (logEnabled && nextGrid[y * config::cols + x])
-                    // #pragma omp critical
-                    ++mActiveCellCount;
-            }
+            if (logEnabled && nextGrid[idx])
+                // #pragma omp critical
+                ++mActiveCellCount;
         }
     }
 
@@ -81,9 +90,8 @@ void AutomataBase::evolve(const bool logEnabled) {
                         << " ns | Active cells: " << mActiveCellCount;
 }
 
-inline bool AutomataBase::compute_cell(const uint y, const uint x) {
+inline bool AutomataBase::compute_cell(const uint idx) {
     unsigned short livingNeighbours = 0;
-    const uint idx = y * config::cols + x;
     // we can calculate the neighbours directly since we're using safety
     // borders
     const uint neighbours[] = {

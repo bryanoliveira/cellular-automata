@@ -21,7 +21,7 @@ class AutomataBase : public AutomataInterface {
     uint mActiveCellCount;
     std::ostringstream *mLiveLogBuffer;
 
-    bool compute_cell(uint i, uint j);
+    bool compute_cell(uint idx);
 
   private:
     void (*mUpdateBuffersFunc)();
