@@ -106,6 +106,9 @@ int main(int argc, char **argv) {
     if (config::patternFileName != "random")
         load_pattern(config::patternFileName);
 
+    // prepare to start loop
+    gAutomata->prepare();
+
     spdlog::info("Starting evolution loop...", stats::iterations);
 
 #ifndef HEADLESS_ONLY

@@ -20,12 +20,16 @@ class AutomataBase : public AutomataInterface {
                  std::ostringstream *const pLiveLogBuffer,
                  const uint *const gridVBO = nullptr);
     virtual ~AutomataBase();
+    virtual void prepare() override;
     virtual void evolve(const bool logEnabled = false) override;
     virtual void update_grid_buffers() override;
 
   protected:
+    int mGpuDeviceId;
     size_t mGpuBlocks;
     size_t mGpuThreadsPerBlock;
+    const size_t mGridSize = config::rows * config::cols;
+    const size_t mGridBytes = mGridSize * sizeof(GridType);
     curandState *mGlobalRandState;
     cudaStream_t mEvolveStream, mBufferUpdateStream;
     unsigned int *mActiveCellCount;

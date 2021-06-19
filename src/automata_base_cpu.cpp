@@ -42,6 +42,10 @@ AutomataBase::~AutomataBase() {
     free(nextGrid);
 }
 
+void AutomataBase::prepare(){
+    // currently does nothing
+};
+
 void AutomataBase::evolve(const bool logEnabled) {
     const std::chrono::steady_clock::time_point timeStart =
         std::chrono::steady_clock::now();
