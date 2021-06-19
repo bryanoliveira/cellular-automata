@@ -22,20 +22,21 @@ function run {
 RUN="$(ls -1v res | tail -1 | cut -d "." -f1)"
 RUN=$(($RUN + 1))
 
-echo "Benchmark #$RUN"
+printf "Benchmark #$RUN\n"
 
 TRIALS=5
 
 for i in $(seq 1 $TRIALS); do
+    printf "\nTrial #$i"
     for threads in {16,}; do # 1,2,4,8,12,
         export OMP_NUM_THREADS=$threads
-        echo "Benchmarking CPU with $OMP_NUM_THREADS threads"
+        printf "\nBenchmarking CPU with $OMP_NUM_THREADS threads"
         run "--cpu" "res/$RUN.benchmark_results_cpu_th_$OMP_NUM_THREADS.csv"
     done
 done
 
-echo "Benchmarking GPU"
+printf "\nBenchmarking GPU"
 for i in $(seq 1 $TRIALS); do
-    echo "Trial #$i"
+    printf "\nTrial #$i"
     run "" "res/$RUN.$i.benchmark_results_gpu.csv"
 done

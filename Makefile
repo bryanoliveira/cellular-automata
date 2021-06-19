@@ -49,7 +49,7 @@ run: $(TARGET)
 
 profile: $(TARGET)
 	@echo "\033[1;37mProfiling" $(TARGET) "\033[0m"; 
-	nsys profile --stats=true -o report ./$(TARGET) -m 5 -d 0 -x 1000 -y 1000
+	nsys profile --stats=true -o report ./$(TARGET) -b
 
 $(TARGET): $(OBJECTS) $(CUOBJECTS)
 	@echo "\033[1;37mLinking" $(TARGET) "\033[0m"
