@@ -108,13 +108,13 @@ __device__ inline unsigned char msgol4(const unsigned char state,
 __global__ void k_setup_rng(const uint rows, const uint cols,
                             curandState *const __restrict__ globalRandState,
                             const unsigned long seed) {
-    const uint stride = gridDim.x * blockDim.x, idxEnd = (rows - 1) * cols - 1,
-               jMax = cols - NH_RADIUS;
+    const uint stride = gridDim.x * blockDim.x, idxMax = (rows - 1) * cols - 1,
+               xMax = cols - NH_RADIUS;
 
-    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxEnd;
+    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxMax;
          idx += stride) {
-        const uint j = idx % cols;
-        if (idx > cols + 1 && NH_RADIUS < j && j < jMax)
+        const uint x = idx % cols;
+        if (idx > cols + 1 && NH_RADIUS < x && x < xMax)
             curand_init(seed, idx, 0, &globalRandState[idx]);
     }
 }
@@ -123,13 +123,13 @@ __global__ void k_init_grid(GridType *const grid, const uint rows,
                             const uint cols,
                             curandState *const __restrict__ globalRandState,
                             const float spawnProbability) {
-    const uint stride = gridDim.x * blockDim.x, idxEnd = (rows - 1) * cols - 1,
-               jMax = cols - NH_RADIUS;
+    const uint stride = gridDim.x * blockDim.x, idxMax = (rows - 1) * cols - 1,
+               xMax = cols - NH_RADIUS;
 
-    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxEnd;
+    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxMax;
          idx += stride) {
-        const uint j = idx % cols;
-        grid[idx] = (idx > cols + 1 && NH_RADIUS < j && j < jMax) &&
+        const uint x = idx % cols;
+        grid[idx] = (idx > cols + 1 && NH_RADIUS < x && x < xMax) &&
                     curand_uniform(&globalRandState[idx]) < spawnProbability;
     }
 }
@@ -141,20 +141,20 @@ __global__ void k_update_grid_buffers(const GridType *const grid,
                                       const ulim2 gridLimX,
                                       const ulim2 gridLimY) {
     const uint stride = gridDim.x * blockDim.x,
-               idxEnd = (gridLimY.end - 1) * cols + gridLimX.end,
-               jMax = cols - NH_RADIUS;
+               idxMin = gridLimY.start * cols + gridLimX.start,
+               idxMax = (gridLimY.end - 1) * cols + gridLimX.end,
+               xMin = max(NH_RADIUS, gridLimX.start),
+               xMax = min(cols - NH_RADIUS, gridLimX.end);
 
-    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxEnd;
+    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxMax;
          idx += stride) {
-        // to check if out of bounds
-        const uint j = idx % cols;
+        // to check if out of bounds and to map vertices
+        const uint x = idx % cols, y = idx / cols;
 
         // try avoiding further operations when not needed
         // atomicMax is pretty expensive
-        if (idx >= gridLimY.start * cols + gridLimX.start && NH_RADIUS < j &&
-            j < jMax && grid[idx]) {
+        if (idxMin <= idx && xMin < x && x < xMax && grid[idx]) {
             // calculate mapping between grid and vertice
-            // TODO fix this
             uint vx = (x - gridLimX.start) / cellDensity.x;
             uint vy = (y - gridLimY.start) / cellDensity.y;
             uint vidx = vy * numVerticesX + vx;
@@ -171,9 +171,9 @@ __global__ void k_reset_grid_buffers(fvec2s *const __restrict__ gridVertices,
                                      const uint numVerticesX,
                                      const uint numVerticesY) {
     const uint stride = gridDim.x * blockDim.x,
-               idxEnd = numVerticesX * numVerticesY;
+               idxMax = numVerticesX * numVerticesY;
 
-    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxEnd;
+    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxMax;
          idx += stride) {
         gridVertices[idx].state = 0;
     }
@@ -185,16 +185,16 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
                     curandState *const __restrict__ globalRandState,
                     const float virtualSpawnProbability,
                     const bool countAliveCells, uint *const activeCellCount) {
-    const uint stride = gridDim.x * blockDim.x, idxEnd = (rows - 1) * cols - 1,
-               jMax = cols - NH_RADIUS;
+    const uint stride = gridDim.x * blockDim.x, idxMax = (rows - 1) * cols - 1,
+               xMax = cols - NH_RADIUS;
 
-    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxEnd;
+    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxMax;
          idx += stride) {
-        const uint j = idx % cols;
+        const uint x = idx % cols;
         bool newState = false;
 
         newState =
-            idx > cols + 1 && NH_RADIUS < j && j < jMax &&
+            idx > cols + 1 && NH_RADIUS < x && x < xMax &&
             // add a "virtual particle" spawn probability
             ((virtualSpawnProbability > 0 &&
               curand_uniform(&globalRandState[idx]) <
