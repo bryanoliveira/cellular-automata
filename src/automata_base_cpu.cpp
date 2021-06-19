@@ -58,7 +58,7 @@ void AutomataBase::evolve(const bool logEnabled) {
 #pragma omp parallel
     {
         uint myseed = omp_get_thread_num();
-#pragma omp for private(myseed) reduction(+ : mActiveCellCount)
+#pragma omp for private(myseed) reduction(+ : mActiveCellCount) schedule(runtime)
         // note: we're using safety borders
         for (uint idx = config::cols + 1; idx < idxMax; ++idx) {
             // check x index to skip borders
