@@ -6,7 +6,6 @@
 #include <omp.h>
 #include <sstream>
 #include <spdlog/spdlog.h>
-#include <iostream>
 
 #include "automata_base_cpu.hpp"
 #include "stats.hpp"

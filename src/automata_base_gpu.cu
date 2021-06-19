@@ -19,19 +19,8 @@ AutomataBase::AutomataBase(const unsigned long randSeed,
     size_t gridSize = config::rows * config::cols;
     size_t gridBytes = gridSize * sizeof(bool);
 
-    // define common kernel configs
     cudaGetDevice(&gpuDeviceId);
     cudaGetDeviceProperties(&gpuProps, gpuDeviceId);
-    // TODO use CUDA max occupancy values
-    // blocks should be a multiple of #SMs on the grid (assume #SMs is even) !
-    // actually the number of blocks should
-    mGpuBlocks =
-        4 * gpuProps.multiProcessorCount; // 1156 on a 3080 - 17 blocks per SM
-    // threads should be a multiple of warpSize on the block (assume warpSize is
-    // even - it usually is 32)
-    mGpuThreadsPerBlock =
-        4 * gpuProps.warpSize; // 256 on a 3080 - 8 threads per SP (I think)
-
     CUDA_ASSERT(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1))
 
     // allocate memory
@@ -45,6 +34,49 @@ AutomataBase::AutomataBase(const unsigned long randSeed,
     CUDA_ASSERT(cudaMemPrefetchAsync(grid, gridBytes, gpuDeviceId));
     CUDA_ASSERT(cudaMemPrefetchAsync(nextGrid, gridBytes, gpuDeviceId));
     CUDA_ASSERT(cudaMemset(grid, 0, gridBytes)); // init grid with zeros
+
+    // define common kernel configs
+    // set_optimal_kernel_config(gpuDeviceId);
+    int tBlockSize;   // The launch configurator returned block size
+    int tMinGridSize; // The minimum grid size needed to achieve the
+                      // maximum occupancy for a full device launch
+    int tGridSize;    // The actual grid size needed, based on input size
+
+    /* int* minGridSize,
+     * int* blockSize,
+     * T func,
+     * size_t dynamicSMemSize = 0,
+     * int blockSizeLimit = 0 */
+    cudaOccupancyMaxPotentialBlockSize(&tMinGridSize, &tBlockSize,
+                                       k_evolve_count_rule, 0, 0);
+    // Round up according to array size
+    tGridSize = (gridSize + tBlockSize - 1) / tBlockSize;
+
+    k_evolve_count_rule<<<tGridSize, tBlockSize>>>(
+        grid, nextGrid, config::rows, config::cols, NULL, 0, false, NULL);
+
+    cudaDeviceSynchronize();
+
+    // calculate theoretical occupancy
+    int maxActiveBlocks;
+    cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+        &maxActiveBlocks, k_evolve_count_rule, tBlockSize, 0);
+
+    float occupancy =
+        (maxActiveBlocks * tBlockSize / gpuProps.warpSize) /
+        (float)(gpuProps.maxThreadsPerMultiProcessor / gpuProps.warpSize);
+
+    spdlog::info(
+        "Kernel launch config set to {} blocks of size {} with occupancy of {}",
+        tGridSize, tBlockSize, occupancy);
+
+    // blocks should be a multiple of #SMs on the grid (assume #SMs is even) !
+    // actually the number of blocks should
+    mGpuBlocks = tGridSize; // 1156 on a 3080 - 17 blocks per SM
+    // threads should be a multiple of warpSize on the block
+    mGpuThreadsPerBlock = tBlockSize;
+
+    ///////////////////////////////////////////
 
     // initialize RNG
     k_setup_rng<<<mGpuBlocks, mGpuThreadsPerBlock>>>(
