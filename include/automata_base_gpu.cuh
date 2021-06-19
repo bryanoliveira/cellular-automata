@@ -24,8 +24,8 @@ class AutomataBase : public AutomataInterface {
     virtual void update_grid_buffers() override;
 
   protected:
-    dim3 mGpuBlocks;
-    dim3 mGpuThreadsPerBlock;
+    size_t mGpuBlocks;
+    size_t mGpuThreadsPerBlock;
     curandState *mGlobalRandState;
     cudaStream_t mEvolveStream, mBufferUpdateStream;
     unsigned int *mActiveCellCount;

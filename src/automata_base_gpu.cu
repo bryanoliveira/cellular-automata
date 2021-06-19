@@ -22,18 +22,16 @@ AutomataBase::AutomataBase(const unsigned long randSeed,
     // define common kernel configs
     cudaGetDevice(&gpuDeviceId);
     cudaGetDeviceProperties(&gpuProps, gpuDeviceId);
+    // TODO use CUDA max occupancy values
     // blocks should be a multiple of #SMs on the grid (assume #SMs is even) !
     // actually the number of blocks should
-    mGpuBlocks = dim3(gpuProps.multiProcessorCount / 2,
-                      gpuProps.multiProcessorCount /
-                          2); // 1156 on a 3080 - 17 blocks per SM
+    mGpuBlocks =
+        4 * gpuProps.multiProcessorCount; // 1156 on a 3080 - 17 blocks per SM
     // threads should be a multiple of warpSize on the block (assume warpSize is
     // even - it usually is 32)
-    mGpuThreadsPerBlock = dim3(
-        gpuProps.warpSize / 2,
-        gpuProps.warpSize / 2); // 256 on a 3080 - 8 threads per SP (I think)
+    mGpuThreadsPerBlock =
+        4 * gpuProps.warpSize; // 256 on a 3080 - 8 threads per SP (I think)
 
-    // TODO replace with shared memory use
     CUDA_ASSERT(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1))
 
     // allocate memory

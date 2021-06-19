@@ -1,3 +1,7 @@
+#ifndef NH_RADIUS
+#define NH_RADIUS 1
+#endif
+
 #include "kernels.cuh"
 
 ////// DEVICE FUNCTIONS
@@ -104,16 +108,14 @@ __device__ inline unsigned char msgol4(const unsigned char state,
 __global__ void k_setup_rng(const uint rows, const uint cols,
                             curandState *const __restrict__ globalRandState,
                             const unsigned long seed) {
-    const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+    const uint stride = gridDim.x * blockDim.x, idxEnd = (rows - 1) * cols - 1,
+               jMax = cols - NH_RADIUS;
 
-    // note: we're using safety borders
-    for (uint y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
-         y += stride.y) {
-        for (uint x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
-             x += stride.x) {
-            uint idx = y * cols + x;
+    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxEnd;
+         idx += stride) {
+        const uint j = idx % cols;
+        if (idx > cols + 1 && NH_RADIUS < j && j < jMax)
             curand_init(seed, idx, 0, &globalRandState[idx]);
-        }
     }
 }
 
@@ -121,17 +123,14 @@ __global__ void k_init_grid(GridType *const grid, const uint rows,
                             const uint cols,
                             curandState *const __restrict__ globalRandState,
                             const float spawnProbability) {
-    const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+    const uint stride = gridDim.x * blockDim.x, idxEnd = (rows - 1) * cols - 1,
+               jMax = cols - NH_RADIUS;
 
-    // note: we're using safety borders
-    for (uint y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
-         y += stride.y) {
-        for (uint x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
-             x += stride.x) {
-            uint idx = y * cols + x;
-            grid[idx] =
-                curand_uniform(&globalRandState[idx]) < spawnProbability;
-        }
+    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxEnd;
+         idx += stride) {
+        const uint j = idx % cols;
+        grid[idx] = (idx > cols + 1 && NH_RADIUS < j && j < jMax) &&
+                    curand_uniform(&globalRandState[idx]) < spawnProbability;
     }
 }
 
@@ -141,33 +140,29 @@ __global__ void k_update_grid_buffers(const GridType *const grid,
                                       const uvec2 cellDensity,
                                       const ulim2 gridLimX,
                                       const ulim2 gridLimY) {
-    const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+    const uint stride = gridDim.x * blockDim.x,
+               idxEnd = (gridLimY.end - 1) * cols + gridLimX.end,
+               jMax = cols - NH_RADIUS;
 
-    // no need to use safety borders here
-    for (uint y = blockDim.y * blockIdx.y + threadIdx.y; y < gridLimY.end;
-         y += stride.y) {
-        // check if out of bounds
-        if (y < gridLimY.start)
-            continue;
-        for (uint x = blockDim.x * blockIdx.x + threadIdx.x; x < gridLimX.end;
-             x += stride.x) {
-            // check if out of bounds
-            if (x < gridLimX.start)
-                continue;
-            uint idx = y * cols + x;
-            // try avoiding further operations when not needed
-            // atomicMax is pretty expensive
-            if (grid[idx]) {
-                // calculate mapping between grid and vertice
-                uint vx = (x - gridLimX.start) / cellDensity.x;
-                uint vy = (y - gridLimY.start) / cellDensity.y;
-                uint vidx = vy * numVerticesX + vx;
-                // no need to be atomic on a read
-                // we check before to avoid atomic writing bottleneck
-                if (gridVertices[vidx].state == 0)
-                    atomicMax(&gridVertices[vidx].state,
-                              static_cast<int>(grid[idx]));
-            }
+    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxEnd;
+         idx += stride) {
+        // to check if out of bounds
+        const uint j = idx % cols;
+
+        // try avoiding further operations when not needed
+        // atomicMax is pretty expensive
+        if (idx >= gridLimY.start * cols + gridLimX.start && NH_RADIUS < j &&
+            j < jMax && grid[idx]) {
+            // calculate mapping between grid and vertice
+            // TODO fix this
+            uint vx = (x - gridLimX.start) / cellDensity.x;
+            uint vy = (y - gridLimY.start) / cellDensity.y;
+            uint vidx = vy * numVerticesX + vx;
+            // no need to be atomic on a read
+            // we check before to avoid atomic writing bottleneck
+            if (gridVertices[vidx].state == 0)
+                atomicMax(&gridVertices[vidx].state,
+                          static_cast<int>(grid[idx]));
         }
     }
 }
@@ -175,14 +170,12 @@ __global__ void k_update_grid_buffers(const GridType *const grid,
 __global__ void k_reset_grid_buffers(fvec2s *const __restrict__ gridVertices,
                                      const uint numVerticesX,
                                      const uint numVerticesY) {
-    const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+    const uint stride = gridDim.x * blockDim.x,
+               idxEnd = numVerticesX * numVerticesY;
 
-    for (uint y = blockDim.y * blockIdx.y + threadIdx.y; y < numVerticesY;
-         y += stride.y) {
-        for (uint x = blockDim.x * blockIdx.x + threadIdx.x; x < numVerticesX;
-             x += stride.x) {
-            gridVertices[y * numVerticesX + x].state = 0;
-        }
+    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxEnd;
+         idx += stride) {
+        gridVertices[idx].state = 0;
     }
 }
 
@@ -192,32 +185,31 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
                     curandState *const __restrict__ globalRandState,
                     const float virtualSpawnProbability,
                     const bool countAliveCells, uint *const activeCellCount) {
-    const dim3 stride(gridDim.x * blockDim.x, gridDim.y * blockDim.x);
+    const uint stride = gridDim.x * blockDim.x, idxEnd = (rows - 1) * cols - 1,
+               jMax = cols - NH_RADIUS;
 
-    // note: we're using safety borders
-    for (uint y = blockDim.y * blockIdx.y + threadIdx.y + 1; y < rows - 1;
-         y += stride.y) {
-        for (uint x = blockDim.x * blockIdx.x + threadIdx.x + 1; x < cols - 1;
-             x += stride.x) {
-            uint idx = y * cols + x;
-            bool newState = false;
+    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxEnd;
+         idx += stride) {
+        const uint j = idx % cols;
+        bool newState = false;
 
-            // 0. Virtual particle spawn probability
-            if (virtualSpawnProbability > 0 &&
-                curand_uniform(&globalRandState[idx]) < virtualSpawnProbability)
-                newState = true;
-            else
-                newState = game_of_life(
-                    grid[idx], count_moore_neighbours(grid, cols, idx));
-            // newState = game_of_life(
-            //     grid[idx],
-            //     count_radius_neighbours(grid, rows, cols, x, y, 3));
+        newState =
+            idx > cols + 1 && NH_RADIUS < j && j < jMax &&
+            // add a "virtual particle" spawn probability
+            ((virtualSpawnProbability > 0 &&
+              curand_uniform(&globalRandState[idx]) <
+                  virtualSpawnProbability) ||
+             // compute cell rule
+             game_of_life(grid[idx], count_moore_neighbours(grid, cols, idx)));
 
-            // avoid atomicAdd when not necessary
-            if (countAliveCells && newState)
-                atomicAdd(activeCellCount, 1);
+        // newState = game_of_life(
+        //     grid[idx],
+        //     count_radius_neighbours(grid, rows, cols, x, y, 3));
 
-            nextGrid[idx] = newState;
-        }
+        // avoid atomicAdd when not necessary
+        if (countAliveCells && newState)
+            atomicAdd(activeCellCount, 1);
+
+        nextGrid[idx] = newState;
     }
 }
