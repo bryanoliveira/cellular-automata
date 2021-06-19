@@ -26,13 +26,13 @@ echo "Benchmark #$RUN"
 
 TRIALS=5
 
-# for i in $(seq 1 $TRIALS); do
-#     for threads in {16,}; do # 1,2,4,8,12,
-#         export OMP_NUM_THREADS=$threads
-#         echo "Benchmarking CPU with $OMP_NUM_THREADS threads"
-#         run "--cpu" "res/$RUN.benchmark_results_cpu_th_$OMP_NUM_THREADS.csv"
-#     done
-# done
+for i in $(seq 1 $TRIALS); do
+    for threads in {16,}; do # 1,2,4,8,12,
+        export OMP_NUM_THREADS=$threads
+        echo "Benchmarking CPU with $OMP_NUM_THREADS threads"
+        run "--cpu" "res/$RUN.benchmark_results_cpu_th_$OMP_NUM_THREADS.csv"
+    done
+done
 
 echo "Benchmarking GPU"
 for i in $(seq 1 $TRIALS); do
