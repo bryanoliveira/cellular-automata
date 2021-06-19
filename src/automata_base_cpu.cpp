@@ -1,3 +1,7 @@
+#ifndef NH_RADIUS
+#define NH_RADIUS 1
+#endif
+
 #include <chrono>
 #include <omp.h>
 #include <sstream>
@@ -6,8 +10,6 @@
 
 #include "automata_base_cpu.hpp"
 #include "stats.hpp"
-
-#define NH_RADIUS 1
 
 namespace cpu {
 
@@ -47,20 +49,19 @@ void AutomataBase::evolve(const bool logEnabled) {
 
     mActiveCellCount = 0;
 
-    const uint idxStart = config::cols + 1,
-               idxEnd = (config::rows - 1) * config::cols,
-               jMax = config::cols - NH_RADIUS;
+    const uint idxMax = (config::rows - 1) * config::cols - 1,
+               xMax = config::cols - NH_RADIUS;
 
 #pragma omp parallel
     {
         uint myseed = omp_get_thread_num();
 #pragma omp for private(myseed) reduction(+ : mActiveCellCount)
         // note: we're using safety borders
-        for (uint idx = idxStart; idx < idxEnd; ++idx) {
-            // check j index to skip borders
-            const uint j = idx % config::cols;
+        for (uint idx = config::cols + 1; idx < idxMax; ++idx) {
+            // check x index to skip borders
+            const uint x = idx % config::cols;
             // check safety borders & cell state
-            nextGrid[idx] = (j > NH_RADIUS || j < jMax) &&
+            nextGrid[idx] = NH_RADIUS < x && x < xMax &&
                             // add a "virtual particle" spawn probability
                             ((config::virtualFillProb &&
                               (static_cast<float>(rand_r(&myseed)) / RAND_MAX) <
