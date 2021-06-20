@@ -6,37 +6,30 @@
 
 ////// DEVICE FUNCTIONS
 
-__device__ inline unsigned short
-count_moore_neighbours(const GridType *const grid, const uint cols,
-                       const uint idx) {
+__device__ inline ushort count_nh(const GridType *const grid, const uint cols,
+                                  const uint idx) {
     /** Counts immediate active Moore neighbours **/
-    unsigned short livingNeighbours = 0;
-    // we can calculate the neighbours directly since we're using safety borders
-    const uint neighbours[] = {
-        idx - cols - 1, // top left
-        idx - cols,     // top center
-        idx - cols + 1, // top right
-        idx - 1,        // middle left
-        idx + 1,        // middle right
-        idx + cols - 1, // bottom left
-        idx + cols,     // bottom center
-        idx + cols + 1, // bottom right
-    };
 
-#pragma unroll
-    for (unsigned short nidx = 0; nidx < 8; ++nidx)
-        // grid is currently bool, so summing true values is ok
-        livingNeighbours += static_cast<unsigned short>(grid[neighbours[nidx]]);
-
-    return livingNeighbours;
+    return static_cast<ushort>(
+        // it's faster to calculate them directly
+        grid[idx - cols - 1] + // top left
+        grid[idx - cols] +     // top center
+        grid[idx - cols + 1] + // top right
+        grid[idx - 1] +        // middle left
+        grid[idx + 1] +        // middle right
+        grid[idx + cols - 1] + // bottom left
+        grid[idx + cols] +     // bottom center
+        grid[idx + cols + 1]   // bottom right
+    );
 }
 
-__device__ inline unsigned short
-count_radius_neighbours(const GridType *const grid, const uint rows,
-                        const uint cols, const uint x, const uint y,
-                        const int radius = 1) {
+__device__ inline ushort count_radius_neighbours(const GridType *const grid,
+                                                 const uint rows,
+                                                 const uint cols, const uint x,
+                                                 const uint y,
+                                                 const int radius = 1) {
     /** Counts active neighbours given radius **/
-    unsigned short livingNeighbours = 0;
+    ushort livingNeighbours = 0;
 
 #pragma unroll
     for (int ny = -radius; ny <= radius; ++ny) {
@@ -47,33 +40,33 @@ count_radius_neighbours(const GridType *const grid, const uint rows,
             const int py = static_cast<int>(y) + ny;
 
             livingNeighbours +=
-                static_cast<unsigned short>((
-                                                // if pos is not current cell
-                                                (ny != 0 || nx != 0) &&
-                                                // and is valid in x
-                                                0 < px && px < cols - 1 &&
-                                                // and is valid in y
-                                                0 < py && py < rows - 1) &&
-                                            // sum its activity
-                                            grid[py * cols + px]);
+                static_cast<ushort>((
+                                        // if pos is not current cell
+                                        (ny != 0 || nx != 0) &&
+                                        // and is valid in x
+                                        0 < px && px < cols - 1 &&
+                                        // and is valid in y
+                                        0 < py && py < rows - 1) &&
+                                    // sum its activity
+                                    grid[py * cols + px]);
         }
     }
 
     return livingNeighbours;
 }
 
-__device__ inline bool game_of_life(const bool isAlive,
-                                    const unsigned short livingNeighbours) {
+__device__ inline GridType game_of_life(const GridType state,
+                                        const ushort livingNeighbours) {
     // 1. Any live cell with two or three live neighbours survives.
     // 2. Any dead cell with three live neighbours becomes a live cell.
     // 3. All other live cells die in the next generation. Similarly,
     // all other dead cells stay dead.
-    return (isAlive && livingNeighbours == 2) || livingNeighbours == 3;
+    return (state && livingNeighbours == 2) || livingNeighbours == 3;
 }
 
-__device__ inline unsigned char msgol(const unsigned char state,
-                                      const unsigned short livingNeighbours,
-                                      const unsigned char nStates) {
+__device__ inline GridType msgol(const GridType state,
+                                 const ushort livingNeighbours,
+                                 const ubyte nStates) {
     if (livingNeighbours == 3 && state < nStates - 1)
         // cell would be born
         return state + 1;
@@ -84,9 +77,9 @@ __device__ inline unsigned char msgol(const unsigned char state,
     return state;
 }
 
-__device__ inline unsigned char msgol4(const unsigned char state,
-                                       const unsigned short livingNeighbours,
-                                       const unsigned char nStates) {
+__device__ inline GridType msgol4(const GridType state,
+                                  const ushort livingNeighbours,
+                                  const ubyte nStates) {
     if (livingNeighbours == 3) {
         // cell would be born
         if (state < nStates - 1)
@@ -107,7 +100,7 @@ __device__ inline unsigned char msgol4(const unsigned char state,
 
 __global__ void k_setup_rng(const uint rows, const uint cols,
                             curandState *const __restrict__ globalRandState,
-                            const unsigned long seed) {
+                            const ulong seed) {
     const uint stride = gridDim.x * blockDim.x, idxMax = (rows - 1) * cols - 1,
                xMax = cols - NH_RADIUS;
 
@@ -191,25 +184,24 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
     for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxMax;
          idx += stride) {
         const uint x = idx % cols;
-        bool newState = false;
+        GridType newState = false;
 
-        newState =
-            idx > cols + 1 && NH_RADIUS < x && x < xMax &&
-            // add a "virtual particle" spawn probability
-            ((virtualSpawnProbability > 0 &&
-              curand_uniform(&globalRandState[idx]) <
-                  virtualSpawnProbability) ||
-             // compute cell rule
-             game_of_life(grid[idx], count_moore_neighbours(grid, cols, idx)));
+        newState = idx > cols + 1 && NH_RADIUS < x && x < xMax &&
+                   // add a "virtual particle" spawn probability
+                   ((virtualSpawnProbability > 0 &&
+                     curand_uniform(&globalRandState[idx]) <
+                         virtualSpawnProbability) ||
+                    // compute cell rule
+                    game_of_life(grid[idx], count_nh(grid, cols, idx)));
 
         // newState = game_of_life(
         //     grid[idx],
         //     count_radius_neighbours(grid, rows, cols, x, y, 3));
 
-        // avoid atomicAdd when not necessary
-        if (countAliveCells && newState)
-            atomicAdd(activeCellCount, 1);
-
         nextGrid[idx] = newState;
+
+        // avoid atomicAdd when not necessary
+        if (countAliveCells)
+            atomicAdd(activeCellCount, newState);
     }
 }

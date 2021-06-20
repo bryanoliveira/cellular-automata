@@ -138,9 +138,7 @@ void AutomataBase::evolve(const bool logEnabled) {
     CUDA_ASSERT(cudaDeviceSynchronize());
 
     // simply swap buffers to avoid reallocation
-    GridType *tmpGrid = grid;
-    grid = nextGrid;
-    nextGrid = tmpGrid;
+    std::swap(grid, nextGrid);
 
     // calculate timing
     const unsigned long duration =

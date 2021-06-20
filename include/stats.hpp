@@ -1,3 +1,6 @@
+#ifndef STATS_HPP_
+#define STATS_HPP_
+
 namespace stats {
 
 extern unsigned long iterations;
@@ -12,3 +15,5 @@ extern unsigned long totalBufferTime;
 void print_timings();
 
 }; // namespace stats
+
+#endif // STATS_HPP_

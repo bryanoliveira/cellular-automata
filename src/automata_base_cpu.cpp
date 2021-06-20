@@ -8,11 +8,12 @@
 #include <spdlog/spdlog.h>
 
 #include "automata_base_cpu.hpp"
+#include "commons_cpu.hpp"
 #include "stats.hpp"
 
 namespace cpu {
 
-AutomataBase::AutomataBase(const unsigned long pRandSeed,
+AutomataBase::AutomataBase(const ulong pRandSeed,
                            std::ostringstream *const pLiveLogBuffer,
                            void (*pUpdateBuffersFunc)()) {
     spdlog::info("Initializing automata CPU engine...");
@@ -58,66 +59,38 @@ void AutomataBase::evolve(const bool logEnabled) {
 #pragma omp parallel
     {
         uint myseed = omp_get_thread_num();
+
 #pragma omp for private(myseed) reduction(+ : mActiveCellCount) schedule(runtime)
-        // note: we're using safety borders
         for (uint idx = config::cols + 1; idx < idxMax; ++idx) {
             // check x index to skip borders
             const uint x = idx % config::cols;
-            // check safety borders & cell state
-            nextGrid[idx] = NH_RADIUS < x && x < xMax &&
-                            // add a "virtual particle" spawn probability
-                            ((config::virtualFillProb &&
-                              (static_cast<float>(rand_r(&myseed)) / RAND_MAX) <
-                                  config::virtualFillProb) ||
-                             // compute cell rule
-                             compute_cell(idx));
+            if (NH_RADIUS < x && x < xMax) {
+                // check safety borders & cell state
+                nextGrid[idx] =
+                    // add a "virtual particle" spawn probability
+                    ((config::virtualFillProb &&
+                      (static_cast<float>(rand_r(&myseed)) / RAND_MAX) <
+                          config::virtualFillProb)
+                     // compute cell rule
+                     || game_of_life(grid[idx], count_nh(idx)));
+            }
 
-            if (logEnabled && nextGrid[idx])
-                // #pragma omp critical
-                ++mActiveCellCount;
+            if (logEnabled)
+                mActiveCellCount += nextGrid[idx];
         }
     }
 
-    GridType *tmpGrid = grid;
-    grid = nextGrid;
-    nextGrid = tmpGrid;
+    std::swap(grid, nextGrid);
 
     // calculate timing
-    const unsigned long duration =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::steady_clock::now() - timeStart)
-            .count();
+    const ulong duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                               std::chrono::steady_clock::now() - timeStart)
+                               .count();
     stats::totalEvolveTime += duration;
     // update live buffer
     if (logEnabled)
         *mLiveLogBuffer << " | Evolve Function: " << duration
                         << " ns | Active cells: " << mActiveCellCount;
-}
-
-inline bool AutomataBase::compute_cell(const uint idx) {
-    unsigned short livingNeighbours = 0;
-    // we can calculate the neighbours directly since we're using safety
-    // borders
-    const uint neighbours[] = {
-        idx - config::cols - 1, // top left
-        idx - config::cols,     // top center
-        idx - config::cols + 1, // top right
-        idx - 1,                // middle left
-        idx + 1,                // middle right
-        idx + config::cols - 1, // bottom left
-        idx + config::cols,     // bottom center
-        idx + config::cols + 1, // bottom right
-    };
-
-#pragma GCC unroll 8
-    for (unsigned short nidx = 0; nidx < 8; ++nidx)
-        livingNeighbours += static_cast<unsigned short>(grid[neighbours[nidx]]);
-
-    // 1. Any living cell with two or three live neighbours survives.
-    // 2. Any dead cell with three live neighbours becomes a live cell.
-    // 3. All other live cells die in the next generation. Similarly,
-    // all other dead cells stay dead.
-    return (grid[idx] && livingNeighbours == 2) || livingNeighbours == 3;
 }
 
 } // namespace cpu

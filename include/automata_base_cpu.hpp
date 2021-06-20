@@ -10,7 +10,7 @@ namespace cpu {
 
 class AutomataBase : public AutomataInterface {
   public:
-    AutomataBase(const unsigned long pRandSeed,
+    AutomataBase(const ulong pRandSeed,
                  std::ostringstream *const pLiveLogBuffer,
                  void (*pUpdateBuffersFunc)());
     virtual ~AutomataBase();

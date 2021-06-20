@@ -1,3 +1,6 @@
+#ifndef PROJECTION_HPP_
+#define PROJECTION_HPP_
+
 #include "config.hpp"
 #include "controls.hpp"
 #include "types.hpp"
@@ -19,3 +22,5 @@ void update();
 uint getVerticeIdx(const uvec2 gridPos);
 
 }; // namespace proj
+
+#endif // PROJECTION_HPP_

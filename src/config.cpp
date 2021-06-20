@@ -12,8 +12,8 @@ const std::string programName = "Automata";
 uint width = 600;
 uint height = 600;
 // 12000 x 12000 uses up to 2GB RAM and 8.5GB VRAM
-uint rows = 1200;
-uint cols = 1200;
+uint rows = 1024;
+uint cols = 1024;
 bool render = false;
 uint renderDelayMs = 0;
 float fillProb = 0.2;

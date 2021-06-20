@@ -1,7 +1,10 @@
 #ifndef TYPES_HPP_
 #define TYPES_HPP_
 
+typedef unsigned char ubyte;
+typedef unsigned short ushort;
 typedef unsigned int uint;
+typedef unsigned long ulong;
 
 // A bidimensional int limit object
 // It is essentially the same as a vec2 but with different member names for
