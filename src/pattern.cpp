@@ -59,8 +59,8 @@ void load_pattern(const std::string filename) {
             else if (ch == ',') {
                 buffer >> sizeCols;
                 buffer.clear();
-                // calculate the col start position (integer) and save it for
-                // later
+                // calculate the col start position (integer) and save
+                // it for later
                 col = startCol = config::cols / 2 - sizeCols / 2;
                 // the next number we'll read is Y
                 state = STATE_HEADER_Y;
@@ -113,12 +113,14 @@ void load_pattern(const std::string filename) {
                     fill_grid(row, col, len);
                     col += len; // update cursor
                 }
-                // if the char is "dead" (b) no operation needs to be done
+                // if the char is "dead" (b) no operation needs to be
+                // done
                 else if (ch == 'b') {
                     // just update the cursor
                     col += len;
                 }
-                // if the char is "new line" ($) skip the number of rows set
+                // if the char is "new line" ($) skip the number of rows
+                // set
                 else if (ch == '$') {
                     row += len;     // skip rows
                     col = startCol; // reset col
@@ -136,8 +138,9 @@ void load_pattern(const std::string filename) {
     spdlog::info("Pattern loading done.");
 }
 
-void fill_grid(const uint row, const uint col, const uint length) {
+inline void fill_grid(const uint row, const uint col, const uint length) {
     // enables a contiguous segment of the grid
-    for (uint i = col; i < col + length; ++i)
-        grid[row * config::cols + i] = 1;
+    const uint start = row * config::cols + col, end = start + length;
+    for (uint i = start; i < end; ++i)
+        grid[i] = 1;
 }
