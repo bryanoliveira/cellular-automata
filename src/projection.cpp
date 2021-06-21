@@ -86,20 +86,6 @@ void update() {
                                config::rows);
 }
 
-uint getVerticeIdx(const uvec2 gridPos) {
-    if (config::noDownsample)
-        // no conversion needed, grid index = vertice index
-        return gridPos.y * config::cols + gridPos.x;
-
-    const uint vx = (gridPos.x - gridLimX.start) / cellDensity.x;
-    const uint vy = (gridPos.y - gridLimY.start) / cellDensity.y;
-    // return a position when the mapping is valid
-    if (vx < info.numVertices.x && vy < info.numVertices.y)
-        return vy * info.numVertices.x + vx;
-    // otherwise return a default position
-    return 0;
-}
-
 // This modifies the param delta in order to limit it!
 ulim2 translateLimits(float *const delta, const ulim2 ref,
                       const int sectionSize, const int hardLimit) {

@@ -9,6 +9,7 @@
 
 #include <ctime>
 #include <iomanip>
+#include <omp.h>
 #include <sstream>
 #include <spdlog/spdlog.h>
 
@@ -148,25 +149,26 @@ void Display::update_grid_buffers_cpu() {
     // update projection limits
     proj::update();
 
+#pragma omp parallel for schedule(runtime)
     // reset vertices states
-    for (uint idx = 0; idx < proj::info.totalVertices; ++idx) {
+    for (uint idx = 0; idx < proj::info.totalVertices; ++idx)
         mGridVertices[idx].state = 0;
-    }
 
+#pragma omp parallel for collapse(2) schedule(runtime)
     // update vertice states
-    // TODO parallelize with OpenMP
     for (uint y = proj::gridLimY.start; y < proj::gridLimY.end; ++y) {
         for (uint x = proj::gridLimX.start; x < proj::gridLimX.end; ++x) {
             // the grid index
-            uint idx = y * config::cols + x;
-            // if grid state is on
-            if (grid[idx]) {
-                // map
-                uint vIdx = proj::getVerticeIdx({x, y});
-                // update vertice state
-                mGridVertices[vIdx].state = std::max(
-                    mGridVertices[vIdx].state, static_cast<int>(grid[idx]));
-            }
+            const uint idx = y * config::cols + x,
+                       vx = (x - proj::gridLimX.start) / proj::cellDensity.x,
+                       vy = (y - proj::gridLimY.start) / proj::cellDensity.y,
+                       vidx = vy * proj::info.numVertices.x + vx;
+
+            // update vertice state
+            if (mGridVertices[vidx].state == 0 && grid[idx])
+#pragma omp critical
+                mGridVertices[vidx].state = std::max(
+                    mGridVertices[vidx].state, static_cast<int>(grid[idx]));
         }
     }
 

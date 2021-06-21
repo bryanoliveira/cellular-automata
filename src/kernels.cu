@@ -148,11 +148,15 @@ __global__ void k_update_grid_buffers(const GridType *const grid,
         // atomicMax is pretty expensive
         if (idxMin <= idx && xMin < x && x < xMax && grid[idx]) {
             // calculate mapping between grid and vertice
-            uint vx = (x - gridLimX.start) / cellDensity.x;
-            uint vy = (y - gridLimY.start) / cellDensity.y;
-            uint vidx = vy * numVerticesX + vx;
+            const uint vx = (x - gridLimX.start) / cellDensity.x,
+                       vy = (y - gridLimY.start) / cellDensity.y,
+                       vidx = vy * numVerticesX + vx;
+
             // no need to be atomic on a read
             // we check before to avoid atomic writing bottleneck
+            // gridVertices[vidx].state = 1;
+            // gridVertices[vidx].state =
+            //     max(gridVertices[vidx].state, static_cast<int>(grid[idx]));
             if (gridVertices[vidx].state == 0)
                 atomicMax(&gridVertices[vidx].state,
                           static_cast<int>(grid[idx]));

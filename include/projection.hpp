@@ -18,8 +18,6 @@ extern ulim2 gridLimX, gridLimY;
 void init();
 // Update projection limits given control updates
 void update();
-// Transform a X,Y Grid position into a 1D vertice index
-uint getVerticeIdx(const uvec2 gridPos);
 
 }; // namespace proj
 
