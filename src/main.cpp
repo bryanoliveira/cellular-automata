@@ -245,7 +245,8 @@ void print_output() {
                 // gray foreground with black background
                 std::cout << "\e[0;37;40m";
 
-            std::cout << " " << grid[i * config::cols + j] << " ";
+            std::cout << " " << static_cast<int>(grid[i * config::cols + j])
+                      << " ";
         }
         std::cout << std::endl;
     }
