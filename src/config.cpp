@@ -25,6 +25,8 @@ std::string patternFileName("random");
 bool startPaused = true;
 bool noDownsample = false;
 bool printOutput = false;
+uint gpuBlocks = 0;
+uint gpuThreads = 0;
 
 void load_file() {}
 void load_cmd(const int argc, char **const argv) {
@@ -42,9 +44,9 @@ void load_cmd(const int argc, char **const argv) {
         ("fill-probability,p", po::value<float>(),
          "Cell probability to start alive") //
         ("virtual-fill-probability,v", po::value<float>(),
-         "Cell probability to become alive")                    //
-        ("max,m", po::value<unsigned long>(), "Max iterations") //
-        ("cpu", "Enable CPU-only mode")                         //
+         "Cell probability to become alive")            //
+        ("max,m", po::value<ulong>(), "Max iterations") //
+        ("cpu", "Enable CPU-only mode")                 //
         ("no-downsample", "Disable automatic grid to vertice downsampling"
                           " when grid size is greater than window size.") //
         ("file,f", po::value<std::string>(), "Pattern file (.rle)")       //
@@ -52,7 +54,9 @@ void load_cmd(const int argc, char **const argv) {
                   "unpaused when not rendering)")   //
         ("output,o", "Output last state to stdout") //
         ("benchmark,b", "Benchmark mode - overrides 'max' to 1000 if it is 0, "
-                        "'start' to true, 'render-delay' to 0");
+                        "'start' to true, 'render-delay' to 0")      //
+        ("gpu-blocks", po::value<uint>(), "GPU grid size in blocks") //
+        ("gpu-threads", po::value<uint>(), "GPU block size in threads");
 
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(description).run(),
@@ -87,7 +91,7 @@ void load_cmd(const int argc, char **const argv) {
     if (vm.count("virtual-fill-probability"))
         virtualFillProb = vm["virtual-fill-probability"].as<float>();
     if (vm.count("max"))
-        maxIterations = vm["max"].as<unsigned long>();
+        maxIterations = vm["max"].as<ulong>();
     if (vm.count("cpu"))
         cpuOnly = true;
 #ifdef CPU_ONLY
@@ -112,6 +116,10 @@ void load_cmd(const int argc, char **const argv) {
     }
     if (vm.count("output"))
         printOutput = true;
+    if (vm.count("gpu-blocks"))
+        gpuBlocks = vm["gpu-blocks"].as<uint>();
+    if (vm.count("gpu-threads"))
+        gpuThreads = vm["gpu-threads"].as<uint>();
 }
 
 } // namespace config

@@ -23,6 +23,8 @@ extern std::string patternFileName;
 extern bool startPaused;
 extern bool noDownsample;
 extern bool printOutput;
+extern uint gpuBlocks;
+extern uint gpuThreads;
 
 void load_file();
 void load_cmd(const int argc, char **const argv);

@@ -26,8 +26,6 @@ class AutomataBase : public AutomataInterface {
 
   protected:
     int mGpuDeviceId;
-    size_t mGpuBlocks;
-    size_t mGpuThreadsPerBlock;
     const size_t mGridSize = config::rows * config::cols;
     const size_t mGridBytes = mGridSize * sizeof(GridType);
     curandState *mGlobalRandState;

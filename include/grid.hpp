@@ -2,8 +2,9 @@
 #define GRID_HPP_
 
 #include "config.hpp"
+#include "types.hpp"
 
-typedef bool GridType;
+typedef ubyte GridType;
 
 extern GridType *grid;
 extern GridType *nextGrid;

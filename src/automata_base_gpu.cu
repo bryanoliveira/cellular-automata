@@ -17,8 +17,20 @@ AutomataBase::AutomataBase(const unsigned long randSeed,
 
     cudaDeviceProp gpuProps;
     cudaGetDevice(&mGpuDeviceId);
+    // define common kernel configs if needed
     cudaGetDeviceProperties(&gpuProps, mGpuDeviceId);
-    CUDA_ASSERT(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1))
+    // blocks should be a multiple of #SMs on the grid
+    // 68 on a 3080
+    if (config::gpuBlocks == 0)
+        config::gpuBlocks = gpuProps.multiProcessorCount * 32;
+    // threads should be a multiple of warpSize on the block
+    // 32 on a 3080
+    if (config::gpuThreads == 0)
+        config::gpuThreads = gpuProps.warpSize * 16;
+
+    std::cout << gpuProps.multiProcessorCount << std::endl;
+
+    CUDA_ASSERT(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
     // allocate memory
     // gpu only, not managed
@@ -31,51 +43,8 @@ AutomataBase::AutomataBase(const unsigned long randSeed,
     *mActiveCellCount = 0;
     CUDA_ASSERT(cudaMemset(grid, 0, mGridBytes)); // init grid with zeros (gpu)
 
-    // define common kernel configs
-    // set_optimal_kernel_config(mGpuDeviceId);
-    int tBlockSize;   // The launch configurator returned block size
-    int tMinGridSize; // The minimum grid size needed to achieve the
-                      // maximum occupancy for a full device launch
-    int tGridSize;    // The actual grid size needed, based on input size
-
-    /* int* minGridSize,
-     * int* blockSize,
-     * T func,
-     * size_t dynamicSMemSize = 0,
-     * int blockSizeLimit = 0 */
-    cudaOccupancyMaxPotentialBlockSize(&tMinGridSize, &tBlockSize,
-                                       k_evolve_count_rule, 0, 0);
-    // Round up according to array size
-    tGridSize = (mGridSize + tBlockSize - 1) / tBlockSize;
-
-    k_evolve_count_rule<<<tGridSize, tBlockSize>>>(
-        grid, nextGrid, config::rows, config::cols, NULL, 0, false, NULL);
-
-    cudaDeviceSynchronize();
-
-    // calculate theoretical occupancy
-    int maxActiveBlocks;
-    cudaOccupancyMaxActiveBlocksPerMultiprocessor(
-        &maxActiveBlocks, k_evolve_count_rule, tBlockSize, 0);
-
-    float occupancy =
-        (maxActiveBlocks * tBlockSize / gpuProps.warpSize) /
-        (float)(gpuProps.maxThreadsPerMultiProcessor / gpuProps.warpSize);
-
-    spdlog::info(
-        "Kernel launch config set to {} blocks of size {} with occupancy of {}",
-        tGridSize, tBlockSize, occupancy);
-
-    // blocks should be a multiple of #SMs on the grid (assume #SMs is even) !
-    // actually the number of blocks should
-    mGpuBlocks = tGridSize; // 1156 on a 3080 - 17 blocks per SM
-    // threads should be a multiple of warpSize on the block
-    mGpuThreadsPerBlock = tBlockSize;
-
-    ///////////////////////////////////////////
-
     // initialize RNG
-    k_setup_rng<<<mGpuBlocks, mGpuThreadsPerBlock>>>(
+    k_setup_rng<<<config::gpuBlocks, config::gpuThreads>>>(
         config::rows, config::cols, mGlobalRandState, randSeed);
 
     // prefetch grid to CPU so it can fill it properly
@@ -122,7 +91,7 @@ void AutomataBase::prepare() {
 
     // initialize grid with fillProb
     if (config::fillProb > 0)
-        k_init_grid<<<mGpuBlocks, mGpuThreadsPerBlock>>>(
+        k_init_grid<<<config::gpuBlocks, config::gpuThreads>>>(
             grid, config::rows, config::cols, mGlobalRandState,
             config::fillProb);
     CUDA_ASSERT(cudaGetLastError());
@@ -163,7 +132,8 @@ void AutomataBase::evolve(const bool logEnabled) {
 }
 
 void AutomataBase::run_evolution_kernel(const bool countAliveCells) {
-    k_evolve_count_rule<<<mGpuBlocks, mGpuThreadsPerBlock, 0, mEvolveStream>>>(
+    k_evolve_count_rule<<<config::gpuBlocks, config::gpuThreads, 0,
+                          mEvolveStream>>>(
         grid, nextGrid, config::rows, config::cols, mGlobalRandState,
         config::virtualFillProb, countAliveCells, mActiveCellCount);
     CUDA_ASSERT(cudaGetLastError());
@@ -194,12 +164,12 @@ void AutomataBase::update_grid_buffers() {
 
     // launch kernels
     // reset buffers
-    k_reset_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
+    k_reset_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
                            mBufferUpdateStream>>>(
         gridVertices, proj::info.numVertices.x, proj::info.numVertices.y);
     CUDA_ASSERT(cudaGetLastError());
     // update buffers
-    k_update_grid_buffers<<<mGpuBlocks, mGpuThreadsPerBlock, 0,
+    k_update_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
                             mBufferUpdateStream>>>(
         grid, gridVertices, config::cols, proj::info.numVertices.x,
         proj::cellDensity, proj::gridLimX, proj::gridLimY);
