@@ -182,25 +182,27 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
                     curandState *const __restrict__ globalRandState,
                     const float virtualSpawnProbability,
                     const bool countAliveCells, uint *const activeCellCount) {
-    const uint stride = gridDim.x * blockDim.x, idxMax = (rows - 1) * cols - 1,
-               xMax = cols - NH_RADIUS;
+    // idMin: thread ID + safety border margin
+    const uint stride = gridDim.x * blockDim.x,
+               idMin = blockDim.x * blockIdx.x + threadIdx.x + cols + 1,
+               idxMax = (rows - 1) * cols - 1, xMax = cols - NH_RADIUS;
 
-    for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxMax;
-         idx += stride) {
+    for (uint idx = idMin; idx < idxMax; idx += stride) {
         const uint x = idx % cols;
-        GridType newState = false;
+        GridType newState = 0;
 
-        newState = idx > cols + 1 && NH_RADIUS < x && x < xMax &&
-                   // add a "virtual particle" spawn probability
-                   ((virtualSpawnProbability > 0 &&
-                     curand_uniform(&globalRandState[idx]) <
-                         virtualSpawnProbability) ||
-                    // compute cell rule
-                    game_of_life(grid[idx], count_nh(grid, cols, idx)));
+        // compute cell rule
+        newState = (NH_RADIUS < x) * (x < xMax) *
+                   game_of_life(grid[idx], count_nh(grid, cols, idx));
 
         // newState = game_of_life(
         //     grid[idx],
         //     count_radius_neighbours(grid, rows, cols, x, y, 3));
+
+        // add a "virtual particle" spawn probability
+        if (virtualSpawnProbability > 0 &&
+            curand_uniform(&globalRandState[idx]) < virtualSpawnProbability)
+            newState = 1;
 
         nextGrid[idx] = newState;
 
