@@ -28,8 +28,6 @@ AutomataBase::AutomataBase(const unsigned long randSeed,
     if (config::gpuThreads == 0)
         config::gpuThreads = gpuProps.warpSize * 16;
 
-    std::cout << gpuProps.multiProcessorCount << std::endl;
-
     CUDA_ASSERT(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
     // allocate memory
