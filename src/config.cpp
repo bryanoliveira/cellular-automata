@@ -19,7 +19,7 @@ uint renderDelayMs = 0;
 float fillProb = 0.2;
 float virtualFillProb = 0;
 bool benchmarkMode = false;
-unsigned long maxIterations = 0;
+ulong maxIterations = 0;
 bool cpuOnly = false;
 std::string patternFileName("random");
 bool startPaused = true;

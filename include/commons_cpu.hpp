@@ -27,8 +27,8 @@ inline ushort count_nh(const uint idx) {
  * Computes the game of life:
  * 1. Any live cell with two or three live neighbours survives.
  * 2. Any dead cell with three live neighbours becomes a live cell.
- * 3. All other live cells die in the next generation. Similarly, all other dead
- * cells stay dead.
+ * 3. All other live cells die in the next generation. Similarly, all other
+ * dead cells stay dead.
  */
 inline GridType game_of_life(const GridType state,
                              const ushort livingNeighbours) {

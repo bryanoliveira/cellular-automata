@@ -3,11 +3,11 @@
 
 namespace stats {
 
-extern unsigned long iterations;
+extern ulong iterations;
 // time in nanoseconds
-extern unsigned long loadTime;
-extern unsigned long totalEvolveTime;
-extern unsigned long totalBufferTime;
+extern ulong loadTime;
+extern ulong totalEvolveTime;
+extern ulong totalBufferTime;
 
 /* Outputs:
  * iterations, total load time, total evolve time,

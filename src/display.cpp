@@ -96,7 +96,7 @@ void Display::stop() {
  * Draws on screen using OpenGL buffers, which is much faster.
  * Requires that the buffers are updated before this function is called.
  */
-void Display::draw(const bool logEnabled, const unsigned long itsPerSecond) {
+void Display::draw(const bool logEnabled, const ulong itsPerSecond) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     // create default transform matrix
@@ -181,7 +181,7 @@ void Display::update_grid_buffers_cpu() {
     glBindBuffer(GL_ARRAY_BUFFER, mGridVBO);
 }
 
-void Display::update_title(const unsigned long itsPerSecond) {
+void Display::update_title(const ulong itsPerSecond) {
     std::ostringstream title;
     title << config::programName << " | " << config::patternFileName << " | "
           << config::rows << "x" << config::cols << " | gpos " << std::fixed

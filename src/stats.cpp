@@ -2,10 +2,10 @@
 
 namespace stats {
 
-unsigned long iterations = 0;
-unsigned long loadTime = 0;
-unsigned long totalEvolveTime = 0;
-unsigned long totalBufferTime = 0;
+ulong iterations = 0;
+ulong loadTime = 0;
+ulong totalEvolveTime = 0;
+ulong totalBufferTime = 0;
 
 void print_timings() {
     std::cout << iterations;

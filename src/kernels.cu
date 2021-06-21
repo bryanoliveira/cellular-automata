@@ -100,7 +100,7 @@ __device__ inline GridType msgol4(const GridType state,
 
 __global__ void k_setup_rng(const uint rows, const uint cols,
                             curandState *const __restrict__ globalRandState,
-                            const ulong seed) {
+                            const uint seed) {
     const uint stride = gridDim.x * blockDim.x, idxMax = (rows - 1) * cols - 1,
                xMax = cols - NH_RADIUS;
 
@@ -189,25 +189,24 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
 
     for (uint idx = idMin; idx < idxMax; idx += stride) {
         const uint x = idx % cols;
-        GridType newState = 0;
 
-        // compute cell rule
-        newState = (NH_RADIUS < x) * (x < xMax) *
-                   game_of_life(grid[idx], count_nh(grid, cols, idx));
+        // check safety borders & cell state
+        nextGrid[idx] = (NH_RADIUS < x) * (x < xMax) *
+                        game_of_life(grid[idx], count_nh(grid, cols, idx));
 
         // newState = game_of_life(
         //     grid[idx],
         //     count_radius_neighbours(grid, rows, cols, x, y, 3));
 
         // add a "virtual particle" spawn probability
-        if (virtualSpawnProbability > 0 &&
-            curand_uniform(&globalRandState[idx]) < virtualSpawnProbability)
-            newState = 1;
-
-        nextGrid[idx] = newState;
+        // note: this branching does not cause significant perf. hit
+        if (virtualSpawnProbability > 0 && NH_RADIUS < x && x < xMax &&
+            curand_uniform(&globalRandState[idx]) < virtualSpawnProbability &&
+            nextGrid[idx] == 0)
+            nextGrid[idx] = 1;
 
         // avoid atomicAdd when not necessary
         if (countAliveCells)
-            atomicAdd(activeCellCount, newState);
+            atomicAdd(activeCellCount, static_cast<uint>(nextGrid[idx] > 0));
     }
 }

@@ -16,8 +16,7 @@ namespace gpu {
 
 class AutomataBase : public AutomataInterface {
   public:
-    AutomataBase(const unsigned long seed,
-                 std::ostringstream *const pLiveLogBuffer,
+    AutomataBase(const uint seed, std::ostringstream *const pLiveLogBuffer,
                  const uint *const gridVBO = nullptr);
     virtual ~AutomataBase();
     virtual void prepare() override;

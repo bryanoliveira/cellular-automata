@@ -10,7 +10,7 @@
 
 namespace gpu {
 
-AutomataBase::AutomataBase(const unsigned long randSeed,
+AutomataBase::AutomataBase(const uint randSeed,
                            std::ostringstream *const pLiveLogBuffer,
                            const uint *const gridVBO) {
     spdlog::info("Initializing automata GPU engine...");
@@ -108,10 +108,9 @@ void AutomataBase::evolve(const bool logEnabled) {
     std::swap(grid, nextGrid);
 
     // calculate timing
-    const unsigned long duration =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::steady_clock::now() - timeStart)
-            .count();
+    const ulong duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                               std::chrono::steady_clock::now() - timeStart)
+                               .count();
     stats::totalEvolveTime += duration;
     // update live buffer
     if (logEnabled) {

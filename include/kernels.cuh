@@ -23,7 +23,7 @@ inline void cuda_assert(cudaError_t code, const char *const file, int line,
 
 __global__ void k_setup_rng(const uint rows, const uint cols,
                             curandState *const __restrict__ globalRandState,
-                            const ulong seed);
+                            const uint seed);
 
 __global__ void k_init_grid(GridType *const grid, const uint rows,
                             const uint cols,

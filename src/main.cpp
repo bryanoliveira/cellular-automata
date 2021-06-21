@@ -44,9 +44,9 @@ Display *gDisplay;
 AutomataInterface *gAutomata;
 
 bool gLooping = true;
-unsigned long gLastIterationCount = 0;
-unsigned long gIterationsPerSecond = 0;
-unsigned long gNsBetweenSeconds = 0;
+ulong gLastIterationCount = 0;
+ulong gIterationsPerSecond = 0;
+ulong gNsBetweenSeconds = 0;
 std::chrono::steady_clock::time_point gLastPrintClock =
     std::chrono::steady_clock::now();
 std::ostringstream gLiveLogBuffer;
@@ -60,7 +60,7 @@ void print_output();
 int main(int argc, char **argv) {
     spdlog::cfg::load_env_levels();
 
-    const unsigned long randSeed = time(nullptr);
+    const uint randSeed = time(nullptr);
     struct sigaction sigIntHandler;
 
     // configure interrupt signal handler

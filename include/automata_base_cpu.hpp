@@ -10,8 +10,7 @@ namespace cpu {
 
 class AutomataBase : public AutomataInterface {
   public:
-    AutomataBase(const ulong pRandSeed,
-                 std::ostringstream *const pLiveLogBuffer,
+    AutomataBase(const uint pRandSeed, std::ostringstream *const pLiveLogBuffer,
                  void (*pUpdateBuffersFunc)());
     virtual ~AutomataBase();
     virtual void prepare() override;
@@ -21,6 +20,7 @@ class AutomataBase : public AutomataInterface {
   protected:
     uint mActiveCellCount;
     std::ostringstream *mLiveLogBuffer;
+    uint *randState;
 
     bool compute_cell(uint idx);
 

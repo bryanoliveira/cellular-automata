@@ -10,8 +10,7 @@ class Display {
     ~Display();
     void start();
     void stop();
-    void draw(const bool logEnabled = false,
-              const unsigned long itsPerSecond = 0);
+    void draw(const bool logEnabled = false, const ulong itsPerSecond = 0);
     void update_grid_buffers_cpu();
     // cuda code may need to register this buffer
     uint const &grid_vbo() const { return mGridVBO; }
@@ -25,7 +24,7 @@ class Display {
     bool mGpuOnly;
 
     static void reshape(const int width, int height);
-    void update_title(const unsigned long itsPerSecond);
+    void update_title(const ulong itsPerSecond);
     void setup_shader_program();
     void setup_grid_buffers();
     void setup_grid_vertices();
