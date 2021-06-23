@@ -19,14 +19,15 @@ AutomataBase::AutomataBase(const uint randSeed,
     cudaGetDevice(&mGpuDeviceId);
     // define common kernel configs if needed
     cudaGetDeviceProperties(&gpuProps, mGpuDeviceId);
-    // blocks should be a multiple of #SMs on the grid
-    // 68 on a 3080
-    if (config::gpuBlocks == 0)
-        config::gpuBlocks = gpuProps.multiProcessorCount * 32;
     // threads should be a multiple of warpSize on the block
     // 32 on a 3080
     if (config::gpuThreads == 0)
         config::gpuThreads = gpuProps.warpSize * 16;
+    // blocks is optimal when it's a multiple of #SMs on the grid
+    // 68 on a 3080
+    if (config::gpuBlocks == 0)
+        config::gpuBlocks =
+            (mGridSize + config::gpuThreads - 1) / config::gpuThreads;
 
     CUDA_ASSERT(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
@@ -168,8 +169,9 @@ void AutomataBase::update_grid_buffers() {
     // update buffers
     k_update_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
                             mBufferUpdateStream>>>(
-        grid, gridVertices, config::cols, proj::info.numVertices.x,
-        proj::cellDensity, proj::gridLimX, proj::gridLimY);
+        grid, gridVertices, config::rows, config::cols,
+        proj::info.numVertices.x, proj::cellDensity, proj::gridLimX,
+        proj::gridLimY);
     CUDA_ASSERT(cudaGetLastError());
 
     // unmap buffer object

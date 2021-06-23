@@ -1,18 +1,18 @@
-#ifndef COMMONS_CPU_HPP_
-#define COMMONS_CPU_HPP_
+#ifndef COMMONS_GPU_CUH_
+#define COMMONS_GPU_CUH_
+
+// this is needed to declare CUDA-specific variable types
+#include <cuda_runtime.h>
+#include <curand_kernel.h> // for the curandState type
 
 #include "definitions.hpp"
-#include "grid.hpp"
-#include "types.hpp"
-
-namespace cpu {
-
-// These definitions must be in the .hpp since they may be inlined
+#include "grid.hpp"  // GridType
+#include "types.hpp" // uint, ulim, etc
 
 // NOTE: this code is repeated here and in commons_gpu.cu to avoid dependencies
 // also, we unroll loops manually to avoid branching overhead
-/** Counts immediate active Moore neighbours **/
-inline ushort count_nh(const uint idx, const uint size1) {
+__device__ inline ushort count_nh(const GridType *const grid, const uint size1,
+                                  const uint idx) {
     /** Counts immediate active Moore neighbours **/
     // size1 = cols
     ushort nhs = static_cast<ushort>(
@@ -199,18 +199,45 @@ inline ushort count_nh(const uint idx, const uint size1) {
     return nhs;
 }
 
-/**
- * Computes the game of life:
- * 1. Any live cell with two or three live neighbours survives.
- * 2. Any dead cell with three live neighbours becomes a live cell.
- * 3. All other live cells die in the next generation. Similarly, all other
- * dead cells stay dead.
- */
-inline GridType game_of_life(const GridType state,
-                             const ushort livingNeighbours) {
+__device__ inline GridType game_of_life(const GridType state,
+                                        const ushort livingNeighbours) {
+    // 1. Any live cell with two or three live neighbours survives.
+    // 2. Any dead cell with three live neighbours becomes a live cell.
+    // 3. All other live cells die in the next generation. Similarly,
+    // all other dead cells stay dead.
     return (state && livingNeighbours == 2) || livingNeighbours == 3;
 }
 
-} // namespace cpu
+__device__ inline GridType msgol(const GridType state,
+                                 const ushort livingNeighbours,
+                                 const ubyte nStates) {
+    if (livingNeighbours == 3 && state < nStates - 1)
+        // cell would be born
+        return state + 1;
+    else if (livingNeighbours != 2 && state != 0)
+        // cell would die
+        return state - 1;
+    // cell would continue living
+    return state;
+}
 
-#endif // COMMONS_CPU_HPP_
+__device__ inline GridType msgol4(const GridType state,
+                                  const ushort livingNeighbours,
+                                  const ubyte nStates) {
+    if (livingNeighbours == 3) {
+        // cell would be born
+        if (state < nStates - 1)
+            return state + 1;
+        // increasing energy of maxed cell kills it (except GoL)
+        else if (state != 1)
+            return 0;
+    } else if (livingNeighbours < 2) {
+        if (state > 0)
+            return state - 1;
+    } else if (livingNeighbours > 3)
+        return 0;
+
+    return state;
+}
+
+#endif

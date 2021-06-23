@@ -30,12 +30,10 @@ __global__ void k_init_grid(GridType *const grid, const uint rows,
                             curandState *const __restrict__ globalRandState,
                             const float spawnProbability);
 
-__global__ void k_update_grid_buffers(const GridType *const grid,
-                                      fvec2s *const __restrict__ gridVertices,
-                                      const uint cols, const uint numVerticesX,
-                                      const uvec2 cellDensity,
-                                      const ulim2 gridLimX,
-                                      const ulim2 gridLimY);
+__global__ void k_update_grid_buffers(
+    const GridType *const grid, fvec2s *const __restrict__ gridVertices,
+    const uint rows, const uint cols, const uint numVerticesX,
+    const uvec2 cellDensity, const ulim2 gridLimX, const ulim2 gridLimY);
 
 __global__ void k_reset_grid_buffers(fvec2s *const __restrict__ gridVertices,
                                      const uint numVerticesX,

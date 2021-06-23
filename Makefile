@@ -10,6 +10,9 @@ endif
 ifdef HEADLESS_ONLY
 EXTRA_FLAGS := $(EXTRA_FLAGS) -DHEADLESS_ONLY
 endif
+ifdef NH_RADIUS
+EXTRA_FLAGS := $(EXTRA_FLAGS) -DNH_RADIUS=$(NH_RADIUS)
+endif
 
 COMMON_FLAGS := -Wall -O3 # Optimization level 3
 CFLAGS := -std=c++17 -fopenmp $(COMMON_FLAGS) $(EXTRA_FLAGS) # -g
