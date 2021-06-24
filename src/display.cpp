@@ -245,7 +245,7 @@ void Display::setup_shader_program() {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
         fprintf(stderr, "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n%s\n",
                 infoLog);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // create our fragment shader
@@ -260,7 +260,7 @@ void Display::setup_shader_program() {
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
         fprintf(stderr, "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n%s\n",
                 infoLog);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
     // create a shader program to link our shaders
@@ -275,7 +275,7 @@ void Display::setup_shader_program() {
         glGetProgramInfoLog(mShaderProgram, 512, NULL, infoLog);
         fprintf(stderr, "ERROR::SHADER::PROGRAM::LINKING_FAILED\n%s\n",
                 infoLog);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     // clear already linked shaders
     glDeleteShader(vertexShader);

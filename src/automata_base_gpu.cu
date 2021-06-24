@@ -15,10 +15,18 @@ AutomataBase::AutomataBase(const uint randSeed,
                            const uint *const gridVBO) {
     spdlog::info("Initializing automata GPU engine...");
 
+    int numGpus = 0;
+    CUDA_ASSERT(cudaGetDeviceCount(&numGpus));
+    if (numGpus == 0) {
+        spdlog::critical(
+            "ERROR! No GPUs available: cudaGetDeviceCount returned 0.");
+        exit(EXIT_FAILURE);
+    }
+
     cudaDeviceProp gpuProps;
-    cudaGetDevice(&mGpuDeviceId);
+    CUDA_ASSERT(cudaGetDevice(&mGpuDeviceId));
     // define common kernel configs if needed
-    cudaGetDeviceProperties(&gpuProps, mGpuDeviceId);
+    CUDA_ASSERT(cudaGetDeviceProperties(&gpuProps, mGpuDeviceId));
     // threads should be a multiple of warpSize on the block
     // 32 on a 3080
     if (config::gpuThreads == 0)

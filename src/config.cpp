@@ -65,7 +65,7 @@ void load_cmd(const int argc, char **const argv) {
 
     if (vm.count("help")) {
         std::cout << description << std::endl;
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
     if (vm.count("width"))
         width = vm["width"].as<uint>();
@@ -79,7 +79,7 @@ void load_cmd(const int argc, char **const argv) {
 #ifdef HEADLESS_ONLY
         spdlog::critical(
             "ERROR! Rendering (-r) is disabled in HEADLESS_ONLY mode!");
-        exit(0);
+        exit(EXIT_FAILURE);
 #else
         render = true;
 #endif
