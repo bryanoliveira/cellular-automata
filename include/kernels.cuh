@@ -30,14 +30,14 @@ __global__ void k_init_grid(GridType *const grid, const uint rows,
                             curandState *const __restrict__ globalRandState,
                             const float spawnProbability);
 
+__global__ void k_reset_grid_buffers(fvec2s *const __restrict__ gridVertices,
+                                     const uint numVerticesX,
+                                     const uint numVerticesY);
+
 __global__ void k_update_grid_buffers(
     const GridType *const grid, fvec2s *const __restrict__ gridVertices,
     const uint rows, const uint cols, const uint numVerticesX,
     const uvec2 cellDensity, const ulim2 gridLimX, const ulim2 gridLimY);
-
-__global__ void k_reset_grid_buffers(fvec2s *const __restrict__ gridVertices,
-                                     const uint numVerticesX,
-                                     const uint numVerticesY);
 
 __global__ void
 k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
@@ -45,5 +45,15 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
                     curandState *const __restrict__ globalRandState,
                     const float virtualSpawnProbability,
                     const bool countAliveCells, uint *const activeCellCount);
+
+__global__ void k_update_bit_grid_buffers(
+    const ubyte *const grid, fvec2s *const __restrict__ gridVertices,
+    const uint rows, const uint cols, const uint numVerticesX,
+    const uvec2 cellDensity, const ulim2 gridLimX, const ulim2 gridLimY,
+    const uint bytesPerThread);
+
+__global__ void k_bit_life(const ubyte *const grid, ubyte *const nextGrid,
+                           const uint rows, const uint cols,
+                           const uint bytesPerThread);
 
 #endif

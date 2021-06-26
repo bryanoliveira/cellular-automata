@@ -138,10 +138,12 @@ void AutomataBase::evolve(const bool logEnabled) {
 }
 
 void AutomataBase::run_evolution_kernel(const bool countAliveCells) {
-    k_evolve_count_rule<<<config::gpuBlocks, config::gpuThreads, 0,
-                          mEvolveStream>>>(
-        grid, nextGrid, config::rows, config::cols, mGlobalRandState,
-        config::virtualFillProb, countAliveCells, mActiveCellCount);
+    k_bit_life<<<config::gpuBlocks, config::gpuThreads, 0, mEvolveStream>>>(
+        grid, nextGrid, config::rows, config::cols, 1);
+    // k_evolve_count_rule<<<config::gpuBlocks, config::gpuThreads, 0,
+    //                       mEvolveStream>>>(
+    //     grid, nextGrid, config::rows, config::cols, mGlobalRandState,
+    //     config::virtualFillProb, countAliveCells, mActiveCellCount);
     CUDA_ASSERT(cudaGetLastError());
 }
 
@@ -175,11 +177,18 @@ void AutomataBase::update_grid_buffers() {
         gridVertices, proj::info.numVertices.x, proj::info.numVertices.y);
     CUDA_ASSERT(cudaGetLastError());
     // update buffers
-    k_update_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
-                            mBufferUpdateStream>>>(
+    // k_update_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
+    //                         mBufferUpdateStream>>>(
+    //     grid, gridVertices, config::rows, config::cols,
+    //     proj::info.numVertices.x, proj::cellDensity, proj::gridLimX,
+    //     proj::gridLimY);
+
+    // update buffers
+    k_update_bit_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
+                                mBufferUpdateStream>>>(
         grid, gridVertices, config::rows, config::cols,
         proj::info.numVertices.x, proj::cellDensity, proj::gridLimX,
-        proj::gridLimY);
+        proj::gridLimY, 1);
     CUDA_ASSERT(cudaGetLastError());
 
     // unmap buffer object

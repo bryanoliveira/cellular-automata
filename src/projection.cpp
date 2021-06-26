@@ -25,8 +25,8 @@ void init() {
 
     // define sizes & proportions
     if (config::noDownsample) {
-        info.numVertices = {config::cols, config::rows};
-        info.totalVertices = config::cols * config::rows;
+        info.numVertices = {config::cols * 8, config::rows};
+        info.totalVertices = info.numVertices.x * info.numVertices.y;
         info.cellDensity = {1, 1};
 
         controls::maxScale = 100.0f;
