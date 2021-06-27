@@ -34,6 +34,7 @@ class AutomataBase : public AutomataInterface {
     // rendering stuff
     struct cudaGraphicsResource *mGridVBOResource = nullptr;
 
+    virtual void run_init_kernel();
     virtual void run_evolution_kernel(const bool countAliveCells = false);
     virtual void run_render_kernel(fvec2s *gridVertices);
 };

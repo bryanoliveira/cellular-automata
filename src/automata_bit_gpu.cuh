@@ -18,7 +18,8 @@ class AutomataBit : public AutomataBase {
         : AutomataBase(seed, pLiveLogBuffer, gridVBO) {}
 
   protected:
-    // override kernel call
+    // override kernel calls
+    void run_init_kernel() override;
     void run_evolution_kernel(const bool countAliveCells = false) override;
     void run_render_kernel(fvec2s *gridVertices) override;
 };

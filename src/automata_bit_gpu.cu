@@ -11,6 +11,10 @@
 #include "grid.hpp"
 #include "projection.hpp"
 
+__global__ void k_init_bit_grid(GridType *const grid, const uvec2 dims,
+                                curandState *const __restrict__ globalRandState,
+                                const float spawnProbability);
+
 __global__ void
 k_update_bit_grid_buffers(const ubyte *const grid, const uvec2 dims,
                           fvec2s *const __restrict__ gridVertices,
@@ -24,6 +28,15 @@ __global__ void k_bit_life(const ubyte *const grid, ubyte *const nextGrid,
 //// AUTOMATA OVERRIDES
 
 namespace gpu {
+
+void AutomataBit::run_init_kernel() {
+    // initialize grid with fillProb
+    if (config::fillProb > 0)
+        k_init_bit_grid<<<config::gpuBlocks, config::gpuThreads>>>(
+            grid, {config::cols, config::rows}, mGlobalRandState,
+            config::fillProb);
+    CUDA_ASSERT(cudaGetLastError());
+}
 
 void AutomataBit::run_evolution_kernel(const bool countAliveCells) {
     k_bit_life<<<config::gpuBlocks, config::gpuThreads, 0, mEvolveStream>>>(
@@ -44,6 +57,30 @@ void AutomataBit::run_render_kernel(fvec2s *gridVertices) {
 
 //// KERNELS
 
+__global__ void k_init_bit_grid(GridType *const grid, const uvec2 dims,
+                                curandState *const __restrict__ globalRandState,
+                                const float spawnProbability) {
+    // idMin = thread ID + safety border margin
+    // idxMax = y - 1 full rows + last row cols OR max id given radius
+    const uint stride = gridDim.x * blockDim.x,
+               idMin =
+                   blockDim.x * blockIdx.x + threadIdx.x + dims.x + NH_RADIUS,
+               idxMax = min((dims.y - 1) * dims.x - NH_RADIUS,
+                            (dims.y - NH_RADIUS) * dims.x - NH_RADIUS);
+
+    for (uint idx = idMin; idx < idxMax; idx += stride) {
+        const uint x = idx % dims.x;
+        // if col is 0 or dims.x-1, given MxN grid and NH_RADIUS=1
+        if (x < NH_RADIUS || dims.x - NH_RADIUS <= x)
+            continue;
+
+        for (uint bit = 0; bit < 8; ++bit)
+            if (curand_uniform(&globalRandState[idx]) < spawnProbability)
+                // enable each bit given probability
+                grid[idx] |= 1 << bit;
+    }
+}
+
 __global__ void
 k_update_bit_grid_buffers(const ubyte *const grid, const uvec2 dims,
                           fvec2s *const __restrict__ gridVertices,
@@ -62,14 +99,14 @@ k_update_bit_grid_buffers(const ubyte *const grid, const uvec2 dims,
 
     /**
     Rendering should only consider cells (all bits), not the number of array
-    items. Render them considering that dims.x is already divided by 8, so each
-    bit is mapped to a vertice.
+    items. Render them considering that dims.x is already divided by 8, so
+    each bit is mapped to a vertice.
     */
     // printf("\n\n\n%02u, %02u, %02u\n", stride, idxMin, idxMax);
     for (uint idx = idxMin; idx < idxMax; idx += stride) {
         const uint x = idx % dims.x, y = idx / dims.x;
-        // printf("%02u, x %02u, y %02u | ", idx, idx % dims.x, idx / dims.x);
-        // try avoiding further operations when not needed
+        // printf("%02u, x %02u, y %02u | ", idx, idx % dims.x, idx /
+        // dims.x); try avoiding further operations when not needed
         // atomicMax is pretty expensive
         if (xMin <= x && x < xMax && grid[idx]) {
             for (int bit = 7; bit >= 0; --bit) {
