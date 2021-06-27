@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "automata_base_gpu.cuh"
+#include "commons_gpu.cuh"
 #include "stats.hpp"
 
 namespace gpu {
@@ -30,12 +31,21 @@ AutomataBase::AutomataBase(const uint randSeed,
     // threads should be a multiple of warpSize on the block
     // 32 on a 3080
     if (config::gpuThreads == 0)
-        config::gpuThreads = gpuProps.warpSize * 16;
+        config::gpuThreads = gpuProps.warpSize * 8;
     // blocks is optimal when it's a multiple of #SMs on the grid
     // 68 on a 3080
-    if (config::gpuBlocks == 0)
+    if (config::gpuBlocks == 0) {
+        const int cores = getSPcores(gpuProps);
+        if (cores <= 0) {
+            spdlog::critical("ERROR! Unable to infer number of GPU cores: "
+                             "unknown GPU device type. You may try seting "
+                             "threads and blocks manually.");
+            exit(EXIT_FAILURE);
+        }
         config::gpuBlocks =
-            (mGridSize + config::gpuThreads - 1) / config::gpuThreads;
+            std::min((mGridSize + config::gpuThreads - 1) / config::gpuThreads,
+                     static_cast<ulong>(cores));
+    }
 
     CUDA_ASSERT(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 
