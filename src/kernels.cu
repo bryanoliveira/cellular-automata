@@ -2,38 +2,39 @@
 #include "definitions.hpp"
 #include "kernels.cuh"
 
-__global__ void k_setup_rng(const uint rows, const uint cols,
+__global__ void k_setup_rng(const uvec2 dims,
                             curandState *const __restrict__ globalRandState,
                             const uint seed) {
     // idMin = thread ID + safety border margin
     // idxMax = y - 1 full rows + last row cols
     const uint stride = gridDim.x * blockDim.x,
-               idMin = blockDim.x * blockIdx.x + threadIdx.x + cols + NH_RADIUS,
-               idxMax = min((rows - 1) * cols - NH_RADIUS,
-                            (rows - NH_RADIUS) * cols - NH_RADIUS),
-               xMax = cols - NH_RADIUS;
+               idMin =
+                   blockDim.x * blockIdx.x + threadIdx.x + dims.x + NH_RADIUS,
+               idxMax = min((dims.y - 1) * dims.x - NH_RADIUS,
+                            (dims.y - NH_RADIUS) * dims.x - NH_RADIUS),
+               xMax = dims.x - NH_RADIUS;
 
     for (uint idx = idMin; idx < idxMax; idx += stride) {
-        const uint x = idx % cols;
+        const uint x = idx % dims.x;
         if (NH_RADIUS < x && x < xMax)
             curand_init(seed, idx, 0, &globalRandState[idx]);
     }
 }
 
-__global__ void k_init_grid(GridType *const grid, const uint rows,
-                            const uint cols,
+__global__ void k_init_grid(GridType *const grid, const uvec2 dims,
                             curandState *const __restrict__ globalRandState,
                             const float spawnProbability) {
     // idMin = thread ID + safety border margin
     // idxMax = y - 1 full rows + last row cols OR max id given radius
     const uint stride = gridDim.x * blockDim.x,
-               idMin = blockDim.x * blockIdx.x + threadIdx.x + cols + NH_RADIUS,
-               idxMax = min((rows - 1) * cols - NH_RADIUS,
-                            (rows - NH_RADIUS) * cols - NH_RADIUS),
-               xMax = cols - NH_RADIUS;
+               idMin =
+                   blockDim.x * blockIdx.x + threadIdx.x + dims.x + NH_RADIUS,
+               idxMax = min((dims.y - 1) * dims.x - NH_RADIUS,
+                            (dims.y - NH_RADIUS) * dims.x - NH_RADIUS),
+               xMax = dims.x - NH_RADIUS;
 
     for (uint idx = idMin; idx < idxMax; idx += stride) {
-        const uint x = idx % cols;
+        const uint x = idx % dims.x;
         grid[idx] = (NH_RADIUS < x) * (x < xMax) *
                         curand_uniform(&globalRandState[idx]) <
                     spawnProbability;
@@ -41,33 +42,33 @@ __global__ void k_init_grid(GridType *const grid, const uint rows,
 }
 
 __global__ void k_reset_grid_buffers(fvec2s *const __restrict__ gridVertices,
-                                     const uint numVerticesX,
-                                     const uint numVerticesY) {
+                                     const uvec2 numVertices) {
     const uint stride = gridDim.x * blockDim.x,
-               idxMax = numVerticesX * numVerticesY;
+               idxMax = numVertices.x * numVertices.y;
 
     for (uint idx = blockDim.x * blockIdx.x + threadIdx.x; idx < idxMax;
          idx += stride)
         gridVertices[idx].state = 0;
 }
 
-__global__ void k_update_grid_buffers(
-    const GridType *const grid, fvec2s *const __restrict__ gridVertices,
-    const uint rows, const uint cols, const uint numVerticesX,
-    const uvec2 cellDensity, const ulim2 gridLimX, const ulim2 gridLimY) {
+__global__ void
+k_update_grid_buffers(const GridType *const grid, const uvec2 dims,
+                      fvec2s *const __restrict__ gridVertices,
+                      const uint numVerticesX, const uvec2 cellDensity,
+                      const ulim2 gridLimX, const ulim2 gridLimY) {
     // idMin = thread ID + render margin
     // idxMax = y - 1 full rows + last row cols
     const uint stride = gridDim.x * blockDim.x,
                idxMin = blockDim.x * blockIdx.x + threadIdx.x +
-                        gridLimY.start * cols + gridLimX.start,
-               idxMax = min((gridLimY.end - 1) * cols + gridLimX.end,
-                            (rows - NH_RADIUS) * cols - NH_RADIUS),
+                        gridLimY.start * dims.x + gridLimX.start,
+               idxMax = min((gridLimY.end - 1) * dims.x + gridLimX.end,
+                            (dims.y - NH_RADIUS) * dims.x - NH_RADIUS),
                xMin = max(NH_RADIUS, gridLimX.start),
-               xMax = min(cols - NH_RADIUS, gridLimX.end);
+               xMax = min(dims.x - NH_RADIUS, gridLimX.end);
 
     for (uint idx = idxMin; idx < idxMax; idx += stride) {
         // to check if out of bounds and to map vertices
-        const uint x = idx % cols, y = idx / cols;
+        const uint x = idx % dims.x, y = idx / dims.x;
 
         // try avoiding further operations when not needed
         // atomicMax is pretty expensive
@@ -91,25 +92,26 @@ __global__ void k_update_grid_buffers(
 
 __global__ void
 k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
-                    const uint rows, const uint cols,
+                    const uvec2 dims,
                     curandState *const __restrict__ globalRandState,
                     const float virtualSpawnProbability,
                     const bool countAliveCells, uint *const activeCellCount) {
     // idMin = thread ID + safety border margin
     // idxMax = y - 1 full rows + last row cols
     const uint stride = gridDim.x * blockDim.x,
-               idMin = blockDim.x * blockIdx.x + threadIdx.x + cols + NH_RADIUS,
-               idxMax = min((rows - 1) * cols - NH_RADIUS,
-                            (rows - NH_RADIUS) * cols - NH_RADIUS);
+               idMin =
+                   blockDim.x * blockIdx.x + threadIdx.x + dims.x + NH_RADIUS,
+               idxMax = min((dims.y - 1) * dims.x - NH_RADIUS,
+                            (dims.y - NH_RADIUS) * dims.x - NH_RADIUS);
 
     for (uint idx = idMin; idx < idxMax; idx += stride) {
-        const uint x = idx % cols;
-        // if col is 0 or cols-1, given MxN grid and NH_RADIUS=1
-        if (x < NH_RADIUS || cols - NH_RADIUS <= x)
+        const uint x = idx % dims.x;
+        // if col is 0 or dims.x-1, given MxN grid and NH_RADIUS=1
+        if (x < NH_RADIUS || dims.x - NH_RADIUS <= x)
             continue;
 
         // check safety borders & cell state
-        nextGrid[idx] = game_of_life(grid[idx], count_nh(grid, cols, idx));
+        nextGrid[idx] = game_of_life(grid[idx], count_nh(grid, dims.x, idx));
 
         // add a "virtual particle" spawn probability
         // note: this branching does not cause significant perf. hit
@@ -123,27 +125,47 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
     }
 }
 
-__global__ void k_update_bit_grid_buffers(
-    const ubyte *const grid, fvec2s *const __restrict__ gridVertices,
-    const uint rows, const uint cols, const uint numVerticesX,
-    const uvec2 cellDensity, const ulim2 gridLimX, const ulim2 gridLimY,
-    const uint bytesPerThread) {
+__global__ void
+k_update_bit_grid_buffers(const ubyte *const grid, const uvec2 dims,
+                          fvec2s *const __restrict__ gridVertices,
+                          const uvec2 numVertices, const uvec2 cellDensity,
+                          const ulim2 gridLimX, const ulim2 gridLimY,
+                          const uint bytesPerThread) {
     // idMin = thread ID + render margin
     // idxMax = y - 1 full rows + last row cols
-    const uint stride = gridDim.x * blockDim.x * bytesPerThread,
-               idxMin =
-                   (blockDim.x * blockIdx.x + threadIdx.x) * bytesPerThread,
-               idxMax = rows * cols;
+    const uint stride = gridDim.x * blockDim.x,
+               idxMin = blockDim.x * blockIdx.x + threadIdx.x +
+                        gridLimY.start * dims.x + gridLimX.start,
+               idxMax = min((gridLimY.end - 1) * dims.x + gridLimX.end,
+                            (dims.y - NH_RADIUS) * dims.x - NH_RADIUS),
+               xMin = max(NH_RADIUS, gridLimX.start),
+               xMax = min(dims.x - NH_RADIUS, gridLimX.end);
 
-    // printf("\n\n\n%u, %u, %u\n", stride, idxMin, idxMax);
+    /**
+    Rendering should only consider cells (all bits), not the number of array
+    items. Render them considering that dims.x is already divided by 8, so each
+    bit is mapped to a vertice.
+    */
+    // printf("\n\n\n%02u, %02u, %02u\n", stride, idxMin, idxMax);
     for (uint idx = idxMin; idx < idxMax; idx += stride) {
-        // printf("%u, %u, %u | ", idx, idx % cols, idx / cols);
-        for (int bit = 0; bit < 8; ++bit) {
-            // try avoiding further operations when not needed
-            // atomicMax is pretty expensive
-            // printf(" %u: %u,", (1 << bit), (grid[idx] & (1 << bit)));
-            if ((grid[idx] & (1 << bit)) && gridVertices[idx + bit].state == 0)
-                atomicMax(&gridVertices[idx + bit].state, 1);
+        const uint x = idx % dims.x, y = idx / dims.x;
+        // printf("%02u, x %02u, y %02u | ", idx, idx % dims.x, idx / dims.x);
+        // try avoiding further operations when not needed
+        // atomicMax is pretty expensive
+        if (xMin <= x && x < xMax && grid[idx]) {
+            for (int bit = 7; bit >= 0; --bit) {
+                const uint vx = (x - gridLimX.start) / cellDensity.x + 7 - bit,
+                           vy = (y - gridLimY.start) / cellDensity.y,
+                           vidx = vy * numVertices.x + vx;
+                // try avoiding further operations when not needed
+                // atomicMax is pretty expensive
+                // printf(" %u: %u,", (1 << bit), (grid[idx] & (1 << bit)));
+                if (vx < numVertices.x && vy < numVertices.y) {
+                    if (!!(grid[idx] & (1 << bit)) &&
+                        gridVertices[vidx].state == 0)
+                        atomicMax(&gridVertices[vidx].state, 1);
+                }
+            }
         }
         // printf("\n");
     }
@@ -154,33 +176,32 @@ __global__ void k_update_bit_grid_buffers(
  * http://www.marekfiser.com/Projects/Conways-Game-of-Life-on-GPU-using-CUDA/3-Advanced-bit-per-cell-implementation
  */
 __global__ void k_bit_life(const ubyte *const grid, ubyte *const nextGrid,
-                           const uint rows, const uint cols,
-                           const uint bytesPerThread) {
+                           const uvec2 dims, const uint bytesPerThread) {
     // idMin = thread ID + safety border margin
     // idxMax = y - 1 full rows + last row cols
     const uint stride = gridDim.x * blockDim.x * bytesPerThread,
                idMin = (blockDim.x * blockIdx.x + threadIdx.x) * bytesPerThread,
-               idxMax = rows * cols;
+               idxMax = dims.y * dims.x;
 
     for (uint idx = idMin; idx < idxMax; idx += stride) {
-        uint x = (idx + cols - 1) % cols; // Start at block x - 1.
-        uint yAbs = (idx / cols) * cols;
-        uint yAbsUp = (yAbs + idxMax - cols) % idxMax;
-        uint yAbsDown = (yAbs + cols) % idxMax;
+        uint x = (idx + dims.x - 1) % dims.x; // Start at block x - 1.
+        uint yAbs = (idx / dims.x) * dims.x;
+        uint yAbsUp = (yAbs + idxMax - dims.x) % idxMax;
+        uint yAbsDown = (yAbs + dims.x) % idxMax;
 
         // Initialize data with previous byte and current byte.
         uint row0 = (uint)grid[x + yAbsUp] << 16;
         uint row1 = (uint)grid[x + yAbs] << 16;
         uint row2 = (uint)grid[x + yAbsDown] << 16;
 
-        x = (x + 1) % cols;
+        x = (x + 1) % dims.x;
         row0 |= (uint)grid[x + yAbsUp] << 8;
         row1 |= (uint)grid[x + yAbs] << 8;
         row2 |= (uint)grid[x + yAbsDown] << 8;
 
         for (uint i = 0; i < bytesPerThread; ++i) {
-            uint current = x; // current center cell
-            x = (x + 1) % cols;
+            uint centerX = x;
+            x = (x + 1) % dims.x;
             row0 |= (uint)grid[x + yAbsUp];
             row1 |= (uint)grid[x + yAbs];
             row2 |= (uint)grid[x + yAbsDown];
@@ -204,7 +225,7 @@ __global__ void k_bit_life(const ubyte *const grid, ubyte *const nextGrid,
                 row2 <<= 1;
             }
 
-            nextGrid[current + yAbs] = result;
+            nextGrid[centerX + yAbs] = result;
         }
     }
 }
