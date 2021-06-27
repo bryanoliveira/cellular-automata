@@ -41,7 +41,7 @@ ifndef CPU_ONLY
 LIB := $(LIB) -lcudart
 endif
 
-INC := -I include
+INC := $()
 ifndef CPU_ONLY
 INC := $(INC) -I/usr/local/cuda/include
 endif

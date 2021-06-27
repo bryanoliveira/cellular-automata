@@ -52,7 +52,7 @@ AutomataBase::AutomataBase(const uint randSeed,
 
     // initialize RNG
     k_setup_rng<<<config::gpuBlocks, config::gpuThreads>>>(
-        config::rows, config::cols, mGlobalRandState, randSeed);
+        {config::cols, config::rows}, mGlobalRandState, randSeed);
 
     // prefetch grid to CPU so it can fill it properly
     CUDA_ASSERT(cudaMemPrefetchAsync(grid, mGridBytes, cudaCpuDeviceId));
@@ -96,11 +96,8 @@ void AutomataBase::prepare() {
     CUDA_ASSERT(
         cudaMemPrefetchAsync(mActiveCellCount, sizeof(uint), mGpuDeviceId));
 
-    // initialize grid with fillProb
-    if (config::fillProb > 0)
-        k_init_grid<<<config::gpuBlocks, config::gpuThreads>>>(
-            grid, config::rows, config::cols, mGlobalRandState,
-            config::fillProb);
+    run_init_kernel();
+
     CUDA_ASSERT(cudaGetLastError());
     CUDA_ASSERT(cudaDeviceSynchronize());
 }
@@ -137,14 +134,6 @@ void AutomataBase::evolve(const bool logEnabled) {
     }
 }
 
-void AutomataBase::run_evolution_kernel(const bool countAliveCells) {
-    k_evolve_count_rule<<<config::gpuBlocks, config::gpuThreads, 0,
-                          mEvolveStream>>>(
-        grid, nextGrid, config::rows, config::cols, mGlobalRandState,
-        config::virtualFillProb, countAliveCells, mActiveCellCount);
-    CUDA_ASSERT(cudaGetLastError());
-}
-
 void AutomataBase::update_grid_buffers() {
 #ifndef HEADLESS_ONLY
 
@@ -171,16 +160,12 @@ void AutomataBase::update_grid_buffers() {
     // launch kernels
     // reset buffers
     k_reset_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
-                           mBufferUpdateStream>>>(
-        gridVertices, proj::info.numVertices.x, proj::info.numVertices.y);
+                           mBufferUpdateStream>>>(gridVertices,
+                                                  proj::info.numVertices);
     CUDA_ASSERT(cudaGetLastError());
+
     // update buffers
-    k_update_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
-                            mBufferUpdateStream>>>(
-        grid, gridVertices, config::rows, config::cols,
-        proj::info.numVertices.x, proj::cellDensity, proj::gridLimX,
-        proj::gridLimY);
-    CUDA_ASSERT(cudaGetLastError());
+    run_render_kernel(gridVertices);
 
     // unmap buffer object
     CUDA_ASSERT(cudaGraphicsUnmapResources(1, &mGridVBOResource, 0));
@@ -192,6 +177,32 @@ void AutomataBase::update_grid_buffers() {
             .count();
 
 #endif // HEADLESS_ONLY
+}
+
+void AutomataBase::run_init_kernel() {
+    // initialize grid with fillProb
+    if (config::fillProb > 0)
+        k_init_grid<<<config::gpuBlocks, config::gpuThreads>>>(
+            grid, {config::cols, config::rows}, mGlobalRandState,
+            config::fillProb);
+    CUDA_ASSERT(cudaGetLastError());
+}
+
+void AutomataBase::run_evolution_kernel(const bool countAliveCells) {
+    k_evolve_count_rule<<<config::gpuBlocks, config::gpuThreads, 0,
+                          mEvolveStream>>>(
+        grid, nextGrid, {config::cols, config::rows}, mGlobalRandState,
+        config::virtualFillProb, countAliveCells, mActiveCellCount);
+    CUDA_ASSERT(cudaGetLastError());
+}
+
+void AutomataBase::run_render_kernel(fvec2s *gridVertices) {
+    k_update_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
+                            mBufferUpdateStream>>>(
+        grid, {config::cols, config::rows}, gridVertices,
+        proj::info.numVertices.x, proj::cellDensity, proj::gridLimX,
+        proj::gridLimY);
+    CUDA_ASSERT(cudaGetLastError());
 }
 
 } // namespace gpu

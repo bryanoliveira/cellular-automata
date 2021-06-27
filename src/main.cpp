@@ -30,6 +30,7 @@
 #include "config.hpp"
 #include "pattern.hpp"
 #include "stats.hpp"
+#include "utils.hpp"
 #ifndef CPU_ONLY
 #include "automata_base_gpu.cuh"
 #endif // CPU_ONLY
@@ -55,7 +56,6 @@ void loop();
 bool should_log();
 void live_log();
 void sigint_handler(int s);
-void print_output();
 
 int main(int argc, char **argv) {
     spdlog::cfg::load_env_levels();
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
     if (config::benchmarkMode)
         stats::print_timings();
     else if (config::printOutput)
-        print_output();
+        utils::print_output();
     else
         std::cout << std::endl;
 
@@ -233,22 +233,4 @@ void live_log() {
 void sigint_handler(int s) {
     gLooping = false;
     std::cout << std::endl;
-}
-
-void print_output() {
-    for (uint i = 0; i < config::rows; ++i) {
-        for (uint j = 0; j < config::cols; ++j) {
-            if (grid[i * config::cols + j])
-                // black foreground with white background
-                std::cout << "\e[0;30;47m";
-            else
-                // gray foreground with black background
-                std::cout << "\e[0;37;40m";
-
-            std::cout << " " << static_cast<int>(grid[i * config::cols + j])
-                      << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "\e[0m"; // reset output formatting
 }
