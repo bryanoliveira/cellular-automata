@@ -138,12 +138,19 @@ void AutomataBase::evolve(const bool logEnabled) {
 }
 
 void AutomataBase::run_evolution_kernel(const bool countAliveCells) {
-    k_bit_life<<<config::gpuBlocks, config::gpuThreads, 0, mEvolveStream>>>(
-        grid, nextGrid, {config::cols, config::rows}, 1);
-    // k_evolve_count_rule<<<config::gpuBlocks, config::gpuThreads, 0,
-    //                       mEvolveStream>>>(
-    //     grid, nextGrid, {config::cols, config::rows}, mGlobalRandState,
-    //     config::virtualFillProb, countAliveCells, mActiveCellCount);
+    k_evolve_count_rule<<<config::gpuBlocks, config::gpuThreads, 0,
+                          mEvolveStream>>>(
+        grid, nextGrid, {config::cols, config::rows}, mGlobalRandState,
+        config::virtualFillProb, countAliveCells, mActiveCellCount);
+    CUDA_ASSERT(cudaGetLastError());
+}
+
+void AutomataBase::run_render_kernel(fvec2s *gridVertices) {
+    k_update_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
+                            mBufferUpdateStream>>>(
+        grid, {config::cols, config::rows}, gridVertices,
+        proj::info.numVertices.x, proj::cellDensity, proj::gridLimX,
+        proj::gridLimY);
     CUDA_ASSERT(cudaGetLastError());
 }
 
@@ -176,20 +183,9 @@ void AutomataBase::update_grid_buffers() {
                            mBufferUpdateStream>>>(gridVertices,
                                                   proj::info.numVertices);
     CUDA_ASSERT(cudaGetLastError());
-    // update buffers
-    // k_update_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
-    //                         mBufferUpdateStream>>>(
-    //     grid, gridVertices, config::rows, config::cols,
-    //     proj::info.numVertices.x, proj::cellDensity, proj::gridLimX,
-    //     proj::gridLimY);
 
     // update buffers
-    k_update_bit_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
-                                mBufferUpdateStream>>>(
-        grid, {config::cols, config::rows}, gridVertices,
-        proj::info.numVertices, proj::cellDensity, proj::gridLimX,
-        proj::gridLimY, 1);
-    CUDA_ASSERT(cudaGetLastError());
+    run_render_kernel(gridVertices);
 
     // unmap buffer object
     CUDA_ASSERT(cudaGraphicsUnmapResources(1, &mGridVBOResource, 0));

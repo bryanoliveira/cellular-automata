@@ -45,14 +45,4 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
                     const float virtualSpawnProbability,
                     const bool countAliveCells, uint *const activeCellCount);
 
-__global__ void
-k_update_bit_grid_buffers(const ubyte *const grid, const uvec2 dims,
-                          fvec2s *const __restrict__ gridVertices,
-                          const uvec2 numVertices, const uvec2 cellDensity,
-                          const ulim2 gridLimX, const ulim2 gridLimY,
-                          const uint bytesPerThread);
-
-__global__ void k_bit_life(const ubyte *const grid, ubyte *const nextGrid,
-                           const uvec2 dims, const uint bytesPerThread);
-
 #endif
