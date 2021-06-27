@@ -1,8 +1,6 @@
 #ifndef AUTOMATA_INTERFACE_HPP_
 #define AUTOMATA_INTERFACE_HPP_
 
-#include "types.hpp"
-
 class AutomataInterface {
   public:
     virtual ~AutomataInterface() {}
