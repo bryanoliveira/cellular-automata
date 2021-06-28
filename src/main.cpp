@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
     // prepare to start loop
     gAutomata->prepare();
 
-    spdlog::info("Starting evolution loop...", stats::iterations);
+    spdlog::info("Running evolution loop...");
 
 #ifndef HEADLESS_ONLY
     if (config::render)

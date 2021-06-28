@@ -46,6 +46,8 @@ AutomataBase::AutomataBase(const uint randSeed,
             std::min((mGridSize + config::gpuThreads - 1) / config::gpuThreads,
                      static_cast<ulong>(cores));
     }
+    spdlog::info("GPU: Using {} blocks of {} threads.", config::gpuBlocks,
+                 config::gpuThreads);
 
     CUDA_ASSERT(cudaDeviceSetCacheConfig(cudaFuncCachePreferL1));
 

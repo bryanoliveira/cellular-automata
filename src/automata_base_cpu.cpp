@@ -57,11 +57,12 @@ void AutomataBase::evolve(const bool logEnabled) {
 
     mActiveCellCount = 0;
 
-    const uint idxMax = (config::rows - NH_RADIUS) * config::cols - NH_RADIUS;
+    const uint idxMin = NH_RADIUS * config::cols + NH_RADIUS,
+               idxMax = (config::rows - NH_RADIUS) * config::cols - NH_RADIUS;
 
 #pragma omp parallel for reduction(+ : mActiveCellCount)
     //   // schedule(runtime)
-    for (uint idx = config::cols + NH_RADIUS; idx < idxMax; ++idx) {
+    for (uint idx = idxMin; idx < idxMax; ++idx) {
         // check x index to skip borders
         const uint x = idx % config::cols;
         // if col is 0 or cols-1, given MxN grid and NH_RADIUS=1
