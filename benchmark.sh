@@ -44,79 +44,89 @@ printf "Benchmark #$RUN\n"
 
 ### KERNEL CONFIG EXPRIMENT
 
-printf "\nBenchmarking GPU for kernel config"
+prefix="Exp Kernel Config:"
+
+printf "\n$prefix Benchmarking GPU"
 for i in $(seq 1 $TRIALS); do
-    printf "\nTrial #$i\n"
+    printf "\n$prefix Trial #$i\n"
     run_kernel_config "" "res/$RUN.$i.k.hl.gpu.8704.csv"
-done
-
-### LATTICE SIZE EXPERIMENTS
-
-# single GPU thread experiment
-run_lattice "--gpu-blocks 1 --gpu-threads 1" "res/$RUN.1.hl.gpu.1.csv"
-
-# CPU threads
-for i in $(seq 1 $TRIALS); do
-    printf "\nTrial #$i\n"
-    for threads in {1,2,4,8,12,16}; do
-        export OMP_NUM_THREADS=$threads
-        export OMP_SCHEDULE=dynamic,1
-        printf "\nBenchmarking CPU with $OMP_NUM_THREADS threads\n"
-        run_lattice "--cpu" "res/$RUN.$i.hl.cpu.$OMP_NUM_THREADS.csv"
-    done
-done
-
-# GPU
-printf "\nBenchmarking GPU"
-for i in $(seq 1 $TRIALS); do
-    printf "\nTrial #$i\n"
-    run_lattice "" "res/$RUN.$i.hl.gpu.8704.csv"
 done
 
 ### RENDERING EXPERIMENTS
 
+prefix="Exp Rendering:"
+
 # CPU threads
 for i in $(seq 1 $TRIALS); do
-    printf "\nTrial #$i\n"
-    for threads in {16,}; do # 1,2,4,8,12,
+    printf "\n$prefix Trial #$i\n"
+    for threads in {1,2,4,6,8,10,12,14,16}; do
         export OMP_NUM_THREADS=$threads
         export OMP_SCHEDULE=dynamic,1
-        printf "\nBenchmarking CPU with $OMP_NUM_THREADS threads and render\n"
-        run_lattice "--cpu -r" "res/$RUN.$i.render.cpu.$OMP_NUM_THREADS.csv"
+        printf "\n$prefix Benchmarking CPU with $OMP_NUM_THREADS threads and render\n"
+        run_lattice "--cpu -r" "res/$RUN.render.cpu.$OMP_NUM_THREADS.$i.csv"
     done
 done
 
 # GPU
-printf "\nBenchmarking GPU with render\n"
+printf "\n$prefix Benchmarking GPU\n"
 for i in $(seq 1 $TRIALS); do
-    printf "\nTrial #$i\n"
-    run_lattice "-r" "res/$RUN.$i.render.gpu.8704.csv"
+    printf "\n$prefix Trial #$i\n"
+    run_lattice "-r" "res/$RUN.render.gpu.8704.$i.csv"
 done
 
 ### NEIGHBOURHOOD EXPERIMENTS
 
 printf "\nBenchmarking Neighbourhood Radius\n"
 for nh_radius in $(seq 1 5); do
-    printf "\nRadius: $nh_radius\nRecompiling...\n"
+    prefix="Exp Radius $nh_radius:"
+    printf $"\n$prefix Recompiling...\n"
     make clean
     make automata NH_RADIUS=$nh_radius
 
     for i in $(seq 1 $TRIALS); do
-        printf "\nTrial #$i\n"
+        printf "\n$prefix Trial #$i\n"
 
-        filename="res/$RUN.$i.nh.$nh_radius.csv"
+        filename="res/$RUN.nh.$nh_radius.$i.csv"
         echo "hw,threads,size,iterations,loadTime,totalEvolveTime,totalBufferTime,avgEvolveTime,avgBufferTime" > $filename
 
-        for threads in {1,2,4,8,12,16}; do
+        for threads in {1,2,4,6,8,10,12,14,16}; do
             export OMP_NUM_THREADS=$threads
             export OMP_SCHEDULE=dynamic,1
-            printf "\nBenchmarking CPU with $OMP_NUM_THREADS threads\n"
+            printf "\n$prefix Benchmarking CPU with $OMP_NUM_THREADS threads\n"
             echo -n "cpu,$threads,4096," >> $filename
             ./automata -b -x 4096 -y 4096 -p 0.5 --cpu >> $filename
         done
 
+        printf "\n$prefix Benchmarking GPU"
         echo -n "gpu,8704,4096," >> $filename
         ./automata -b -x 4096 -y 4096 -p 0.5 >> $filename
 
     done
+done
+
+
+### LATTICE SIZE EXPERIMENTS
+
+prefix="Exp Lattice:"
+
+# single GPU thread experiment
+printf "\n$prefix Single GPU Thread"
+run_lattice "--gpu-blocks 1 --gpu-threads 1" "res/$RUN.1.hl.gpu.1.csv"
+
+# CPU threads
+for i in $(seq 1 $TRIALS); do
+    printf "\n$prefix Trial #$i\n"
+    for threads in {1,2,4,6,8,10,12,14,16}; do
+        export OMP_NUM_THREADS=$threads
+        export OMP_SCHEDULE=dynamic,1
+        printf "\n$prefix Benchmarking CPU with $OMP_NUM_THREADS threads\n"
+        run_lattice "--cpu" "res/$RUN.hl.cpu.$OMP_NUM_THREADS.$i.csv"
+    done
+done
+
+# GPU
+printf "\n$prefix Benchmarking GPU"
+for i in $(seq 1 $TRIALS); do
+    printf "\n$prefix Trial #$i\n"
+    run_lattice "" "res/$RUN.hl.gpu.8704.$i.csv"
 done
