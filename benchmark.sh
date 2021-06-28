@@ -120,7 +120,7 @@ for i in $(seq 1 $TRIALS); do
         export OMP_NUM_THREADS=$threads
         export OMP_SCHEDULE=dynamic,1
         printf "\n$prefix Benchmarking CPU with $OMP_NUM_THREADS threads\n"
-        run_lattice "--cpu" "res/$RUN.hl.cpu.$OMP_NUM_THREADS.$i.csv"
+        run_lattice "--cpu" "res/$RUN.lat.hl.cpu.$OMP_NUM_THREADS.$i.csv"
     done
 done
 
@@ -128,5 +128,5 @@ done
 printf "\n$prefix Benchmarking GPU"
 for i in $(seq 1 $TRIALS); do
     printf "\n$prefix Trial #$i\n"
-    run_lattice "" "res/$RUN.hl.gpu.8704.$i.csv"
+    run_lattice "" "res/$RUN.lat.hl.gpu.8704.$i.csv"
 done
