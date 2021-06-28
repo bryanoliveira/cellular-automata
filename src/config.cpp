@@ -27,6 +27,7 @@ bool noDownsample = false;
 bool printOutput = false;
 uint gpuBlocks = 0;
 uint gpuThreads = 0;
+uint skipFrames = 0;
 
 void load_file() {}
 void load_cmd(const int argc, char **const argv) {
@@ -54,9 +55,11 @@ void load_cmd(const int argc, char **const argv) {
                   "unpaused when not rendering)")   //
         ("output,o", "Output last state to stdout") //
         ("benchmark,b", "Benchmark mode - overrides 'max' to 1000 if it is 0, "
-                        "'start' to true, 'render-delay' to 0")      //
-        ("gpu-blocks", po::value<uint>(), "GPU grid size in blocks") //
-        ("gpu-threads", po::value<uint>(), "GPU block size in threads");
+                        "'start' to true, 'render-delay' to 0")         //
+        ("gpu-blocks", po::value<uint>(), "GPU grid size in blocks")    //
+        ("gpu-threads", po::value<uint>(), "GPU block size in threads") //
+        ("skip-frames", po::value<uint>(),
+         "Number of extra generations before render");
 
     po::variables_map vm;
     po::store(po::command_line_parser(argc, argv).options(description).run(),
@@ -120,6 +123,8 @@ void load_cmd(const int argc, char **const argv) {
         gpuBlocks = vm["gpu-blocks"].as<uint>();
     if (vm.count("gpu-threads"))
         gpuThreads = vm["gpu-threads"].as<uint>();
+    if (vm.count("skip-frames"))
+        skipFrames = vm["skip-frames"].as<uint>();
 }
 
 } // namespace config

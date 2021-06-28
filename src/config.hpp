@@ -25,6 +25,7 @@ extern bool noDownsample;
 extern bool printOutput;
 extern uint gpuBlocks;
 extern uint gpuThreads;
+extern uint skipFrames;
 
 void load_file();
 void load_cmd(const int argc, char **const argv);

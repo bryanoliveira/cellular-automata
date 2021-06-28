@@ -170,6 +170,14 @@ void loop() {
         if (config::render)
             std::cout << "\r\e[KPaused. Press space to resume." << std::flush;
     } else {
+        // compute a batch of generations if not rendering a single step
+        if (!controls::singleStep)
+            for (uint repeat = 0; repeat < config::skipFrames; ++repeat) {
+                // compute extra generations
+                gAutomata->evolve(false);
+                ++stats::iterations;
+            }
+
         controls::singleStep = false;
 
 #endif // HEADLESS_ONLY
