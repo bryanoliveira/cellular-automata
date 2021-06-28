@@ -7,7 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <ctime>
+#include <chrono>
 #include <iomanip>
 #include <omp.h>
 #include <sstream>
@@ -146,6 +146,9 @@ void Display::update_grid_buffers_cpu() {
         exit(EXIT_FAILURE);
     }
 
+    const std::chrono::steady_clock::time_point timeStart =
+        std::chrono::steady_clock::now();
+
     // update projection limits
     proj::update();
 
@@ -179,6 +182,12 @@ void Display::update_grid_buffers_cpu() {
                  GL_STATIC_DRAW);
     // unbind VBO
     glBindBuffer(GL_ARRAY_BUFFER, mGridVBO);
+
+    // calculate timing
+    stats::totalBufferTime +=
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::steady_clock::now() - timeStart)
+            .count();
 }
 
 void Display::update_title(const ulong itsPerSecond) {
