@@ -68,14 +68,14 @@ inline ushort count_nh(const uint idx, const uint size1) {
         grid[idx - size2 - 3] + //
         grid[idx - size2 + 3] + //
         // 3rd row
-        grid[idx - size - 3] + //
-        grid[idx - size + 3] + //
+        grid[idx - size1 - 3] + //
+        grid[idx - size1 + 3] + //
         // middle row
         grid[idx - 3] + //
         grid[idx + 3] + //
         // 5th row
-        grid[idx + size - 3] + //
-        grid[idx + size + 3] + //
+        grid[idx + size1 - 3] + //
+        grid[idx + size1 + 3] + //
         // 6th row
         grid[idx + size2 - 3] + //
         grid[idx + size2 + 3] + //
@@ -109,14 +109,14 @@ inline ushort count_nh(const uint idx, const uint size1) {
         grid[idx - size2 - 4] + //
         grid[idx - size2 + 4] + //
                                 // 4th row
-        grid[idx - size - 4] +  //
-        grid[idx - size + 4] +  //
+        grid[idx - size1 - 4] + //
+        grid[idx - size1 + 4] + //
                                 // middle row
         grid[idx - 4] +         //
         grid[idx + 4] +         //
                                 // 6th row
-        grid[idx + size - 4] +  //
-        grid[idx + size + 4] +  //
+        grid[idx + size1 - 4] + //
+        grid[idx + size1 + 4] + //
                                 // 7th row
         grid[idx + size2 - 4] + //
         grid[idx + size2 + 4] + //
@@ -160,14 +160,14 @@ inline ushort count_nh(const uint idx, const uint size1) {
         grid[idx - size2 - 5] + //
         grid[idx - size2 + 5] + //
                                 // 5th row
-        grid[idx - size - 5] +  //
-        grid[idx - size + 5] +  //
+        grid[idx - size1 - 5] + //
+        grid[idx - size1 + 5] + //
                                 // middle row
         grid[idx - 5] +         //
         grid[idx + 5] +         //
                                 // 7th row
-        grid[idx + size - 5] +  //
-        grid[idx + size + 5] +  //
+        grid[idx + size1 - 5] + //
+        grid[idx + size1 + 5] + //
                                 // 8th row
         grid[idx + size2 - 5] + //
         grid[idx + size2 + 5] + //

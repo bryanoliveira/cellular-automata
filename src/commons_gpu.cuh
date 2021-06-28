@@ -3,11 +3,64 @@
 
 // this is needed to declare CUDA-specific variable types
 #include <cuda_runtime.h>
-#include <curand_kernel.h> // for the curandState type
+#include <spdlog/spdlog.h>
 
 #include "definitions.hpp"
 #include "grid.hpp"  // GridType
 #include "types.hpp" // uint, ulim, etc
+
+//// UTIL FUNCTIONS
+
+inline int getSPcores(const cudaDeviceProp gpuProps) {
+    int cores = 0;
+    int mp = gpuProps.multiProcessorCount;
+    switch (gpuProps.major) {
+    case 2: // Fermi
+        if (gpuProps.minor == 1)
+            cores = mp * 48;
+        else
+            cores = mp * 32;
+        break;
+    case 3: // Kepler
+        cores = mp * 192;
+        break;
+    case 5: // Maxwell
+        cores = mp * 128;
+        break;
+    case 6: // Pascal
+        if ((gpuProps.minor == 1) || (gpuProps.minor == 2))
+            cores = mp * 128;
+        else if (gpuProps.minor == 0)
+            cores = mp * 64;
+        else
+            // unknown
+            return -1;
+        break;
+    case 7: // Volta and Turing
+        if ((gpuProps.minor == 0) || (gpuProps.minor == 5))
+            cores = mp * 64;
+        else
+            // unknown
+            return -1;
+        break;
+    case 8: // Ampere
+        if (gpuProps.minor == 0)
+            cores = mp * 64;
+        else if (gpuProps.minor == 6)
+            cores = mp * 128;
+        else
+            // unknown
+            return -1;
+        break;
+    default:
+        // unknown
+        return -1;
+        break;
+    }
+    return cores;
+}
+
+//// DEVICE FUNCTIONS
 
 // NOTE: this code is repeated here and in commons_gpu.cu to avoid dependencies
 // also, we unroll loops manually to avoid branching overhead
@@ -68,14 +121,14 @@ __device__ inline ushort count_nh(const GridType *const grid, const uint size1,
         grid[idx - size2 - 3] + //
         grid[idx - size2 + 3] + //
         // 3rd row
-        grid[idx - size - 3] + //
-        grid[idx - size + 3] + //
+        grid[idx - size1 - 3] + //
+        grid[idx - size1 + 3] + //
         // middle row
         grid[idx - 3] + //
         grid[idx + 3] + //
         // 5th row
-        grid[idx + size - 3] + //
-        grid[idx + size + 3] + //
+        grid[idx + size1 - 3] + //
+        grid[idx + size1 + 3] + //
         // 6th row
         grid[idx + size2 - 3] + //
         grid[idx + size2 + 3] + //
@@ -109,14 +162,14 @@ __device__ inline ushort count_nh(const GridType *const grid, const uint size1,
         grid[idx - size2 - 4] + //
         grid[idx - size2 + 4] + //
                                 // 4th row
-        grid[idx - size - 4] +  //
-        grid[idx - size + 4] +  //
+        grid[idx - size1 - 4] + //
+        grid[idx - size1 + 4] + //
                                 // middle row
         grid[idx - 4] +         //
         grid[idx + 4] +         //
                                 // 6th row
-        grid[idx + size - 4] +  //
-        grid[idx + size + 4] +  //
+        grid[idx + size1 - 4] + //
+        grid[idx + size1 + 4] + //
                                 // 7th row
         grid[idx + size2 - 4] + //
         grid[idx + size2 + 4] + //
@@ -160,14 +213,14 @@ __device__ inline ushort count_nh(const GridType *const grid, const uint size1,
         grid[idx - size2 - 5] + //
         grid[idx - size2 + 5] + //
                                 // 5th row
-        grid[idx - size - 5] +  //
-        grid[idx - size + 5] +  //
+        grid[idx - size1 - 5] + //
+        grid[idx - size1 + 5] + //
                                 // middle row
         grid[idx - 5] +         //
         grid[idx + 5] +         //
                                 // 7th row
-        grid[idx + size - 5] +  //
-        grid[idx + size + 5] +  //
+        grid[idx + size1 - 5] + //
+        grid[idx + size1 + 5] + //
                                 // 8th row
         grid[idx + size2 - 5] + //
         grid[idx + size2 + 5] + //

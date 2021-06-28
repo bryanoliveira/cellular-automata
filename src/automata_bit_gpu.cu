@@ -81,6 +81,8 @@ __global__ void k_init_bit_grid(GridType *const grid, const uvec2 dims,
     }
 }
 
+// ALERT: this currently does not work
+// TODO: fix this!
 __global__ void
 k_update_bit_grid_buffers(const ubyte *const grid, const uvec2 dims,
                           fvec2s *const __restrict__ gridVertices,
