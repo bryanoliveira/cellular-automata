@@ -201,10 +201,16 @@ void AutomataBase::run_init_kernel() {
 }
 
 void AutomataBase::run_evolution_kernel(const bool countAliveCells) {
-    k_evolve_count_rule<<<config::gpuBlocks, config::gpuThreads, 0,
-                          mEvolveStream>>>(
+    // k_evolve_count_rule<<<config::gpuBlocks, config::gpuThreads, 0,
+    //                       mEvolveStream>>>(
+    //     grid, nextGrid, {config::cols, config::rows}, mGlobalRandState,
+    //     config::virtualFillProb, countAliveCells, mActiveCellCount);
+
+    k_evolve_shmem<<<config::gpuBlocks, config::gpuThreads,
+                     config::gpuBlocks * config::gpuThreads, mEvolveStream>>>(
         grid, nextGrid, {config::cols, config::rows}, mGlobalRandState,
         config::virtualFillProb, countAliveCells, mActiveCellCount);
+
     CUDA_ASSERT(cudaGetLastError());
 }
 

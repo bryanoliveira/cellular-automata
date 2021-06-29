@@ -121,3 +121,63 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
             atomicAdd(activeCellCount, static_cast<uint>(nextGrid[idx] > 0));
     }
 }
+
+__global__ void k_evolve_shmem(const GridType *const grid,
+                               GridType *const nextGrid, const uvec2 dims,
+                               curandState *const __restrict__ globalRandState,
+                               const float virtualSpawnProbability,
+                               const bool countAliveCells,
+                               uint *const activeCellCount) {
+
+    extern __shared__ GridType shgrid[];
+
+    // idxMin = thread ID + skip safety rows + skip safety cols
+    // idxMax = y - 1 full rows + last row cols
+    const uint stride = gridDim.x * blockDim.x,
+               idxMin = blockDim.x * blockIdx.x + threadIdx.x +
+                        (dims.x * NH_RADIUS) + NH_RADIUS,
+               idxMax = (dims.y - NH_RADIUS) * dims.x - NH_RADIUS;
+
+    for (uint idx = idxMin; idx < idxMax; idx += stride) {
+        // shared memory idx -
+        const int shidx = (int(idx) - int(idxMin)) % stride;
+        shgrid[shidx] = grid[idx];
+
+        const uint x = idx % dims.x;
+        // if col is 0 or dims.x-1, given MxN grid and NH_RADIUS=1
+        if (!(x < NH_RADIUS || dims.x - NH_RADIUS <= x)) {
+
+            const int inhs[] = {
+                shidx - int(dims.x) - 1, // [* - -] top left
+                shidx - int(dims.x),     // [- * -] top center
+                shidx - int(dims.x) + 1, // [- - *] top right
+                shidx - 1,               // [* - -] middle left
+                shidx + 1,               // [- - *] middle right
+                shidx + int(dims.x) - 1, // [* - -] bottom left
+                shidx + int(dims.x),     // [- * -] bottom center
+                shidx + int(dims.x) + 1  // [- - *] bottom right
+            };
+            ushort nhs = 0;
+            for (auto inh : inhs) {
+                if (inh >= 0 && inh < 32768)
+                    nhs += shgrid[inh];
+            }
+
+            // check safety borders & cell state
+            nextGrid[idx] = game_of_life(shgrid[shidx], nhs);
+
+            // add a "virtual particle" spawn probability
+            // note: this branching does not cause significant perf. hit
+            if (virtualSpawnProbability > 0 && nextGrid[idx] == 0)
+                nextGrid[idx] = curand_uniform(&globalRandState[idx]) <
+                                virtualSpawnProbability;
+
+            // avoid atomicAdd when not necessary
+            if (countAliveCells)
+                atomicAdd(activeCellCount,
+                          static_cast<uint>(nextGrid[idx] > 0));
+        }
+
+        __syncthreads();
+    }
+}

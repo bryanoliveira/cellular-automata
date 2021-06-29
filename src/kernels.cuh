@@ -45,4 +45,11 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
                     const float virtualSpawnProbability,
                     const bool countAliveCells, uint *const activeCellCount);
 
+__global__ void k_evolve_shmem(const GridType *const grid,
+                               GridType *const nextGrid, const uvec2 dims,
+                               curandState *const __restrict__ globalRandState,
+                               const float virtualSpawnProbability,
+                               const bool countAliveCells,
+                               uint *const activeCellCount);
+
 #endif
