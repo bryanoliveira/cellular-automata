@@ -45,12 +45,14 @@ void AutomataBit::run_evolution_kernel(const bool countAliveCells) {
 }
 
 void AutomataBit::run_render_kernel(fvec2s *gridVertices) {
+#ifndef HEADLESS_ONLY
     k_update_bit_grid_buffers<<<config::gpuBlocks, config::gpuThreads, 0,
                                 mBufferUpdateStream>>>(
         grid, {config::cols, config::rows}, gridVertices,
         proj::info.numVertices, proj::cellDensity, proj::gridLimX,
         proj::gridLimY, 1);
     CUDA_ASSERT(cudaGetLastError());
+#endif
 }
 
 } // namespace gpu

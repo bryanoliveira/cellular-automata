@@ -36,7 +36,7 @@ export SPDLOG_LEVEL=error
 # how many times to repeat the same experiment
 TRIALS=5
 # run ID
-RUN="$(ls -1v res | tail -1 | cut -d "." -f1)"
+RUN="$(ls -1v res | tail -1 | cut -d "." -f1 | rev | cut -d "-" -f1 | cut -d "," -f1 | rev)"
 RUN=$(($RUN + 1))
 
 
