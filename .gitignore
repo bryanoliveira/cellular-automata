@@ -5,6 +5,7 @@ build/
 *.sqlite
 callgrind.out*
 *.csv
+res/
 .vscode/
 
 # Prerequisites

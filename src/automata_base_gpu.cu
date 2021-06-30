@@ -175,6 +175,8 @@ void AutomataBase::update_grid_buffers() {
                            mBufferUpdateStream>>>(gridVertices,
                                                   proj::info.numVertices);
     CUDA_ASSERT(cudaGetLastError());
+    // should I call cudaDeviceSynchronize?
+    CUDA_ASSERT(cudaDeviceSynchronize());
 
     // update buffers
     run_render_kernel(gridVertices);
