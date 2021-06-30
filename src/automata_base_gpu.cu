@@ -14,7 +14,7 @@ namespace gpu {
 AutomataBase::AutomataBase(const uint randSeed,
                            std::ostringstream *const pLiveLogBuffer,
                            const uint *const gridVBO) {
-    spdlog::info("Initializing automata GPU engine...");
+    spdlog::info("Initializing Automata Base GPU engine...");
 
     int numGpus = 0;
     CUDA_ASSERT(cudaGetDeviceCount(&numGpus));
@@ -85,7 +85,7 @@ AutomataBase::AutomataBase(const uint randSeed,
     // define the live log buffer
     mLiveLogBuffer = pLiveLogBuffer;
 
-    spdlog::info("Automata GPU engine is ready.");
+    spdlog::info("Automata Base GPU engine is ready.");
 }
 
 AutomataBase::~AutomataBase() {

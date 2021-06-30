@@ -4,6 +4,7 @@
 // this is needed to declare CUDA-specific variable types
 #include <cuda_runtime.h>
 #include <curand_kernel.h> // for the curandStatate type
+#include <spdlog/spdlog.h>
 
 #include "automata_base_gpu.cuh"
 #include "types.hpp"
@@ -15,7 +16,9 @@ class AutomataBit : public AutomataBase {
     // call superclass constructor as is
     AutomataBit(const uint seed, std::ostringstream *const pLiveLogBuffer,
                 const uint *const gridVBO = nullptr)
-        : AutomataBase(seed, pLiveLogBuffer, gridVBO) {}
+        : AutomataBase(seed, pLiveLogBuffer, gridVBO) {
+        spdlog::info("Automata Bit GPU engine is ready.");
+    }
 
   protected:
     // override kernel calls

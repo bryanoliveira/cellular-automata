@@ -13,6 +13,9 @@ endif
 ifdef NH_RADIUS
 EXTRA_FLAGS := $(EXTRA_FLAGS) -DNH_RADIUS=$(NH_RADIUS)
 endif
+ifdef AUTOMATA_TYPE_BIT
+EXTRA_FLAGS := $(EXTRA_FLAGS) -DAUTOMATA_TYPE_BIT
+endif
 
 COMMON_FLAGS := -Wall -O3 # Optimization level 3
 CFLAGS := -std=c++17 -fopenmp $(COMMON_FLAGS) $(EXTRA_FLAGS) # -g

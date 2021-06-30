@@ -31,9 +31,19 @@
 #include "pattern.hpp"
 #include "stats.hpp"
 #include "utils.hpp"
+
 #ifndef CPU_ONLY
+#include "automata_bit_gpu.cuh"
 #include "automata_base_gpu.cuh"
 #endif // CPU_ONLY
+
+#ifdef AUTOMATA_TYPE_BIT
+#define AUTOMATA AutomataBit
+#else // !AUTOMATA_TYPE_BIT
+#define AUTOMATA AutomataBase
+#endif // AUTOMATA_TYPE_BIT
+
+// no display stuff should be imported
 #ifndef HEADLESS_ONLY
 #include "controls.hpp"
 #include "display.hpp"
@@ -95,12 +105,12 @@ int main(int argc, char **argv) {
 #ifndef HEADLESS_ONLY
     else if (config::render)
         // the GPU implementation updates the VBO using the CUDA<>GL interop
-        gAutomata = static_cast<AutomataInterface *>(new gpu::AutomataBase(
+        gAutomata = dynamic_cast<AutomataInterface *>(new gpu::AUTOMATA(
             randSeed, &gLiveLogBuffer, &(gDisplay->grid_vbo())));
 #endif // HEADLESS_ONLY
     else
-        gAutomata = static_cast<AutomataInterface *>(
-            new gpu::AutomataBase(randSeed, &gLiveLogBuffer));
+        gAutomata = dynamic_cast<AutomataInterface *>(
+            new gpu::AUTOMATA(randSeed, &gLiveLogBuffer));
 #endif // CPU_ONLY
 
     if (config::patternFileName != "random")
