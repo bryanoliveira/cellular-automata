@@ -1,6 +1,6 @@
 # Cellular Automata
 
-<img src="docs/100x100.gif" align="right">
+<img src="images/100x100.gif" align="right">
 
 A [Cellular Automata](https://en.wikipedia.org/wiki/Cellular_automaton) program built with C++, OpenGL, CUDA and OpenMP. It's built to run on a GPU but it also supports multithreaded CPU-only execution. On the right there's an example execution of [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) on a 100x100 randomly initialised lattice.
 
@@ -11,13 +11,13 @@ This program can currently evolve a dense & high entropy 182.25 million cell Gam
 The ability to evolve and render such large grids allows the program to run some really interesting patterns, like evolving the Game of Life _within_ the Game of Life:
 
 <div align="center">
-<img src="docs/zoom.gif">
+<img src="images/zoom.gif">
 </div>
 
 In the GIF above we're running a 12300x12300 grid using Game of Life rules to evolve a pattern known as [Meta-Toad](http://b3s23life.blogspot.com/2006_09_01_archive.html). It uses a grid of [OTCA Metapixels](https://www.conwaylife.com/wiki/OTCA_metapixel) and requires about 35 thousand generations of the underlying automaton to represent a single generation of the meta-grid. The pattern being evolved by the meta-grid is known as [Toad](https://www.conwaylife.com/wiki/Toad):
 
 <div align="center">
-<img src="docs/toad.gif" align="center" width="100">
+<img src="images/toad.gif" align="center" width="100">
 </div>
 <br/>
 This program also supports a benchmark mode (`-b` option), which outputs the total and average evolution and rendering timings to stdout. Combined with `benchmark.sh` and `benchmark_visualize.ipynb`, it is possible to plot speedups and evolution times for different lattice sizes. Currently, the GPU implementation achieves a speedup up to 627x over the single-core CPU implementation.
@@ -111,7 +111,7 @@ There is still much room for improvement. This includes better memory management
 ## Bonus
 
 <div align="center">
-<img src="https://github.com/bryanoliveira/cellular-automata/raw/master/docs/1000x1000.gif"/>
+<img src="https://github.com/bryanoliveira/cellular-automata/raw/master/images/1000x1000.gif"/>
 </div>
 
 > A 1000x1000 randomly initialized grid running Game of life.
