@@ -69,7 +69,7 @@ void AutomataBase::evolve(const bool logEnabled) {
         if (x < NH_RADIUS || config::cols - NH_RADIUS <= x)
             continue;
 
-        // check safety borders & cell state
+        // check cell state
         nextGrid[idx] = game_of_life(grid[idx], count_nh(idx, config::cols));
 
         // add a "virtual particle" spawn probability
