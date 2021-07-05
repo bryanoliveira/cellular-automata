@@ -81,7 +81,7 @@ for nh_radius in $(seq 1 5); do
     prefix="Exp Radius $nh_radius:"
     printf $"\n$prefix Recompiling...\n"
     make clean
-    make automata NH_RADIUS=$nh_radius
+    make automata NH_RADIUS=$nh_radius -j
 
     for i in $(seq 1 $TRIALS); do
         printf "\n$prefix Trial #$i\n"
@@ -97,20 +97,24 @@ for nh_radius in $(seq 1 5); do
             ./automata -b -x 4096 -y 4096 -p 0.5 --cpu >> $filename
         done
 
-        printf "\n$prefix Benchmarking GPU"
+        printf "\n$prefix Benchmarking GPU\n"
         echo -n "gpu,8704,4096," >> $filename
         ./automata -b -x 4096 -y 4096 -p 0.5 >> $filename
 
     done
 done
 
+# reset compilation to defaults
+make clean
+make automata -j
 
-### LATTICE SIZE EXPERIMENTS
+
+## LATTICE SIZE EXPERIMENTS
 
 prefix="Exp Lattice:"
 
 # single GPU thread experiment
-printf "\n$prefix Single GPU Thread"
+printf "\n\n$prefix Single GPU Thread\n"
 run_lattice "--gpu-blocks 1 --gpu-threads 1" "res/$RUN.1.hl.gpu.1.csv"
 
 # CPU threads
