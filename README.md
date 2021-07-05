@@ -24,8 +24,8 @@ This program also supports a benchmark mode (`-b` option), which outputs the tot
 
 <div align="center">
 <br/>
-<img src="docs/speedup.png" align="center" width="330">
-<img src="docs/avg_time.png" align="center" width="330">
+<img src="images/lat_hl_evo_speedup.png" align="center" width="330">
+<img src="images/lat_hl_evo_avg.png" align="center" width="330">
 </div>
 <br/>
 
