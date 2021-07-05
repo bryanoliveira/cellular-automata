@@ -168,10 +168,11 @@ void Display::update_grid_buffers_cpu() {
                        vidx = vy * proj::info.numVertices.x + vx;
 
             // update vertice state
-            if (mGridVertices[vidx].state == 0 && grid[idx])
-#pragma omp atomic
+            if (mGridVertices[vidx].state == 0 && grid[idx]) {
+#pragma omp critical
                 mGridVertices[vidx].state = std::max(
                     mGridVertices[vidx].state, static_cast<int>(grid[idx]));
+            }
         }
     }
 
