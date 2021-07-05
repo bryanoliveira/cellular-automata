@@ -107,7 +107,7 @@ k_evolve_count_rule(const GridType *const grid, GridType *const nextGrid,
         if (x < NH_RADIUS || dims.x - NH_RADIUS <= x)
             continue;
 
-        // check safety borders & cell state
+        // check cell state
         nextGrid[idx] = game_of_life(grid[idx], count_nh(grid, dims.x, idx));
 
         // add a "virtual particle" spawn probability
