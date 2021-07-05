@@ -61,7 +61,6 @@ void AutomataBase::evolve(const bool logEnabled) {
                idxMax = (config::rows - NH_RADIUS) * config::cols - NH_RADIUS;
 
 #pragma omp parallel for reduction(+ : mActiveCellCount)
-    //   // schedule(runtime)
     for (uint idx = idxMin; idx < idxMax; ++idx) {
         // check x index to skip borders
         const uint x = idx % config::cols;
