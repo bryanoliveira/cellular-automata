@@ -152,12 +152,12 @@ void Display::update_grid_buffers_cpu() {
     // update projection limits
     proj::update();
 
-#pragma omp parallel for schedule(runtime)
+#pragma omp parallel for
     // reset vertices states
     for (uint idx = 0; idx < proj::info.totalVertices; ++idx)
         mGridVertices[idx].state = 0;
 
-#pragma omp parallel for collapse(2) schedule(runtime)
+#pragma omp parallel for collapse(2)
     // update vertice states
     for (uint y = proj::gridLimY.start; y < proj::gridLimY.end; ++y) {
         for (uint x = proj::gridLimX.start; x < proj::gridLimX.end; ++x) {
