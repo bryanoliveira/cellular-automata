@@ -45,7 +45,9 @@ To build it from source you'll also need:
 - g++ (C++ 17) and _make_
   - e.g. `sudo apt install build-essential`
 - Boost C++ Library (program_options module)
+  - e.g. `sudo apt install libboost-all-dev`
 - [spdlog](https://github.com/gabime/spdlog)
+  - e.g. `sudo apt install libfmt-dev libspdlog-dev`
 
 \*It is possible to run this program in headless-only mode, so if your machine doesn't support rendering (e.g. Colab runtimes) you may skip the OpenGL installation step. For that to work you must compile the program with the `HEADLESS_ONLY` flag set (e.g. `make automata HEADLESS_ONLY=1`).
 

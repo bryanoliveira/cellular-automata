@@ -36,11 +36,13 @@ CUSOURCES := $(shell find $(SRCDIR) -type f -name *.cu)
 CUOBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(CUSOURCES:.cu=.o))
 endif
 
-LIB := -lboost_program_options -fopenmp
+LIB := -lboost_program_options -fopenmp -lfmt
 ifndef HEADLESS_ONLY
 LIB := $(LIB) -lGL -lGLU -lglut -lGLEW
 endif
 ifndef CPU_ONLY
+# if lcudart cannot be found, check if the env var 
+# LIBRARY_PATH is pointing to the correct cuda install location
 LIB := $(LIB) -lcudart
 endif
 
